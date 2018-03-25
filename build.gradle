@@ -1,0 +1,174 @@
+buildscript {
+    repositories {
+        mavenCentral()
+		
+	    maven {
+            name = "forge"
+            url = "http://files.minecraftforge.net/maven"
+        }
+        
+        maven {
+            name = "sonatype"
+            url = "https://oss.sonatype.org/content/repositories/snapshots/"
+        }
+    }
+    
+    dependencies {
+        classpath 'net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT'
+        classpath 'org.ajoberstar:gradle-git:0.10.1'
+    }
+}
+
+apply plugin: 'net.minecraftforge.gradle.forge'
+apply plugin: 'maven-publish'
+
+import org.ajoberstar.grgit.Grgit
+
+def repo = Grgit.open(project.file('.'))
+project.ext.gitHash = repo.log().find().abbreviatedId
+
+ext.buildnumber = 0
+project.buildnumber = System.getenv('BUILD_NUMBER') != null ? System.getenv('BUILD_NUMBER') : project.ext.gitHash
+
+version = "MC${minecraft_version}-${mod_version}.${buildnumber}"
+group= "grondag.volcano" // http://maven.apache.org/guides/mini/guide-naming-conventions.html
+archivesBaseName = "big_active_volcano"
+
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+// Need this here so eclipse task generates correctly.
+compileJava {
+    sourceCompatibility = targetCompatibility = '1.8'
+}
+
+minecraft {
+    version = "${minecraft_version}-${forge_version}"
+    runDir = "run"
+    mappings = "snapshot_20171003"
+    useDepAts = true
+    
+    replaceIn "Reference.java"
+    replace "@VERSION@", project.version
+}
+
+task deobfJar(type: Jar) {
+    from sourceSets.main.output
+    classifier = 'dev'
+}
+
+configurations {
+    shade
+    compile.extendsFrom shade
+}
+
+reobf {
+    jar {
+            extraLines += [ "PK: org/magicwerk/brownies/collections grondag/hard_science/shade/org/magicwerk/brownies/collections" ]
+    			extraLines += [ "PK: org/magicwerk/brownies/collections/exceptions grondag/hard_science/shade/org/magicwerk/brownies/collections/exceptions" ]
+		    extraLines += [ "PK: org/magicwerk/brownies/collections/function grondag/hard_science/shade/org/magicwerk/brownies/collections/function" ]
+		    extraLines += [ "PK: org/magicwerk/brownies/collections/helper grondag/hard_science/shade/org/magicwerk/brownies/collections/helper" ]
+		    extraLines += [ "PK: org/magicwerk/brownies/collections/helper/primitive grondag/hard_science/shade/org/magicwerk/brownies/collections/helper/primitive" ]
+		    extraLines += [ "PK: org/magicwerk/brownies/collections/primitive grondag/hard_science/shade/org/magicwerk/brownies/collections/primitive" ]
+    }
+}
+
+repositories {
+
+	maven { // CTM & TOP
+		url "http://maven.tterrag.com/"
+	}
+	
+	maven { // WAILA
+		url "http://mobiusstrip.eu/maven"
+	}
+	
+    maven { // JEI
+        url "http://dvs1.progwml6.com/files/maven"
+    }
+    
+    maven { // Multipart
+    		url "http://maven.amadornes.com/"
+	}
+    
+    maven {
+        name = "sonatype"
+        url = "https://oss.sonatype.org/content/repositories/snapshots/"
+    }
+    
+    maven {
+        name = "CoFH Maven"
+        url = "http://maven.covers1624.net"
+    }
+    
+    maven {
+        name = "refinedstorage"
+        url = "https://dl.bintray.com/raoulvdberge/dev/"
+    }
+}
+
+artifacts {
+    archives sourceJar
+    archives deobfJar
+}
+
+dependencies {
+    
+    deobfCompile "org.magicwerk:brownies-collections:0.9.13"
+    shade "org.magicwerk:brownies-collections:0.9.13"
+    
+    	deobfCompile "team.chisel.ctm:CTM:MC1.12-${ctm_version}"
+	deobfCompile "mezz.jei:jei_1.12.2:${jei_version}"
+    deobfCompile "mcjty.theoneprobe:TheOneProbe-1.12:1.12-${top_version}"
+	
+	// not currently using these APIs
+	// here to support compatibility testing in dev environment
+	// or because thinking about using the APIs
+    deobfCompile "MCMultiPart2:MCMultiPart:${mcmp_version}"
+}
+
+processResources
+{
+    // this will ensure that this task is redone when the versions change.
+    inputs.property "version", project.version
+    inputs.property "mcversion", project.minecraft.version
+
+    // replace stuff in mcmod.info, nothing else
+    from(sourceSets.main.resources.srcDirs) {
+        include 'mcmod.info'
+                
+        // replace version and mcversion
+        expand 'version':project.version, 'mcversion':project.minecraft.version
+    }
+        
+    // copy everything else, thats not the mcmod.info
+    from(sourceSets.main.resources.srcDirs) {
+        exclude 'mcmod.info'
+    }
+}
+
+sourceSets {
+	main {
+	        java {
+	            include 'grondag/**'
+	        }
+	        resources
+	        {
+	        	include '**'
+	        }
+	    }
+    test {
+        java {
+            exclude 'grondag/**'
+        }
+    }
+}
+
+jar {
+    configurations.shade.each { dep ->
+        from(project.zipTree(dep)){
+            exclude 'META-INF', 'META-INF/**'
+        }
+    }
+}
