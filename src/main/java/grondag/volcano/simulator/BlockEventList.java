@@ -10,8 +10,8 @@ import grondag.exotic_matter.concurrency.Job;
 import grondag.exotic_matter.concurrency.PerformanceCollector;
 import grondag.exotic_matter.concurrency.SimpleConcurrentList;
 import grondag.exotic_matter.varia.PackedBlockPos;
+import grondag.volcano.BigActiveVolcano;
 import grondag.volcano.Configurator;
-import grondag.volcano.Log;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.math.BlockPos;
 
@@ -88,7 +88,7 @@ public class BlockEventList
             }
         }
         
-        Log.info("Saving " + i / BlockEvent.NBT_WIDTH + " Block Events with tag " + this.nbtTagName);
+        BigActiveVolcano.INSTANCE.info("Saving " + i / BlockEvent.NBT_WIDTH + " Block Events with tag " + this.nbtTagName);
         
         nbt.setIntArray(this.nbtTagName, Arrays.copyOfRange(saveData, 0, i));
     }
@@ -102,7 +102,7 @@ public class BlockEventList
         //confirm correct size
         if(saveData == null || saveData.length % BlockEvent.NBT_WIDTH != 0)
         {
-            Log.warn("Invalid save data loading block events with tag " + nbtTagName + ". Lava blocks may not be updated properly.");
+            BigActiveVolcano.INSTANCE.warn("Invalid save data loading block events with tag " + nbtTagName + ". Lava blocks may not be updated properly.");
         }
         else
         {
@@ -115,7 +115,7 @@ public class BlockEventList
                 i += BlockEvent.NBT_WIDTH;
             }
           
-            Log.info("Loaded " + this.eventList.size() + " block events with NBT Tag " + nbtTagName);
+            BigActiveVolcano.INSTANCE.info("Loaded " + this.eventList.size() + " block events with NBT Tag " + nbtTagName);
         }
     }
     

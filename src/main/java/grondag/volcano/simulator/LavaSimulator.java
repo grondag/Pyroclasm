@@ -18,8 +18,8 @@ import grondag.exotic_matter.simulator.Simulator;
 import grondag.exotic_matter.simulator.persistence.ISimulationTopNode;
 import grondag.exotic_matter.varia.PackedBlockPos;
 import grondag.exotic_matter.world.WorldInfo;
+import grondag.volcano.BigActiveVolcano;
 import grondag.volcano.Configurator;
-import grondag.volcano.Log;
 import grondag.volcano.init.ModBlocks;
 import grondag.volcano.lava.AgedBlockPos;
 import grondag.volcano.lava.CoolingBasaltBlock;
@@ -441,7 +441,7 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable
         // SAVE BASALT BLOCKS
         {
             if(Configurator.VOLCANO.enablePerformanceLogging)
-                Log.info("Saving " + basaltBlocks.size() + " cooling basalt blocks.");
+                BigActiveVolcano.INSTANCE.info("Saving " + basaltBlocks.size() + " cooling basalt blocks.");
             
             int[] saveData = new int[basaltBlocks.size() * BASALT_BLOCKS_NBT_WIDTH];
             int i = 0;
@@ -474,7 +474,7 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable
         //confirm correct size
         if(saveData == null || saveData.length % BASALT_BLOCKS_NBT_WIDTH != 0)
         {
-            Log.warn("Invalid save data loading lava simulator. Cooling basalt blocks may not be updated properly.");
+            BigActiveVolcano.INSTANCE.warn("Invalid save data loading lava simulator. Cooling basalt blocks may not be updated properly.");
         }
         else
         {
@@ -483,7 +483,7 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable
             {
                 this.basaltBlocks.add(new AgedBlockPos(((long)saveData[i++] << 32) | (long)saveData[i++], saveData[i++]));
             }
-            Log.info("Loaded " + basaltBlocks.size() + " cooling basalt blocks.");
+            BigActiveVolcano.INSTANCE.info("Loaded " + basaltBlocks.size() + " cooling basalt blocks.");
         }
 
     }
@@ -747,7 +747,7 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable
             {
                 for(int i = 0; i < 8; i++)
                 {
-                    Log.info(String.format("Flow total for step %1$d = %2$,d with %3$,d connections", i, this.flowTotals[i], this.flowCounts[i]));
+                    BigActiveVolcano.INSTANCE.info(String.format("Flow total for step %1$d = %2$,d with %3$,d connections", i, this.flowTotals[i], this.flowCounts[i]));
                     this.flowTotals[i] = 0;
                     this.flowCounts[i] = 0;
                 }
@@ -755,13 +755,13 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable
 
             if(Configurator.VOLCANO.enablePerformanceLogging) 
             {
-                Log.info("totalCells=" + this.getCellCount() 
+                BigActiveVolcano.INSTANCE.info("totalCells=" + this.getCellCount() 
                         + " connections=" + this.getConnectionCount() + " basaltBlocks=" + this.basaltBlocks.size() + " loadFactor=" + this.loadFactor());
                 
-                Log.info(String.format("Time elapsed = %1$.3fs", ((float)Configurator.VOLCANO.performanceSampleInterval 
+                BigActiveVolcano.INSTANCE.info(String.format("Time elapsed = %1$.3fs", ((float)Configurator.VOLCANO.performanceSampleInterval 
                         + (now - nextStatTime) / Configurator.Volcano.performanceSampleIntervalMillis)));
 
-                Log.info("WorldBuffer state sets this sample = " + this.worldBuffer().stateSetCount());
+                BigActiveVolcano.INSTANCE.info("WorldBuffer state sets this sample = " + this.worldBuffer().stateSetCount());
                 this.worldBuffer().clearStatistics();
             }
                

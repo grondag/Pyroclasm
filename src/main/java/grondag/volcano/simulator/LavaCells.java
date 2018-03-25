@@ -13,8 +13,8 @@ import grondag.exotic_matter.concurrency.SimpleConcurrentList;
 import grondag.exotic_matter.serialization.NBTDictionary;
 import grondag.exotic_matter.simulator.Simulator;
 import grondag.exotic_matter.varia.PackedBlockPos;
+import grondag.volcano.BigActiveVolcano;
 import grondag.volcano.Configurator;
-import grondag.volcano.Log;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap.Entry;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import net.minecraft.nbt.NBTTagCompound;
@@ -418,7 +418,7 @@ public class LavaCells
         }
         
         if(Configurator.VOLCANO.enablePerformanceLogging)
-            Log.info("Saving " + i / LavaCell.LAVA_CELL_NBT_WIDTH + " lava cells.");
+            BigActiveVolcano.INSTANCE.info("Saving " + i / LavaCell.LAVA_CELL_NBT_WIDTH + " lava cells.");
         
         nbt.setIntArray(NBT_LAVA_CELLS, Arrays.copyOfRange(saveData, 0, i));
     }
@@ -433,7 +433,7 @@ public class LavaCells
         //confirm correct size
         if(saveData == null || saveData.length % LavaCell.LAVA_CELL_NBT_WIDTH != 0)
         {
-            Log.warn("Invalid save data loading lava simulator. Lava blocks may not be updated properly.");
+            BigActiveVolcano.INSTANCE.warn("Invalid save data loading lava simulator. Lava blocks may not be updated properly.");
         }
         else
         {
@@ -488,16 +488,16 @@ public class LavaCells
             // Make sure other stuff is up to date
             this.updateStuffJob.runOn(Simulator.SIMULATION_POOL);
             
-            Log.info("Loaded " + this.cellList.size() + " lava cells.");
+            BigActiveVolcano.INSTANCE.info("Loaded " + this.cellList.size() + " lava cells.");
         }
     }
     
     public void logDebugInfo()
     {
-        Log.info(this.cellChunks.size() + " loaded cell chunks");
+        BigActiveVolcano.INSTANCE.info(this.cellChunks.size() + " loaded cell chunks");
         for(CellChunk chunk : this.cellChunks.values())
         {
-            Log.info("xStart=" + PackedBlockPos.getChunkXStart(chunk.packedChunkPos)
+            BigActiveVolcano.INSTANCE.info("xStart=" + PackedBlockPos.getChunkXStart(chunk.packedChunkPos)
                 + " zStart=" + PackedBlockPos.getChunkZStart(chunk.packedChunkPos)
                 + " activeCount=" + chunk.getActiveCount() + " entryCount=" + chunk.getEntryCount());
             

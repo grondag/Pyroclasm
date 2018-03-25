@@ -14,7 +14,6 @@ import grondag.exotic_matter.simulator.persistence.ISimulationTopNode;
 import grondag.exotic_matter.world.Location;
 import grondag.volcano.BigActiveVolcano;
 import grondag.volcano.Configurator;
-import grondag.volcano.Log;
 import grondag.volcano.core.VolcanoTileEntity.VolcanoStage;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
@@ -149,7 +148,7 @@ public class VolcanoManager implements ISimulationTickable, ISimulationTopNode
     {
         if(nodes == null)
         {
-            Log.warn("Volcano simulation manager not properly initialized."
+            BigActiveVolcano.INSTANCE.warn("Volcano simulation manager not properly initialized."
                     + " Volcano simulation state will be invalid.");
             return null;
         }
@@ -297,7 +296,7 @@ public class VolcanoManager implements ISimulationTickable, ISimulationTopNode
         {
             if(this.isActive && this.keepAlive + 2048L < Simulator.instance().getWorld().getTotalWorldTime())
             {
-                Log.warn("Active volcano tile entity at " + this.location.toString()
+                BigActiveVolcano.INSTANCE.warn("Active volcano tile entity at " + this.location.toString()
                 + " has not reported in. Deactivating volcano simulation node.");
                 this.deActivate();
             }

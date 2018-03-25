@@ -8,7 +8,7 @@ import grondag.exotic_matter.model.TerrainBlockHelper;
 import grondag.exotic_matter.model.TerrainState;
 import grondag.exotic_matter.serialization.NBTDictionary;
 import grondag.exotic_matter.simulator.Simulator;
-import grondag.volcano.Log;
+import grondag.volcano.BigActiveVolcano;
 import grondag.volcano.init.ModBlocks;
 import grondag.volcano.simulator.LavaSimulator;
 import net.minecraft.block.Block;
@@ -230,7 +230,7 @@ public class EntityLavaBlob extends Entity
         
         if(this.ticksExisted > 600)
         {
-            Log.info("Ancient lava particle died of old age.");
+            BigActiveVolcano.INSTANCE.info("Ancient lava particle died of old age.");
             this.setDead();
             return;
         }

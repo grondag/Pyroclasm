@@ -22,8 +22,8 @@ import grondag.exotic_matter.serialization.NBTDictionary;
 import grondag.exotic_matter.simulator.Simulator;
 import grondag.exotic_matter.terrain.TerrainStaticBlock;
 import grondag.exotic_matter.varia.PackedBlockPos;
+import grondag.volcano.BigActiveVolcano;
 import grondag.volcano.Configurator;
-import grondag.volcano.Log;
 import grondag.volcano.init.ModBlocks;
 import grondag.volcano.lava.CoolingBasaltBlock;
 import grondag.volcano.lava.LavaTerrainHelper;
@@ -300,7 +300,7 @@ public class WorldStateBuffer implements IBlockAccess
         //confirm correct size
         if(saveData == null || saveData.length % NBT_SAVE_DATA_WIDTH != 0)
         {
-            Log.warn("Invalid save data loading world state buffer. Blocks updates may have been lost.");
+            BigActiveVolcano.INSTANCE.warn("Invalid save data loading world state buffer. Blocks updates may have been lost.");
             return;
         }
 
@@ -315,7 +315,7 @@ public class WorldStateBuffer implements IBlockAccess
         }
 //        this.isLoading = false;
 
-        Log.info("Loaded " + i / NBT_SAVE_DATA_WIDTH + " world updates.");
+        BigActiveVolcano.INSTANCE.info("Loaded " + i / NBT_SAVE_DATA_WIDTH + " world updates.");
     }
 
     public void writeToNBT(NBTTagCompound nbt)
@@ -327,7 +327,7 @@ public class WorldStateBuffer implements IBlockAccess
         }
         
         if(Configurator.VOLCANO.enablePerformanceLogging)
-            Log.info("Saving " + recordCount + " world updates.");
+            BigActiveVolcano.INSTANCE.info("Saving " + recordCount + " world updates.");
         
         int[] saveData = new int[recordCount * NBT_SAVE_DATA_WIDTH];
         int i = 0;

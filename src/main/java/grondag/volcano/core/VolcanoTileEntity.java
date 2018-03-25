@@ -9,8 +9,8 @@ import grondag.exotic_matter.model.ISuperBlock;
 import grondag.exotic_matter.serialization.NBTDictionary;
 import grondag.exotic_matter.simulator.Simulator;
 import grondag.exotic_matter.varia.Useful;
+import grondag.volcano.BigActiveVolcano;
 import grondag.volcano.Configurator;
-import grondag.volcano.Log;
 import grondag.volcano.init.ModBlocks;
 import grondag.volcano.init.ModSubstances;
 import grondag.volcano.lava.LavaTerrainHelper;
@@ -154,12 +154,12 @@ public class VolcanoTileEntity extends TileEntity implements ITickable
             
             if(this.lavaSim == null)
             {
-                Log.warn("Volcano tile entity unable to retrieve instance for lava simulator.  Volcano will not function.");
+                BigActiveVolcano.INSTANCE.warn("Volcano tile entity unable to retrieve instance for lava simulator.  Volcano will not function.");
                 this.isBroken = true;
             }
             else if(volcanoSim == null)
             {
-                Log.warn("Volcano tile entity unable to retrieve instance for volcano simulator.  Volcano will not function.");
+                BigActiveVolcano.INSTANCE.warn("Volcano tile entity unable to retrieve instance for volcano simulator.  Volcano will not function.");
                 this.isBroken = true;
             }
             else
@@ -168,13 +168,13 @@ public class VolcanoTileEntity extends TileEntity implements ITickable
                 
                 if(node == null)
                 {
-                    Log.info("Setting up new Volcano Node @" + this.pos.toString());
+                    BigActiveVolcano.INSTANCE.info("Setting up new Volcano Node @" + this.pos.toString());
                     this.node = volcanoSim.createNode(this.pos,this.world.provider.getDimension());
                     this.stage = VolcanoStage.DORMANT;
                 }
                 else
                 {
-                    Log.info("Found Volcano Node @" + this.pos.toString());
+                    BigActiveVolcano.INSTANCE.info("Found Volcano Node @" + this.pos.toString());
                     this.stage = node.isActive() ? VolcanoStage.CLEARING : VolcanoStage.DORMANT;
                 }
     

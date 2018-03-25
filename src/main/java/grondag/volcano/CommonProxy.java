@@ -12,7 +12,7 @@ public class CommonProxy
 {
 	public void preInit(FMLPreInitializationEvent event) 
 	{
-		Log.setLog(event.getModLog());
+		BigActiveVolcano.setLog(event.getModLog());
 		Configurator.recalcDerived();
 		ModTileEntities.preInit(event);
 		ModEntities.preInit(event);

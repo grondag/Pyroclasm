@@ -12,8 +12,8 @@ import com.google.common.collect.ComparisonChain;
 import grondag.exotic_matter.serialization.NBTDictionary;
 import grondag.exotic_matter.simulator.Simulator;
 import grondag.exotic_matter.varia.PackedBlockPos;
+import grondag.volcano.BigActiveVolcano;
 import grondag.volcano.Configurator;
-import grondag.volcano.Log;
 import grondag.volcano.simulator.LavaSimulator;
 import net.minecraft.nbt.NBTTagCompound;
 
@@ -126,7 +126,7 @@ public class LavaBlobManager
         //confirm correct size
         if(saveData == null || saveData.length % NBT_SAVE_DATA_WIDTH != 0)
         {
-            Log.warn("Invalid save data loading lava entity state buffer. Lava entities may have been lost.");
+            BigActiveVolcano.INSTANCE.warn("Invalid save data loading lava entity state buffer. Lava entities may have been lost.");
             return;
         }
 
@@ -143,13 +143,13 @@ public class LavaBlobManager
             }
         }
 
-        Log.info("Loaded " + map.size() + " lava entities.");
+        BigActiveVolcano.INSTANCE.info("Loaded " + map.size() + " lava entities.");
     }
 
     public void writeToNBT(NBTTagCompound nbt)
     {
         if(Configurator.VOLCANO.enablePerformanceLogging)
-            Log.info("Saving " + map.size() + " lava entities.");
+            BigActiveVolcano.INSTANCE.info("Saving " + map.size() + " lava entities.");
         
         int[] saveData = new int[map.size() * NBT_SAVE_DATA_WIDTH];
         int i = 0;
