@@ -428,18 +428,4 @@ public class VolcanoManager implements ISimulationTickable, ISimulationTopNode
     {
         return NBT_VOLCANO_MANAGER;
     }
-
-    @Override
-    public void unload()
-    {
-        // TODO Auto-generated method stub
-        
-    }
-
-    @Override
-    public void afterDeserialization()
-    {
-        // TODO Auto-generated method stub
-        
-    }
 }

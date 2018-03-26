@@ -548,11 +548,6 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable
         
         // This job can access world objects concurrently, however all access is 
         // read only and is synchronized by the worldBuffer.
-        
-        //FIXME:  is the really where we want this to run?
-        // if last sim tick is still running, will force us to 
-        // wait until work pool is drained before we can proceed 
-        // with world tick...
         this.cells.provideBlockUpdateJob.runOn(Simulator.SIMULATION_POOL);
         
         this.itMe = true;
