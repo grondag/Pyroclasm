@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "RRR",
+    "RRR",
+    "RRR"
+  ],
+  "key": {
+    "R": {
+      "item": "hard_science:basalt_rubble"
+    }
+  },
+  "result": {
+    "item": "hard_science:basalt_cobble",
+    "data": 0
+  }
+}

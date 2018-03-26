@@ -1,0 +1,6 @@
+{
+    "parent": "item/handheld",
+    "textures": {
+        "layer0": "hard_science:items/volcano_wand"
+    }
+}
