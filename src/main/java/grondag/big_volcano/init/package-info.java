@@ -1,0 +1,8 @@
+@ParametersAreNonnullByDefault
+@MethodsReturnNonnullByDefault
+@FieldsAreNonnullByDefault
+package grondag.big_volcano.init;
+
+import javax.annotation.ParametersAreNonnullByDefault;
+import mcp.MethodsReturnNonnullByDefault;
+import grondag.exotic_matter.varia.FieldsAreNonnullByDefault;
