@@ -52,9 +52,6 @@ public class Configurator
 
     public static class Volcano
     {
-        @Comment("Basically the purpose of this mod.")
-        public boolean enableVolcano = true;
-
         @Comment("Fraction of alloted CPU usage must be drop below this before volcano in cooldown mode starts to flow again.")
         @RangeDouble(min = 0.3, max = 0.7)
         public float cooldownTargetLoadFactor = 0.5F;

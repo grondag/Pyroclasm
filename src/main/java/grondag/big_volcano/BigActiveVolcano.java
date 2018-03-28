@@ -34,7 +34,7 @@ public class BigActiveVolcano  implements IGrondagMod
 	public static final String MODNAME = "Big Active Volcano";
 	public static final String VERSION = "0.0.1";
 	
-	public static CreativeTabs tabMod = new CreativeTabs("Big Active Volcano") 
+    public static CreativeTabs tabMod = new CreativeTabs(MODID) 
 	{
 		@Override
 		@SideOnly(Side.CLIENT)

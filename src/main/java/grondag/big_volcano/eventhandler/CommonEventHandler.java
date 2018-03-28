@@ -86,8 +86,6 @@ public class CommonEventHandler
     @SubscribeEvent
     public static void onAskingForIt(ServerChatEvent event)
     {
-        if(!Configurator.VOLCANO.enableVolcano) return;
-        
         EntityPlayerMP player = event.getPlayer();
         
         if(player.getHeldItemMainhand().getItem() == Items.LAVA_BUCKET && event.getMessage().toLowerCase().contains("volcano"))

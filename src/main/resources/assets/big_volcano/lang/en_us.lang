@@ -1,27 +1,28 @@
 #MISC
+itemGroup.big_volcano=Big Active Volcano
 misc.denials=["Absolutely not.","Nope.","Not happening","Doctor No sends his regards.","You must be joking.","I made a list of things that aren\u0027t going to happen, and what you just tried is on it.","Nice try.","That\u0027s not going to work.","DENIED!"]
 
 #CONFIG LABELS
 config.volcano=Volcano Settings
 
 #BLOCKS
-tile.basalt_cobble.name=Basalt Cobblestone
-tile.basalt_cool_dynamic_height.name=Cool Basalt
-tile.basalt_cool_dynamic_filler.name=Cool Basalt (Filler)
-tile.basalt_cool_static_height.name=Cool Basalt (Static)
-tile.basalt_cool_static_filler.name=Cool Basalt (Static Filler)
-tile.basalt_cut.name=Cut Basalt
-tile.basalt_dynamic_cooling_height.name=Cooling Basalt
-tile.basalt_dynamic_cooling_filler.name=Cooling Basalt (Filler)
-tile.basalt_dynamic_warm_height.name=Warm Basalt
-tile.basalt_dynamic_warm_filler.name=Warm Basalt (Filler)
-tile.basalt_dynamic_hot_height.name=Hot Basalt
-tile.basalt_dynamic_hot_filler.name=Hot Basalt (Filler)
-tile.basalt_dynamic_very_hot_height.name=Very Hot Basalt
-tile.basalt_dynamic_very_hot_filler.name=Very Hot Basalt (Filler)
-tile.lava_dynamic_height.name=Volcanic Lava
-tile.lava_dynamic_filler.name=Volcanic Lava (Filler)
-tile.block_volcano.name=Volcano Root
+tile.big_volcano:basalt_cobble.name=Basalt Cobblestone
+tile.big_volcano:basalt_cool_dynamic_height.name=Cool Basalt
+tile.big_volcano:basalt_cool_dynamic_filler.name=Cool Basalt (Filler)
+tile.big_volcano:basalt_cool_static_height.name=Cool Basalt (Static)
+tile.big_volcano:basalt_cool_static_filler.name=Cool Basalt (Static Filler)
+tile.big_volcano:basalt_cut.name=Cut Basalt
+tile.big_volcano:basalt_dynamic_cooling_height.name=Cooling Basalt
+tile.big_volcano:basalt_dynamic_cooling_filler.name=Cooling Basalt (Filler)
+tile.big_volcano:basalt_dynamic_warm_height.name=Warm Basalt
+tile.big_volcano:basalt_dynamic_warm_filler.name=Warm Basalt (Filler)
+tile.big_volcano:basalt_dynamic_hot_height.name=Hot Basalt
+tile.big_volcano:basalt_dynamic_hot_filler.name=Hot Basalt (Filler)
+tile.big_volcano:basalt_dynamic_very_hot_height.name=Very Hot Basalt
+tile.big_volcano:basalt_dynamic_very_hot_filler.name=Very Hot Basalt (Filler)
+tile.big_volcano:lava_dynamic_height.name=Volcanic Lava
+tile.big_volcano:lava_dynamic_filler.name=Volcanic Lava (Filler)
+tile.big_volcano:block_volcano.name=Volcano Root
 
 #SUBSTANCES
 material.basalt=Basalt
@@ -31,11 +32,12 @@ material.volcanic_lava=Volcanic Lava
 item.volcano_wand.name=Volcano Wand
 item.basalt_rubble.name=Basalt Rubble
 item.lava_blob.name=Lava Ball
+item.terrain_wand.name=Terrain Wand
 
 #TEXTURES
 texture.basalt_cut=Cut Stone
 texture.basalt_cool=Cool Basalt
-texture.lava=Volcanic Lava
+texture.volcanic_lava=Volcanic Lava
 texture.basalt_cooling=Cooling Basalt
 texture.basalt_warm=Warm Basalt
 texture.basalt_hot=Hot Basalt
