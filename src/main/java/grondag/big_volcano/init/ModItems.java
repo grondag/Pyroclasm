@@ -3,6 +3,7 @@ package grondag.big_volcano.init;
 import grondag.big_volcano.BigActiveVolcano;
 import grondag.big_volcano.core.TerrainWand;
 import grondag.big_volcano.lava.LavaBlobItem;
+import grondag.exotic_matter.init.RegistratingItem;
 import net.minecraft.item.Item;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -26,7 +27,7 @@ public class ModItems
     {
         IForgeRegistry<Item> itemReg = event.getRegistry();
  
-        itemReg.register(new Item().setRegistryName("basalt_rubble").setUnlocalizedName("basalt_rubble").setCreativeTab(BigActiveVolcano.tabMod));
+        itemReg.register(new RegistratingItem().setRegistryName("basalt_rubble").setUnlocalizedName("basalt_rubble").setCreativeTab(BigActiveVolcano.tabMod));
 
         itemReg.register(new LavaBlobItem().setRegistryName("lava_blob").setUnlocalizedName("lava_blob").setCreativeTab(BigActiveVolcano.tabMod));
         

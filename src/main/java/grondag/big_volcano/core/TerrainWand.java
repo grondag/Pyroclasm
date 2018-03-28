@@ -3,6 +3,7 @@ package grondag.big_volcano.core;
 import javax.annotation.Nonnull;
 
 import grondag.big_volcano.init.ModBlocks;
+import grondag.exotic_matter.init.RegistratingItem;
 import grondag.exotic_matter.model.ISuperBlock;
 import grondag.exotic_matter.model.TerrainBlockHelper;
 import grondag.exotic_matter.model.TerrainState;
@@ -13,7 +14,6 @@ import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
-import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ActionResult;
@@ -27,7 +27,7 @@ import net.minecraft.util.text.TextComponentString;
 import net.minecraft.world.World;
 
 
-public class TerrainWand extends Item
+public class TerrainWand extends RegistratingItem
 {
     public TerrainWand() 
     {

@@ -4,9 +4,9 @@ import javax.annotation.Nonnull;
 
 import grondag.big_volcano.BigActiveVolcano;
 import grondag.big_volcano.simulator.LavaSimulator;
+import grondag.exotic_matter.init.RegistratingItem;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.SoundEvents;
-import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.stats.StatList;
 import net.minecraft.util.ActionResult;
@@ -16,7 +16,7 @@ import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 
-public class LavaBlobItem extends Item
+public class LavaBlobItem extends RegistratingItem
     {
         public LavaBlobItem()
         {
