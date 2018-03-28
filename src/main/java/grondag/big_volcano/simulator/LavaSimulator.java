@@ -356,6 +356,7 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable
     /** used by world update to notify when fillers are placed */
     public void trackCoolingBlock(BlockPos pos)
     {
+        //FIXME: don't add if already in the list!
         this.basaltBlocks.add(new AgedBlockPos(pos, Simulator.instance().getTick()));
         this.setDirty();
     }
