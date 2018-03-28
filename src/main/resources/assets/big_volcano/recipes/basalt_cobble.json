@@ -7,11 +7,11 @@
   ],
   "key": {
     "R": {
-      "item": "hard_science:basalt_rubble"
+      "item": "big_volcano:basalt_rubble"
     }
   },
   "result": {
-    "item": "hard_science:basalt_cobble",
+    "item": "big_volcano:basalt_cobble",
     "data": 0
   }
 }

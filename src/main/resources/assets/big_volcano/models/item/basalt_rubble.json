@@ -2,7 +2,7 @@
 
   "parent": "builtin/generated",
     "textures": {
-        "layer0": "hard_science:items/basalt_rubble"
+        "layer0": "big_volcano:items/basalt_rubble"
     },
   "display": {
     "thirdperson_righthand": {

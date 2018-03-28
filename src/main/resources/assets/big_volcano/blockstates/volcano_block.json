@@ -1,5 +1,5 @@
 {
 	"variants": {
-		"normal": { "model": "hard_science:volcano_block" }
+		"normal": { "model": "big_volcano:volcano_block" }
 	}
 }

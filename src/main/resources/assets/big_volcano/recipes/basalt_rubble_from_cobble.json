@@ -2,12 +2,12 @@
   "type": "minecraft:crafting_shapeless",
   "ingredients": [
     {
-      "item": "hard_science:basalt_cobble",
+      "item": "big_volcano:basalt_cobble",
       "data": 0
     }
   ],
   "result": {
-    "item": "hard_science:basalt_rubble",
+    "item": "big_volcano:basalt_rubble",
     "count": 9
   }
 }

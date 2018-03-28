@@ -2,7 +2,7 @@
 
   "parent": "builtin/generated",
     "textures": {
-        "layer0": "hard_science:items/lava_blob"
+        "layer0": "big_volcano:items/lava_blob"
     },
   "display": {
     "thirdperson_righthand": {
