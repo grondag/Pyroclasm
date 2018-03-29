@@ -7,22 +7,16 @@ import javax.annotation.Nullable;
 import grondag.big_volcano.BigActiveVolcano;
 import grondag.big_volcano.Configurator;
 import grondag.big_volcano.init.ModBlocks;
-import grondag.big_volcano.lava.AgedBlockPos;
-import grondag.big_volcano.lava.CoolingBasaltBlock;
 import grondag.big_volcano.lava.EntityLavaBlob;
 import grondag.big_volcano.lava.LavaBlobManager;
-import grondag.big_volcano.lava.LavaTerrainHelper;
 import grondag.big_volcano.lava.LavaBlobManager.ParticleInfo;
+import grondag.big_volcano.lava.LavaTerrainHelper;
 import grondag.big_volcano.simulator.BlockEventList.BlockEvent;
 import grondag.big_volcano.simulator.BlockEventList.BlockEventHandler;
 import grondag.big_volcano.simulator.LavaConnections.SortBucket;
 import grondag.exotic_matter.block.SuperBlock;
-import grondag.exotic_matter.concurrency.CountedJob;
-import grondag.exotic_matter.concurrency.CountedJobTask;
-import grondag.exotic_matter.concurrency.Job;
 import grondag.exotic_matter.concurrency.PerformanceCollector;
 import grondag.exotic_matter.concurrency.PerformanceCounter;
-import grondag.exotic_matter.concurrency.SimpleConcurrentList;
 import grondag.exotic_matter.model.ISuperBlock;
 import grondag.exotic_matter.model.TerrainBlockHelper;
 import grondag.exotic_matter.model.TerrainState;
@@ -45,7 +39,6 @@ import net.minecraftforge.fml.common.FMLCommonHandler;
 
 public class LavaSimulator implements ISimulationTopNode, ISimulationTickable
 {
-    private static final String NBT_BASALT_BLOCKS = NBTDictionary.claim("basaltBlocks");
     private static final String NBT_LAVA_ADD_EVENTS = NBTDictionary.claim("lavaAddEvents");
     private static final String NBT_LAVA_PLACEMENT_EVENTS = NBTDictionary.claim("lavaPlaceEvents");
     private static final String NBT_LAVA_SIMULATOR = NBTDictionary.claim("lavaSim");
@@ -68,7 +61,7 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable
     public static final int FLUID_UNITS_PER_TICK = FLUID_UNITS_PER_BLOCK / 20;
     public static final int MIN_FLOW_UNITS = 10;
     public static final int MIN_FLOW_UNITS_X2 = 10;
-    protected static final int BLOCK_COOLING_DELAY_TICKS = 20;
+
     
     public final PerformanceCollector perfCollectorAllTick = new PerformanceCollector("Lava Simulator Whole tick");
     public final PerformanceCollector perfCollectorOnTick = new PerformanceCollector("Lava Simulator On tick");
@@ -80,56 +73,14 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable
     private final WorldStateBuffer worldBuffer;
     private final LavaTerrainHelper terrainHelper;
     public final LavaBlobManager particleManager;
+    private final BasaltTracker basaltTracker;
     
-    /** Basalt blocks that are awaiting cooling */
-    private final SimpleConcurrentList<AgedBlockPos> basaltBlocks = SimpleConcurrentList.create(Configurator.VOLCANO.enablePerformanceLogging, "Basalt Blocks", perfCollectorOnTick);
-    private Job basaltCoolingJob;
+
     public final LavaCells cells = new LavaCells(this);
     public final LavaConnections connections = new LavaConnections(this);
     public final CellChunkLoader cellChunkLoader = new CellChunkLoader();
-    
-    private int lastEligibleBasaltCoolingTick;
+   
     private boolean isDirty;
-    
-    private static final int BASALT_BLOCKS_NBT_WIDTH = 3;
-    
-    private final CountedJobTask<AgedBlockPos> basaltCoolingTask =  new CountedJobTask<AgedBlockPos>() 
-    {
-        @Override
-        public void doJobTask(AgedBlockPos operand)
-        {
-            if(operand.getTick() <= lastEligibleBasaltCoolingTick)
-            {
-                IBlockState state = worldBuffer().getBlockState(operand.packedBlockPos);
-                Block block = state.getBlock();
-                if(block instanceof CoolingBasaltBlock)
-                {
-                    switch(((CoolingBasaltBlock)block).tryCooling(worldBuffer(), PackedBlockPos.unpack(operand.packedBlockPos), state))
-                    {
-                        case PARTIAL:
-                            // will be ready to cool again after delay
-                            operand.setTick(Simulator.instance().getTick());
-                            break;
-                            
-                        case UNREADY:
-                            // do nothing and try again later
-                            break;
-                            
-                        case COMPLETE:
-                        case INVALID:
-                        default:
-                            //notify to remove from collection
-                            operand.setDeleted();
-                    }
-                }
-                else
-                {
-                    operand.setDeleted();;
-                }
-            };
-        }
-    };
-
     
     /** used to schedule intermittent cooling jobs */
     private int nextCoolTick = 0;
@@ -237,8 +188,8 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable
                 perfCollectorOnTick);
         this.terrainHelper = new LavaTerrainHelper(worldBuffer());        
         this.particleManager = new LavaBlobManager();
-        this.basaltCoolingJob = new CountedJob<AgedBlockPos>(this.basaltBlocks, this.basaltCoolingTask, 1024, 
-                Configurator.VOLCANO.enablePerformanceLogging, "Basalt Cooling", perfCollectorOnTick);    
+        this.basaltTracker = new BasaltTracker(perfCollectorOnTick, worldBuffer);
+        
     }
     
     /**
@@ -341,23 +292,12 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable
             this.setDirty();
         }
     }
-    
-    protected void doBasaltCooling()
-    {
-        if(this.basaltBlocks.isEmpty()) return;
-        
-        this.lastEligibleBasaltCoolingTick = Simulator.instance().getTick() - BLOCK_COOLING_DELAY_TICKS;
-
-        this.basaltCoolingJob.runOn(Simulator.SIMULATION_POOL);
-        this.basaltBlocks.removeSomeDeletedItems(AgedBlockPos.REMOVAL_PREDICATE);
-    }
 
     
     /** used by world update to notify when fillers are placed */
     public void trackCoolingBlock(BlockPos pos)
     {
-        //FIXME: don't add if already in the list!
-        this.basaltBlocks.add(new AgedBlockPos(pos, Simulator.instance().getTick()));
+        this.basaltTracker.trackCoolingBlock(pos);
         this.setDirty();
     }
     
@@ -430,7 +370,7 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable
 //            this.itMe = true;
             this.worldBuffer().setBlockState(packedBlockPos, newBlock.getDefaultState().withProperty(ISuperBlock.META, priorState.getValue(ISuperBlock.META)), priorState);
 //            this.itMe = false;
-            this.basaltBlocks.add(new AgedBlockPos(packedBlockPos, Simulator.instance().getTick()));
+            this.basaltTracker.trackCoolingBlock(packedBlockPos);
         }
     }
     
@@ -440,55 +380,17 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable
         this.saveLavaNBT(nbt);
         this.worldBuffer().writeToNBT(nbt);
         this.particleManager.writeToNBT(nbt);
-
-        // SAVE BASALT BLOCKS
-        {
-            if(Configurator.VOLCANO.enablePerformanceLogging)
-                BigActiveVolcano.INSTANCE.info("Saving " + basaltBlocks.size() + " cooling basalt blocks.");
-            
-            int[] saveData = new int[basaltBlocks.size() * BASALT_BLOCKS_NBT_WIDTH];
-            int i = 0;
-            for(AgedBlockPos apos: basaltBlocks)
-            {
-                saveData[i++] = (int) (apos.packedBlockPos & 0xFFFFFFFF);
-                saveData[i++] = (int) ((apos.packedBlockPos >> 32) & 0xFFFFFFFF);
-                saveData[i++] = apos.getTick();
-            }       
-            nbt.setIntArray(NBT_BASALT_BLOCKS, saveData);
-        }
+        this.basaltTracker.serializeNBT(nbt);
     }
     
     @Override
     public void deserializeNBT(@Nullable NBTTagCompound nbt)
     {
 
-        basaltBlocks.clear();
-        
         this.worldBuffer().readFromNBT(nbt);
-        
         this.particleManager.readFromNBT(nbt);
-        
         this.readLavaNBT(nbt);
-        
-        
-        // LOAD BASALT BLOCKS
-        int[] saveData = nbt.getIntArray(NBT_BASALT_BLOCKS);
-
-        //confirm correct size
-        if(saveData == null || saveData.length % BASALT_BLOCKS_NBT_WIDTH != 0)
-        {
-            BigActiveVolcano.INSTANCE.warn("Invalid save data loading lava simulator. Cooling basalt blocks may not be updated properly.");
-        }
-        else
-        {
-            int i = 0;
-            while(i < saveData.length)
-            {
-                this.basaltBlocks.add(new AgedBlockPos(((long)saveData[i++] << 32) | (long)saveData[i++], saveData[i++]));
-            }
-            BigActiveVolcano.INSTANCE.info("Loaded " + basaltBlocks.size() + " cooling basalt blocks.");
-        }
-
+        this.basaltTracker.deserializeNBT(nbt);
     }
     
     public int getStepIndex()
@@ -575,7 +477,7 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable
             else
             {
                 this.nextCoolTickIsLava = true;
-                this.doBasaltCooling();
+                this.basaltTracker.doBasaltCooling();
             }
         }
         
@@ -754,7 +656,7 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable
             if(Configurator.VOLCANO.enablePerformanceLogging) 
             {
                 BigActiveVolcano.INSTANCE.info("totalCells=" + this.getCellCount() 
-                        + " connections=" + this.getConnectionCount() + " basaltBlocks=" + this.basaltBlocks.size() + " loadFactor=" + this.loadFactor());
+                        + " connections=" + this.getConnectionCount() + " basaltBlocks=" + this.basaltTracker.size() + " loadFactor=" + this.loadFactor());
                 
                 BigActiveVolcano.INSTANCE.info(String.format("Time elapsed = %1$.3fs", ((float)Configurator.VOLCANO.performanceSampleInterval 
                         + (now - nextStatTime) / Configurator.Volcano.performanceSampleIntervalMillis)));

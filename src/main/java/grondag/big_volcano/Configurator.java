@@ -86,10 +86,14 @@ public class Configurator
         @RangeInt(min = 10, max = 200)
         public int maxLavaEntities = 20;
 
-        @Comment({"Number of ticks needed for lava or basalt to cool from one stage to another.",
+        @Comment({"Number of ticks lava should go without a significant flow before it becomes basalt.",
         "Should be larger than minDormantTicks"})
         @RangeInt(min = 200, max = 200000)
-        public int basaltCoolingTicks = 200;
+        public int lavaCoolingTicks = 200;
+
+        @Comment({"Minimum number of ticks needed for basalt to cool from one stage to another."})
+        @RangeInt(min = 1, max = 20000)
+        public int basaltCoolingTicks = 20;
 
         @Comment({"Block updates are buffered for at least this many ticks before applied to world.",
         "Higher numbers can be better for performance but may cause block updates to appear strangely."})
@@ -176,7 +180,6 @@ public class Configurator
         @Comment({"If true, volcano simulation will output cell debug information each performance interval.",
         "Will cause significant log spam so should only be enabled for testing."})
         public boolean outputLavaCellDebugSummaries = false;
-
 
         /** Contains block objects configured to be destroyed by lava */
         public static final IdentityHashMap<Block, Block> blocksDestroyedByLava = new IdentityHashMap<Block, Block>();

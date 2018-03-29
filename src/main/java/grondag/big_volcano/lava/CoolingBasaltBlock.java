@@ -4,6 +4,7 @@ import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import grondag.big_volcano.init.ModBlocks;
 import grondag.big_volcano.simulator.LavaSimulator;
@@ -23,7 +24,7 @@ import net.minecraft.world.World;
 public class CoolingBasaltBlock extends TerrainDynamicBlock
 {
 
-    protected TerrainDynamicBlock nextCoolingBlock;
+    @Nullable protected TerrainDynamicBlock nextCoolingBlock;
     protected int heatLevel = 0;
 
     public CoolingBasaltBlock(String blockName, BlockSubstance substance, ISuperModelState defaultModelState, boolean isFiller)
@@ -49,6 +50,9 @@ public class CoolingBasaltBlock extends TerrainDynamicBlock
      */
     public CoolingResult tryCooling(WorldStateBuffer worldIn, BlockPos pos, final IBlockState state)
     {
+        TerrainDynamicBlock nextBlock = this.nextCoolingBlock;
+        if(nextBlock == null) return CoolingResult.INVALID;
+        
         if(state.getBlock() == this)
         {
             if(canCool(worldIn, pos, state))
@@ -61,13 +65,13 @@ public class CoolingBasaltBlock extends TerrainDynamicBlock
                     }
                     else
                     {
-                        worldIn.setBlockState(pos.getX(), pos.getY(), pos.getZ(), this.nextCoolingBlock.getDefaultState().withProperty(ISuperBlock.META, state.getValue(ISuperBlock.META)), state);
+                        worldIn.setBlockState(pos.getX(), pos.getY(), pos.getZ(), nextBlock.getDefaultState().withProperty(ISuperBlock.META, state.getValue(ISuperBlock.META)), state);
                     }
                     return CoolingResult.COMPLETE;
                 }
                 else
                 {
-                    worldIn.setBlockState(pos.getX(), pos.getY(), pos.getZ(), this.nextCoolingBlock.getDefaultState().withProperty(ISuperBlock.META, state.getValue(ISuperBlock.META)), state);
+                    worldIn.setBlockState(pos.getX(), pos.getY(), pos.getZ(), nextBlock.getDefaultState().withProperty(ISuperBlock.META, state.getValue(ISuperBlock.META)), state);
                     return CoolingResult.PARTIAL;
                 }
             }
@@ -95,25 +99,22 @@ public class CoolingBasaltBlock extends TerrainDynamicBlock
         for(EnumFacing face : EnumFacing.VALUES)
         {
             IBlockState testState = worldIn.getBlockState(pos.add(face.getDirectionVec()));
-            if(testState != null)
+            Block neighbor = testState.getBlock();
+            
+            if(neighbor == ModBlocks.lava_dynamic_height
+                    || neighbor == ModBlocks.lava_dynamic_filler) 
             {
-                Block neighbor = testState.getBlock();
-                
-                if(neighbor == ModBlocks.lava_dynamic_height
-                        || neighbor == ModBlocks.lava_dynamic_filler) 
-                {
-                    awayFromLava = false;
-                }
-                else if(neighbor instanceof CoolingBasaltBlock)
-                {
-                    int heat = ((CoolingBasaltBlock) neighbor).heatLevel;
-                    if(heat < this.heatLevel)
-                    chances += (this.heatLevel - heat);
-                }
-                else
-                {
-                    chances += 2;
-                }
+                awayFromLava = false;
+            }
+            else if(neighbor instanceof CoolingBasaltBlock)
+            {
+                int heat = ((CoolingBasaltBlock) neighbor).heatLevel;
+                if(heat < this.heatLevel)
+                chances += (this.heatLevel - heat);
+            }
+            else
+            {
+                chances += 2;
             }
         }
        

@@ -1400,7 +1400,7 @@ public class LavaCell extends AbstractLavaCell
     public boolean canCool(int simTickIndex)
     {
         if(this.isCoolingDisabled || this.isDeleted || this.fluidUnits() == 0 
-                || simTickIndex - this.lastTickIndex < Configurator.VOLCANO.basaltCoolingTicks) return false;
+                || simTickIndex - this.lastTickIndex < Configurator.VOLCANO.lavaCoolingTicks) return false;
         
         if(this.connections.size() < 4) return true;
         
