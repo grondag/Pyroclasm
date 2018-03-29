@@ -7,7 +7,7 @@ import grondag.big_volcano.Configurator;
 import grondag.big_volcano.lava.AgedBlockPos;
 import grondag.big_volcano.lava.CoolingBasaltBlock;
 import grondag.exotic_matter.concurrency.CountedJob;
-import grondag.exotic_matter.concurrency.CountedJobTask;
+import grondag.exotic_matter.concurrency.JobTask;
 import grondag.exotic_matter.concurrency.Job;
 import grondag.exotic_matter.concurrency.PerformanceCollector;
 import grondag.exotic_matter.concurrency.SimpleConcurrentList;
@@ -37,7 +37,7 @@ public class BasaltTracker
     
     private int lastEligibleBasaltCoolingTick;
     
-    private final CountedJobTask<AgedBlockPos> basaltCoolingTask =  new CountedJobTask<AgedBlockPos>() 
+    private final JobTask<AgedBlockPos> basaltCoolingTask =  new JobTask<AgedBlockPos>() 
     {
         @Override
         public void doJobTask(AgedBlockPos operand)

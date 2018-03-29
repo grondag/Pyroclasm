@@ -10,7 +10,7 @@ import javax.annotation.Nullable;
 import grondag.big_volcano.BigActiveVolcano;
 import grondag.big_volcano.Configurator;
 import grondag.exotic_matter.concurrency.CountedJob;
-import grondag.exotic_matter.concurrency.CountedJobTask;
+import grondag.exotic_matter.concurrency.JobTask;
 import grondag.exotic_matter.concurrency.Job;
 import grondag.exotic_matter.concurrency.PerformanceCounter;
 import grondag.exotic_matter.concurrency.SimpleConcurrentList;
@@ -38,7 +38,7 @@ public class LavaCells
     public final LavaSimulator sim;
   
     // on-tick tasks
-    private final CountedJobTask<LavaCell> provideBlockUpdateTask =  new CountedJobTask<LavaCell>() 
+    private final JobTask<LavaCell> provideBlockUpdateTask =  new JobTask<LavaCell>() 
     {
         @Override
         public void doJobTask(LavaCell operand)
@@ -47,7 +47,7 @@ public class LavaCells
         }
     };
             
-    private final CountedJobTask<LavaCell> updateRetentionTask = new CountedJobTask<LavaCell>()
+    private final JobTask<LavaCell> updateRetentionTask = new JobTask<LavaCell>()
     {
 
         @Override
@@ -57,7 +57,7 @@ public class LavaCells
         }
     };
     
-    private final CountedJobTask<LavaCell> updateSmoothedRetentionTask = new CountedJobTask<LavaCell>()
+    private final JobTask<LavaCell> updateSmoothedRetentionTask = new JobTask<LavaCell>()
     {
 
         @Override
@@ -67,7 +67,7 @@ public class LavaCells
         }
     };
     
-    private final CountedJobTask<LavaCell> doCoolingTask = new CountedJobTask<LavaCell>()
+    private final JobTask<LavaCell> doCoolingTask = new JobTask<LavaCell>()
     {
         @Override
         public void doJobTask(LavaCell operand)
@@ -87,7 +87,7 @@ public class LavaCells
     };
             
     // off-tick tasks
-    private final CountedJobTask<LavaCell> updateStuffTask = new CountedJobTask<LavaCell>()
+    private final JobTask<LavaCell> updateStuffTask = new JobTask<LavaCell>()
     {
         @Override
         public void doJobTask(LavaCell operand)
@@ -101,7 +101,7 @@ public class LavaCells
         }
     };
     
-    private final CountedJobTask<LavaCell> prioritizeConnectionsTask = new CountedJobTask<LavaCell>() 
+    private final JobTask<LavaCell> prioritizeConnectionsTask = new JobTask<LavaCell>() 
     {
 
         @Override
@@ -111,7 +111,7 @@ public class LavaCells
         }
     };
     
-    private final CountedJobTask<CellChunk> doChunkValidationTask = new CountedJobTask<CellChunk>()
+    private final JobTask<CellChunk> doChunkValidationTask = new JobTask<CellChunk>()
     {
         @Override
         public void doJobTask(CellChunk operand)

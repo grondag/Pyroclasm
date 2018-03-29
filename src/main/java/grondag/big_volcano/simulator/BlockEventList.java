@@ -9,7 +9,7 @@ import javax.annotation.Nullable;
 import grondag.big_volcano.BigActiveVolcano;
 import grondag.big_volcano.Configurator;
 import grondag.exotic_matter.concurrency.CountedJob;
-import grondag.exotic_matter.concurrency.CountedJobTask;
+import grondag.exotic_matter.concurrency.JobTask;
 import grondag.exotic_matter.concurrency.Job;
 import grondag.exotic_matter.concurrency.PerformanceCollector;
 import grondag.exotic_matter.concurrency.SimpleConcurrentList;
@@ -25,7 +25,7 @@ public class BlockEventList
     private final String nbtTagName;
     private final BlockEventHandler eventHandler;
     
-    private final CountedJobTask<BlockEventList.BlockEvent> processTask = new CountedJobTask<BlockEventList.BlockEvent>() {
+    private final JobTask<BlockEventList.BlockEvent> processTask = new JobTask<BlockEventList.BlockEvent>() {
 
         @Override
         public void doJobTask(BlockEventList.BlockEvent operand)

@@ -8,7 +8,7 @@ import javax.annotation.Nullable;
 
 import grondag.big_volcano.Configurator;
 import grondag.exotic_matter.concurrency.CountedJob;
-import grondag.exotic_matter.concurrency.CountedJobTask;
+import grondag.exotic_matter.concurrency.JobTask;
 import grondag.exotic_matter.concurrency.Job;
 import grondag.exotic_matter.concurrency.SimpleConcurrentList;
 import grondag.exotic_matter.simulator.Simulator;
@@ -24,7 +24,7 @@ public class LavaConnections
     public final Job[] firstStepJob = new CountedJob[4];  
     public final Job[] stepJob = new CountedJob[4];
     
-    private final CountedJobTask<LavaConnection> firstStepTask = new CountedJobTask<LavaConnection>()
+    private final JobTask<LavaConnection> firstStepTask = new JobTask<LavaConnection>()
     {
         @Override
         public void doJobTask(LavaConnection operand)
@@ -33,7 +33,7 @@ public class LavaConnections
         }
     };
     
-    private final CountedJobTask<LavaConnection> stepTask = new CountedJobTask<LavaConnection>()
+    private final JobTask<LavaConnection> stepTask = new JobTask<LavaConnection>()
     {
         @Override
         public void doJobTask(LavaConnection operand)
@@ -42,7 +42,7 @@ public class LavaConnections
         }
     };
     
-    private final CountedJobTask<LavaConnection> sortTask = new CountedJobTask<LavaConnection>()
+    private final JobTask<LavaConnection> sortTask = new JobTask<LavaConnection>()
     {
         @Override
         public void doJobTask(LavaConnection operand)
@@ -59,7 +59,7 @@ public class LavaConnections
         }
     };
     
-    private final CountedJobTask<LavaConnection> setupTickTask = new CountedJobTask<LavaConnection>()
+    private final JobTask<LavaConnection> setupTickTask = new JobTask<LavaConnection>()
     {
         @Override
         public void doJobTask(LavaConnection operand)
