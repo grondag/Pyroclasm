@@ -3,11 +3,13 @@ package grondag.big_volcano.eventhandler;
 import grondag.big_volcano.BigActiveVolcano;
 import grondag.big_volcano.Configurator;
 import grondag.big_volcano.init.ModBlocks;
+import grondag.big_volcano.lava.CoolingBasaltBlock;
 import grondag.big_volcano.lava.LavaBlock;
 import grondag.big_volcano.simulator.LavaSimulator;
 import grondag.exotic_matter.simulator.Simulator;
 import grondag.exotic_matter.world.WorldInfo;
 import jline.internal.Log;
+import net.minecraft.block.Block;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Items;
 import net.minecraft.item.Item;
@@ -51,11 +53,23 @@ public class CommonEventHandler
     @SubscribeEvent
     public static void onBlockPlaced(BlockEvent.PlaceEvent event)
     {
+        if(event.getWorld().isRemote) return;
+        
+        Block block = event.getState().getBlock();
+        
         // Lava blocks have their own handling
-        if(!event.getWorld().isRemote && !(event.getState().getBlock() instanceof LavaBlock))
+        if(block instanceof LavaBlock) return;
+            
+        LavaSimulator sim = Simulator.instance().getNode(LavaSimulator.class);
+        if(sim == null) return;
+        
+        if(block instanceof CoolingBasaltBlock)
         {
-            LavaSimulator sim = Simulator.instance().getNode(LavaSimulator.class);
-            if(sim != null) sim.notifyBlockChange(event.getWorld(), event.getPos());
+            sim.registerCoolingBlock(event.getWorld(), event.getPos());
+        }
+        else
+        {
+            sim.notifyBlockChange(event.getWorld(), event.getPos());
         }
     }
     

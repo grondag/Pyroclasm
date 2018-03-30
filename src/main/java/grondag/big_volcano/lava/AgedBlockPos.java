@@ -18,16 +18,6 @@ public class AgedBlockPos
 {
     private int tick;
     public final long packedBlockPos;
-    private boolean isDeleted = false;
-    
-    public static final Predicate<AgedBlockPos> REMOVAL_PREDICATE = new Predicate<AgedBlockPos>()
-    {
-        @Override
-        public boolean test(@Nullable AgedBlockPos t)
-        {
-            return t.isDeleted;
-        }
-    };
     
     public AgedBlockPos(BlockPos pos, int tick)
     {
@@ -48,11 +38,6 @@ public class AgedBlockPos
     public int getTick()
     {
         return this.tick;
-    }
-    
-    public void setDeleted()
-    {
-        this.isDeleted = true;
     }
     
     @Override
@@ -77,10 +62,4 @@ public class AgedBlockPos
             return false;
         }
     }
-
-    public boolean isDeleted()
-    {
-         return this.isDeleted;
-    }
- 
 }

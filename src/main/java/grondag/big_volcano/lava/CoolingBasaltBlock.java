@@ -101,24 +101,21 @@ public class CoolingBasaltBlock extends TerrainDynamicBlock
             IBlockState testState = worldIn.getBlockState(pos.add(face.getDirectionVec()));
             Block neighbor = testState.getBlock();
             
-            if(neighbor == ModBlocks.lava_dynamic_height
-                    || neighbor == ModBlocks.lava_dynamic_filler) 
-            {
-                awayFromLava = false;
-            }
-            else if(neighbor instanceof CoolingBasaltBlock)
+            if(neighbor == ModBlocks.lava_dynamic_height || neighbor == ModBlocks.lava_dynamic_filler) return false;
+           
+            if(neighbor instanceof CoolingBasaltBlock)
             {
                 int heat = ((CoolingBasaltBlock) neighbor).heatLevel;
-                if(heat < this.heatLevel)
-                chances += (this.heatLevel - heat);
+                if(heat > this.heatLevel) 
+                    return false;
+                else if(heat == this.heatLevel) 
+                    continue;
             }
-            else
-            {
-                chances += 2;
-            }
+            
+            chances += 1;
         }
        
-        return (ThreadLocalRandom.current().nextInt(1) < chances) && (awayFromLava || ThreadLocalRandom.current().nextInt(10) == 0);
+        return chances > 3 || (chances == 3 && ThreadLocalRandom.current().nextInt(3) == 0);
         
     }
     
