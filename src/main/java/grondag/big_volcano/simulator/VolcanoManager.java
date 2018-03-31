@@ -10,6 +10,7 @@ import javax.annotation.Nullable;
 import grondag.big_volcano.BigActiveVolcano;
 import grondag.big_volcano.Configurator;
 import grondag.big_volcano.core.VolcanoTileEntity.VolcanoStage;
+import grondag.exotic_matter.ExoticMatter;
 import grondag.exotic_matter.serialization.IReadWriteNBT;
 import grondag.exotic_matter.serialization.NBTDictionary;
 import grondag.exotic_matter.simulator.ISimulationTickable;
@@ -81,7 +82,9 @@ public class VolcanoManager implements ISimulationTickable, ISimulationTopNode
                 {
                     if(chunkTicket == null || (chunksUsedThisTicket == chunkTicket.getChunkListDepth()))
                     {
-                        chunkTicket = ForgeChunkManager.requestTicket(BigActiveVolcano.INSTANCE, worldObj, ForgeChunkManager.Type.NORMAL);
+                        // Note use of library mod instance instead of volcano mod instance
+                        // the simulator is the reload listener and is registered under the library mod
+                        chunkTicket = ForgeChunkManager.requestTicket(ExoticMatter.INSTANCE, worldObj, ForgeChunkManager.Type.NORMAL);
 //                        chunkTicket.getModData().setInteger("TYPE", this.getID());
                         tickets.add(chunkTicket);
                         chunksUsedThisTicket = 0;
