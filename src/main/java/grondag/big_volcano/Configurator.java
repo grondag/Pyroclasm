@@ -195,6 +195,10 @@ public class Configurator
         @RangeInt(min = 2, max = 2001)
         public int lavaCoolingPropagationMax = 40;
 
+        @Comment({"Enable render of lava cell / chunk buffer bounding boxes for debug purposes."
+                + "Client-side only."})
+        public boolean enableDebugRender = true;
+
         /** Contains block objects configured to be destroyed by lava */
         public static final IdentityHashMap<Block, Block> blocksDestroyedByLava = new IdentityHashMap<Block, Block>();
 

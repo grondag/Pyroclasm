@@ -22,7 +22,7 @@ import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import net.minecraft.nbt.NBTTagCompound;
 
 
-public class LavaCells
+public class LavaCells implements Iterable<LavaCell>
 {
     private final static String NBT_LAVA_CELLS = NBTDictionary.claim("lavaCells");
     private final static int CAPACITY_INCREMENT = 0x10000;
@@ -504,5 +504,11 @@ public class LavaCells
                 + " activeCount=" + chunk.getActiveCount() + " entryCount=" + chunk.getEntryCount());
             
         }
+    }
+
+    @Override
+    public Iterator<LavaCell> iterator()
+    {
+        return this.cellList.iterator();
     }
 }

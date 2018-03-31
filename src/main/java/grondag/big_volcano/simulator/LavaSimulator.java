@@ -59,8 +59,7 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable
     public static final int FLUID_UNITS_PER_TWO_BLOCKS = FLUID_UNITS_PER_BLOCK * 2;
     
     public static final int FLUID_UNITS_PER_TICK = FLUID_UNITS_PER_BLOCK / 20;
-    public static final int MIN_FLOW_UNITS = 10;
-    public static final int MIN_FLOW_UNITS_X2 = 10;
+    public static final int MIN_FLOW_UNITS = 2;
 
     
     public final PerformanceCollector perfCollectorAllTick = new PerformanceCollector("Lava Simulator Whole tick");

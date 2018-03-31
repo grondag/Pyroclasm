@@ -21,6 +21,8 @@ import io.netty.util.internal.ThreadLocalRandom;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.init.Blocks;
 import net.minecraft.util.math.BlockPos;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class LavaCell extends AbstractLavaCell
 {
@@ -1447,6 +1449,17 @@ public class LavaCell extends AbstractLavaCell
         }
         
         return true;
+    }
+    
+    /**
+     * For debug rendering - returns a number 0-1 representing
+     * how recently lava flowed in this cell.  0 means cell hasn't
+     * had a recent flow and could cool.  1 means flowed this tick.
+     */
+    @SideOnly(Side.CLIENT)
+    public float activityLevel()
+    {
+        return Math.max(0, 1f - ((float) (Simulator.instance().getTick() - this.lastFlowTick)) / Configurator.VOLCANO.lavaCoolingTicks);
     }
     
     /** 

@@ -12,9 +12,12 @@ public abstract class AbstractLavaCell
     
     /** 
      * Excess fluid in a cell above it's normal volume is multiplied by this
-     * factor to compute an effective fluid surface for determining flow .
+     * factor to compute an effective fluid surface for determining flow. <p>
+     * 
+     * Larger numbers mean the fluid is less compressible which is more realistic.
+     * Unclear at this time what the performance effects are of higher/lower values.
      */
-    public static final int PRESSURE_FACTOR = 50;
+    public static final int PRESSURE_FACTOR = 100;
     public static final int PRESSURE_FACTOR_PLUS = PRESSURE_FACTOR + 1;
     public static final int PRESSURE_FACTOR_MINUS = PRESSURE_FACTOR - 1;
     public static final int PRESSURE_FACTOR_X2 = PRESSURE_FACTOR * 2;
