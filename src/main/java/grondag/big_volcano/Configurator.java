@@ -180,6 +180,10 @@ public class Configurator
         @Comment({"If true, volcano simulation will output cell debug information each performance interval.",
         "Will cause significant log spam so should only be enabled for testing."})
         public boolean outputLavaCellDebugSummaries = false;
+        
+        @Comment({"If true, volcano simulation will output chunk buffer creation, load and unload.",
+        "Will cause significant log spam so should only be enabled for debug and testing."})
+        public boolean enableLavaChunkBufferTrace = true;
 
         @Comment({"Once lava starts cooling, the minimum number of ticks (inclusive) an interior block has to wait after"
                 + "a neighbor successfully cools before it can also cool."})

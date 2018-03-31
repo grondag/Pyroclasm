@@ -158,8 +158,8 @@ public class BlockEventList
             else if(retryCount++ > maxRetries)
             {
                 //exceeded max retries - give up
-                assert false : String.format("Lava add event @ %1$d %2$d %3$d discarded after max retries. Amount = %4$d", this.x, this.y, this.z, this.amount);
                 retryCount = IS_COMPLETE;
+                BigActiveVolcano.INSTANCE.info(String.format("Lava add event @ %1$d %2$d %3$d discarded after max retries. Amount = %4$d", this.x, this.y, this.z, this.amount));
             }
         }
         

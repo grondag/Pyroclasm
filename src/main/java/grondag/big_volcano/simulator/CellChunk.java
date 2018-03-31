@@ -2,6 +2,8 @@ package grondag.big_volcano.simulator;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+import grondag.big_volcano.BigActiveVolcano;
+import grondag.big_volcano.Configurator;
 import grondag.exotic_matter.varia.PackedBlockPos;
 /**
  * Container for all cells in a world chunk.
@@ -69,6 +71,9 @@ public class CellChunk
         this.xStart = PackedBlockPos.getChunkXStart(packedChunkPos);
         this.zStart = PackedBlockPos.getChunkZStart(packedChunkPos);
         this.cells = cells;
+        
+        if(Configurator.VOLCANO.enableLavaChunkBufferTrace)
+            BigActiveVolcano.INSTANCE.info("Created chunk buffer with corner x=%d, z=%d", this.xStart, this.zStart);
     }
 
 //    /** for use when reading from NBT */
@@ -165,6 +170,9 @@ public class CellChunk
         {
             if(this.isUnloaded) return;
 
+            if(Configurator.VOLCANO.enableLavaChunkBufferTrace)
+                BigActiveVolcano.INSTANCE.info("Loading (or reloading) chunk buffer with corner x=%d, z=%d", this.xStart, this.zStart);
+            
             CellStackBuilder builder = new CellStackBuilder();
             CellColumn columnBuffer = new CellColumn();
             
@@ -287,6 +295,9 @@ public class CellChunk
     public void unload()
     {
         if(this.isUnloaded) return;
+        
+        if(Configurator.VOLCANO.enableLavaChunkBufferTrace)
+            BigActiveVolcano.INSTANCE.info("Unloading chunk buffer with corner x=%d, z=%d", this.xStart, this.zStart);
 
         for(int x = 0; x < 16; x++)
         {

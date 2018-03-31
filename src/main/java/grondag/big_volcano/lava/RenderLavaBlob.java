@@ -30,7 +30,7 @@ public class RenderLavaBlob extends Render<EntityLavaBlob>
         super(renderManagerIn);
     }
 
-    private static final ResourceLocation TEXTURE = new ResourceLocation("hard_science:textures/entity/lava.png");
+    private static final ResourceLocation TEXTURE = new ResourceLocation("big_volcano:textures/entity/lava.png");
 
     private static final List<RawQuad> quads = QuadHelper.makeIcosahedron(new Vec3d(0,0,0), 0.5, new RawQuad());
 
