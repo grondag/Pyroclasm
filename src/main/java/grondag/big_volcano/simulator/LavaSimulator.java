@@ -655,7 +655,9 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable
             if(Configurator.VOLCANO.enablePerformanceLogging) 
             {
                 BigActiveVolcano.INSTANCE.info("totalCells=" + this.getCellCount() 
-                        + " connections=" + this.getConnectionCount() + " basaltBlocks=" + this.basaltTracker.size() + " loadFactor=" + this.loadFactor());
+                        + " connections=" + this.getConnectionCount() + " basaltBlocks=" + this.basaltTracker.size());
+                
+                BigActiveVolcano.INSTANCE.info("Effective load factor is %f.  (onTick = %f, totalTick = %f)", this.loadFactor, onTickLoad, totalTickLoad);
                 
                 BigActiveVolcano.INSTANCE.info(String.format("Time elapsed = %1$.3fs", ((float)Configurator.VOLCANO.performanceSampleInterval 
                         + (now - nextStatTime) / Configurator.Volcano.performanceSampleIntervalMillis)));
