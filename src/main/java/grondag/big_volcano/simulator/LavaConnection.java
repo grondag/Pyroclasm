@@ -55,7 +55,8 @@ public class LavaConnection
     private boolean isDirectionOneToTwo = true;
     
     /**
-     * True if flow occurred during the last step.
+     * True if flow occurred during the last step or if
+     * lava has been added to either cell.
      * Maintained by {@link #doStepWork()}.
      * Connection will skip processing after start step if false.
      * Ignored during start step.
@@ -307,17 +308,18 @@ public class LavaConnection
     }
     
     /**
-     *  Resets lastFlowTick and forces run at least once a tick.
+     *  Does a step and if there was a flow on this connection 
+     *  will set {@link #flowedLastStep} to true. 
+     *  If there was a flow, also updates the tick index of both cells.
+     *  If there was no flow, connection will be ignored in remaining passes this tick.
      */
     public void doFirstStep()
     {
-//        this.lastFlowTick = newTickIndex;
         this.doStepWork();
         if(this.flowedLastStep)
         {
-            int tick = Simulator.instance().getTick();
-            this.firstCell.updateTickIndex(tick);
-            this.secondCell.updateTickIndex(tick);
+            this.firstCell.updateLastFlowTick();
+            this.secondCell.updateLastFlowTick();
         }
     }
     
@@ -329,14 +331,6 @@ public class LavaConnection
         }
     }
     
-//    public static AtomicInteger tryCount = new AtomicInteger(0);
-//    public static AtomicInteger successCount = new AtomicInteger(0);
-    
-//    public static AtomicLong innerTime = new AtomicLong(0);
-//    public static AtomicLong outerTime = new AtomicLong(0);
-    
-//    public static ConcurrentPerformanceCounter perfFlowRate = new ConcurrentPerformanceCounter();
-//    public static ConcurrentPerformanceCounter perfFlowAcross = new ConcurrentPerformanceCounter();
     
     /**
      * Guts of doStep.
@@ -349,10 +343,6 @@ public class LavaConnection
             return;
         }
 
-        //        long outerStart = System.nanoTime();
-        //            tryCount.incrementAndGet();
-
-        // very high-frequency loop here - so repeating some code to reduce comparisons for performance
         if(this.isDirectionOneToTwo)
         {
             this.doStepFromTo(this.firstCell, this.secondCell);
@@ -361,9 +351,6 @@ public class LavaConnection
         {
             this.doStepFromTo(this.secondCell, this.firstCell);
         }
-
-        //        successCount.incrementAndGet();
-        //        outerTime.addAndGet(System.nanoTime() - outerStart);
     }
     
     private void doStepFromTo(LavaCell cellFrom, LavaCell cellTo )

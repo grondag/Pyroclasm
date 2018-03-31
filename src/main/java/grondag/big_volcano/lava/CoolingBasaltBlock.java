@@ -95,7 +95,6 @@ public class CoolingBasaltBlock extends TerrainDynamicBlock
         if(TerrainBlockHelper.shouldBeFullCube(state, worldIn, pos)) return true;
         
         int chances = 0;
-        boolean awayFromLava = true;
         for(EnumFacing face : EnumFacing.VALUES)
         {
             IBlockState testState = worldIn.getBlockState(pos.add(face.getDirectionVec()));

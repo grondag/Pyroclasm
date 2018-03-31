@@ -5,6 +5,7 @@ import grondag.big_volcano.core.TerrainWand;
 import grondag.big_volcano.lava.LavaBlobItem;
 import grondag.exotic_matter.init.RegistratingItem;
 import net.minecraft.item.Item;
+import net.minecraft.item.ItemBlock;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
@@ -32,6 +33,10 @@ public class ModItems
         itemReg.register(new LavaBlobItem().setRegistryName("lava_blob").setUnlocalizedName("lava_blob").setCreativeTab(BigActiveVolcano.tabMod));
         
         itemReg.register(new TerrainWand().setCreativeTab(BigActiveVolcano.tabMod));
+        
+        ItemBlock volcanoItemBlock = new ItemBlock(ModBlocks.volcano_block);
+        volcanoItemBlock.setRegistryName(ModBlocks.volcano_block.getRegistryName());
+        itemReg.register(volcanoItemBlock);
     }
 
   

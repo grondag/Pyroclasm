@@ -181,6 +181,16 @@ public class Configurator
         "Will cause significant log spam so should only be enabled for testing."})
         public boolean outputLavaCellDebugSummaries = false;
 
+        @Comment({"Once lava starts cooling, the minimum number of ticks (inclusive) an interior block has to wait after"
+                + "a neighbor successfully cools before it can also cool."})
+        @RangeInt(min = 1, max = 2000)
+        public int lavaCoolingPropagationMin = 20;
+        
+        @Comment({"Once lava starts cooling, the maximum number of ticks (exclusive) an interior block has to wait after"
+                + "a neighbor successfully cools before it can also cool."})
+        @RangeInt(min = 2, max = 2001)
+        public int lavaCoolingPropagationMax = 40;
+
         /** Contains block objects configured to be destroyed by lava */
         public static final IdentityHashMap<Block, Block> blocksDestroyedByLava = new IdentityHashMap<Block, Block>();
 

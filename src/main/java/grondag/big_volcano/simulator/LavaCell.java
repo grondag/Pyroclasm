@@ -17,6 +17,7 @@ import grondag.exotic_matter.model.TerrainState;
 import grondag.exotic_matter.simulator.Simulator;
 import grondag.exotic_matter.varia.PackedBlockPos;
 import grondag.exotic_matter.varia.SimpleUnorderedArrayList;
+import io.netty.util.internal.ThreadLocalRandom;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.init.Blocks;
 import net.minecraft.util.math.BlockPos;
@@ -124,10 +125,12 @@ public class LavaCell extends AbstractLavaCell
     public int avgFluidSurfaceLevelWithPrecision = 0;
     
     /**
-     * The simulation tick that was last seen.
-     * Used to know when a cell can be cooled.
+     * The simulation tick when lava was lasted added or flowed in/out of this cell.<br>
+     * Used to know when lava in a cell can be cooled.<br>
+     * Set to current simulation tick by {@link #updateLastFlowTick()}
+     * and can be incremented by 
      */
-    private int lastTickIndex;
+    private int lastFlowTick;
     
     /** 
      * Value of worldSurfaceLevel that was last used for block update.
@@ -392,7 +395,7 @@ public class LavaCell extends AbstractLavaCell
         saveData[i++] = combinedBounds;
         
         // save never cools as sign bit on last tick index
-        saveData[i++] = this.isCoolingDisabled ? -this.lastTickIndex : this.lastTickIndex;
+        saveData[i++] = this.isCoolingDisabled ? -this.lastFlowTick : this.lastFlowTick;
         
         // need to persist lastVisibleLevel or will not refresh world properly in some scenarios on restart
         saveData[i++] = this.lastVisibleLevel;
@@ -437,10 +440,10 @@ public class LavaCell extends AbstractLavaCell
         this.setFluidUnits(fluidUnits);
 
         
-        this.lastTickIndex = saveData[i++];
-        if(this.lastTickIndex < 0)
+        this.lastFlowTick = saveData[i++];
+        if(this.lastFlowTick < 0)
         {
-            this.lastTickIndex = -this.lastTickIndex;
+            this.lastFlowTick = -this.lastFlowTick;
             this.isCoolingDisabled = true;
         }
         else
@@ -670,9 +673,10 @@ public class LavaCell extends AbstractLavaCell
     }
     
     /** 
+     * True if projections onto Y axis are adjacent. (Does not consider x,z).<br>
      * Ceiling is inclusive, floor is not. 
      */
-    public boolean isVerticallyAdjacentTo(int floorIn, int ceilingIn)
+    public boolean isAdjacentOnYAxis(int floorIn, int ceilingIn)
     {
         return this.floorLevel() == ceilingIn || this.ceilingLevel() == floorIn;
     }
@@ -682,10 +686,15 @@ public class LavaCell extends AbstractLavaCell
     {
         return  this.locator.x == other.locator.x 
                 && this.locator.z == other.locator.z
-                && this.isVerticallyAdjacentTo(other.floorLevel(), other.ceilingLevel());
+                && this.isAdjacentOnYAxis(other.floorLevel(), other.ceilingLevel());
     }
     
-    public boolean intersectsWith(int floorIn, int ceilingIn)
+    /**
+     * True if the vertical region described by the parameters overlaps (projects on to) the 
+     * vertical open space of this cell, irrespective of x,z coordinates. <br>
+     * Does not consider the presence or level of lava and does not consider if cell is deleted.
+     */
+    public boolean intersectsOnYAxis(int floorIn, int ceilingIn)
     {
         return //to overlap, top of cell must be above my floor
                 ceilingIn > this.floorLevel()
@@ -693,19 +702,26 @@ public class LavaCell extends AbstractLavaCell
                 && floorIn < this.ceilingLevel();
     }
     
+    /**
+     * True if block pos is in the same column and vertically overlaps with the cell.<br>
+     * Does not consider if cell is deleted.
+     */
     public boolean intersectsWith(BlockPos pos)
     {
         return this.locator.x == pos.getX() 
                 && this.locator.z == pos.getZ()
-                && intersectsWith(blockFloorFromY(pos.getY()), blockCeilingFromY(pos.getY()));
+                && intersectsOnYAxis(blockFloorFromY(pos.getY()), blockCeilingFromY(pos.getY()));
     }
     
-    /** cells should not overlap - use this to assert */
+    /**
+     * True if cells are in the same space and have vertical overlap. 
+     * Cells should not overlap - use this to assert.
+     */
     public boolean intersectsWith(LavaCell other)
     {
         return this.locator.x == other.locator.x 
                 && this.locator.z == other.locator.z
-                && this.intersectsWith(other.floorLevel(), other.ceilingLevel());
+                && this.intersectsOnYAxis(other.floorLevel(), other.ceilingLevel());
     }
     
     /**
@@ -751,7 +767,7 @@ public class LavaCell extends AbstractLavaCell
     {
         if(fluidUnits == 0) return;
         this.changeFluidUnits(fluidUnits);
-        this.updateTickIndex(Simulator.instance().getTick());
+        this.updateLastFlowTick();
     }
     
 //    private void doFallingParticles(int y, World world)
@@ -1035,7 +1051,7 @@ public class LavaCell extends AbstractLavaCell
         {
             int surfaceUnits = this.worldSurfaceUnits();
             newCell.changeFluidUnits(surfaceUnits - floorForNewCell * LavaSimulator.FLUID_UNITS_PER_LEVEL);
-            newCell.updateTickIndex(Simulator.instance().getTick());
+            newCell.updateLastFlowTick();
         }
         
         if(this.worldSurfaceLevel() > newCeilingForThisCell)
@@ -1091,13 +1107,13 @@ public class LavaCell extends AbstractLavaCell
                     if(flowHeight > 0)
                     {
                         this.changeFluidUnits(-Math.min(this.fluidUnits(), flowHeight * LavaSimulator.FLUID_UNITS_PER_LEVEL));
-                        this.updateTickIndex(Simulator.instance().getTick());
+                        this.updateLastFlowTick();
                     }
                 }
                 else if( y < surfaceY)
                 {
                     this.changeFluidUnits(-LavaSimulator.FLUID_UNITS_PER_BLOCK);
-                    this.updateTickIndex(Simulator.instance().getTick());
+                    this.updateLastFlowTick();
                 }
             }
             
@@ -1217,6 +1233,20 @@ public class LavaCell extends AbstractLavaCell
         {
             this.connections.removeIfPresent(connection);
         }
+    }
+    
+    /**
+     * True if projection of fluid volumes onto Y axis overlap.  Does not confirm
+     * the cells are actually horizontally adjacent. <br>
+     * Also does not duplicate {@link #intersectsOnYAxis(int, int)}
+     * but would seem to imply the vertical space in cells must also overlap.
+     */
+    public  boolean canFluidConnect(LavaCell otherCell)
+    {
+        return // top of fluid  in other cell must be above my floor
+                otherCell.worldSurfaceLevel() > this.floorLevel()
+                //bottom of other cell must be below my fluid level
+                && otherCell.floorLevel() < this.worldSurfaceLevel();
     }
     
     public boolean isConnectedTo(LavaCell otherCell)
@@ -1386,28 +1416,33 @@ public class LavaCell extends AbstractLavaCell
         }
     }
 
+    /**
+     * Returns true if vertical spaces overlap and neither cell is deleted.<br>
+     * Does not consider presence or amount of lava.<br>
+     * ASSUMES cells are horizontally adjacent. Does not check this.
+     */
     public boolean canConnectWith(LavaCell other)
     {
-        return this.floorLevel() < other.ceilingLevel()
-                && this.ceilingLevel() > other.floorLevel()
+        return this.intersectsOnYAxis(other.floorLevel(), other.ceilingLevel())
                 && !this.isDeleted() && !other.isDeleted();
     }
     
     /**
      * True if this cell has not had a flow in a configured number of ticks
-     * and it has fewer than four connections to cells that are also lava. (Is on an edge.)
+     * and it has fewer than four connections to cells that have intersecting lava. (Is on an edge.)
      */
     public boolean canCool(int simTickIndex)
     {
         if(this.isCoolingDisabled || this.isDeleted || this.fluidUnits() == 0 
-                || simTickIndex - this.lastTickIndex < Configurator.VOLCANO.lavaCoolingTicks) return false;
+                || simTickIndex - this.lastFlowTick < Configurator.VOLCANO.lavaCoolingTicks) return false;
         
         if(this.connections.size() < 4) return true;
         
         int hotCount = 0;
         for(int i = this.connections.size() - 1; i >= 0; i--)
         {
-            if(this.connections.get(i).getOther(this).fluidUnits() > 0) hotCount++;
+            final LavaCell other = this.connections.get(i).getOther(this);
+            if(other.fluidUnits() > 0 && this.canFluidConnect(other)) hotCount++;
             if(hotCount >= 3) return false;
         }
         
@@ -1422,6 +1457,16 @@ public class LavaCell extends AbstractLavaCell
     public void coolAndShrink()
     {
         if(this.isDeleted || this.fluidUnits() == 0) return;
+        
+        // delay cooling in neighbors - see delayCooling for explanation
+        for(int i = this.connections.size() - 1; i >= 0; i--)
+        {
+            final LavaCell other = this.connections.get(i).getOther(this);
+            if(other.fluidUnits() > 0 && this.canFluidConnect(other))
+            {
+                other.delayCooling();
+            }
+        }
         
         int newFloor = this.worldSurfaceLevel();
         if(newFloor >= this.ceilingLevel())
@@ -1880,11 +1925,33 @@ public class LavaCell extends AbstractLavaCell
         }
     }
     
-    public void updateTickIndex(int newTickIndex)
+    /**
+     * Makes the last flow tick for this cell equal the current simulator tick.
+     * Should be called whenever lava is added to this cell or flows in or out.
+     */
+    public void updateLastFlowTick()
     {
-        this.lastTickIndex = newTickIndex;
+        this.lastFlowTick = Simulator.instance().getTick();
     }
     
+    /**
+     * Delays cooling of this cell (if it can be cooled) by a configurable,
+     * randomized number of ticks.  Does so by making it seem like lava
+     * flowed in/or out more recently that it actually did.  Will have no 
+     * or limited effect if the cell flowed recently. Also has no effect
+     * if the cell contains no lava.<p>
+     * 
+     * Used to delay cooling of neighbors when a cell does cool successfully.
+     * Most cells in a flow tend to stop at the same time, and without this they
+     * would all cool together.  This means that they will cool more gradually,
+     * and somewhat randomly, from the outside in.
+     */
+    public void delayCooling()
+    {
+        if(this.fluidUnits() == 0) return;
+        this.lastFlowTick = Math.min(Simulator.instance().getTick(), 
+                this.lastFlowTick + ThreadLocalRandom.current().nextInt(Configurator.VOLCANO.lavaCoolingPropagationMin, Configurator.VOLCANO.lavaCoolingPropagationMax));
+    }
     
     
 //    /**
