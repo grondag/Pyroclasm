@@ -1531,32 +1531,32 @@ public class LavaCell extends AbstractLavaCell
     }
     
     @Override
-    protected void invalidateRawRetention()
+    protected void invalidateLocalFloorDependencies()
     {
         this.rawRetainedUnits = RETENTION_NEEDS_UPDATE;
-        this.invalidateSmoothedRetention();
+        this.invalidateNeighborFloorDependencies();
         
         int x = this.x();
         int z = this.z();
         
         LavaCell neighbor = this.getFloorNeighbor(x - 1, z);
-        if(neighbor != null) neighbor.invalidateSmoothedRetention();
+        if(neighbor != null) neighbor.invalidateNeighborFloorDependencies();
         
         neighbor = this.getFloorNeighbor(x + 1, z);
-        if(neighbor != null) neighbor.invalidateSmoothedRetention();
+        if(neighbor != null) neighbor.invalidateNeighborFloorDependencies();
         neighbor = this.getFloorNeighbor(x, z - 1);
-        if(neighbor != null) neighbor.invalidateSmoothedRetention();
+        if(neighbor != null) neighbor.invalidateNeighborFloorDependencies();
         neighbor = this.getFloorNeighbor(x, z + 1);
-        if(neighbor != null) neighbor.invalidateSmoothedRetention();
+        if(neighbor != null) neighbor.invalidateNeighborFloorDependencies();
         
         neighbor = this.getFloorNeighbor(x - 1, z - 1);
-        if(neighbor != null) neighbor.invalidateSmoothedRetention();
+        if(neighbor != null) neighbor.invalidateNeighborFloorDependencies();
         neighbor = this.getFloorNeighbor(x - 1, z + 1);
-        if(neighbor != null) neighbor.invalidateSmoothedRetention();
+        if(neighbor != null) neighbor.invalidateNeighborFloorDependencies();
         neighbor = this.getFloorNeighbor(x + 1, z - 1);
-        if(neighbor != null) neighbor.invalidateSmoothedRetention();
+        if(neighbor != null) neighbor.invalidateNeighborFloorDependencies();
         neighbor = this.getFloorNeighbor(x + 1, z + 1);
-        if(neighbor != null) neighbor.invalidateSmoothedRetention();
+        if(neighbor != null) neighbor.invalidateNeighborFloorDependencies();
     }
     
     /** see {@link #rawRetainedLevel} */
@@ -1667,8 +1667,12 @@ public class LavaCell extends AbstractLavaCell
         return this.smoothedRetainedUnits == RETENTION_NEEDS_UPDATE ? this.fluidUnits() : this.smoothedRetainedUnits;
     }
 
-    /** see {@link #smoothedRetainedUnits} */
-    public void invalidateSmoothedRetention()
+    /** 
+     * To be called by neighbor cells when their floor changes so that this cell
+     * can update if it depends on neighbor floors.
+     * see {@link #smoothedRetainedUnits}
+     */
+    public void invalidateNeighborFloorDependencies()
     {
         if(this.smoothedRetainedUnits != RETENTION_NEEDS_UPDATE) this.smoothedRetainedUnits = RETENTION_NEEDS_UPDATE;
     }

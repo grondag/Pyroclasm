@@ -67,7 +67,7 @@ public abstract class AbstractLavaCell
             this.floorY = (short) getYFromFloor(this.floorLevel);
             
             //force retention recalc
-            this.invalidateRawRetention();
+            this.invalidateLocalFloorDependencies();
         }
     }
 
@@ -232,9 +232,12 @@ public abstract class AbstractLavaCell
       
         return this.fluidUnits.compareAndSet(expectedPriorUnits, expectedPriorUnits + deltaUnits);
     }
-
-//    protected abstract void clearHasSurfaceChanged();
-    protected abstract void invalidateRawRetention();
+    
+    /**
+     * Called when the floor of this cell is changed to force recalc
+     * of anything in this cells or neighbor cells that depend on the floor.
+     */
+    protected abstract void invalidateLocalFloorDependencies();
     
     public int fluidUnits()
     {
