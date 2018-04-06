@@ -102,22 +102,24 @@ public class LavaCell extends AbstractLavaCell
      */
     private short refreshBottomY = REFRESH_NONE;
     
-    private static final int RETENTION_NEEDS_UPDATE = -1;
-    
     /** 
      * Depth of fluid will not drop below this - to emulate surface tension/viscosity.
      * Initialized to -1 to indicate has not yet been set or if needs to be recalculated.
      * Computed during start update after cell is start created.  Does not change until cell solidifies or bottom drops out.
      * The raw value is persisted because it should not change as neighbors change.
      */
-    private int rawRetainedUnits = RETENTION_NEEDS_UPDATE;
+    private int rawRetainedUnits = LavaSimulator.FLUID_UNITS_PER_QUARTER_BLOCK;
+    
+    private boolean needsRawRetentionUpdate = true;
     
     /** 
      * As with {@link #rawRetainedLevel} but smoothed with neighbors using a box filter.  
      * Is not persisted because can be recomputed from neighbors.
      * Is computed lazily as needed.  Invalidated whenever raw retention in this cell or a neighboring cell changes.
      */
-    private int smoothedRetainedUnits = RETENTION_NEEDS_UPDATE;
+    private int smoothedRetainedUnits = LavaSimulator.FLUID_UNITS_PER_QUARTER_BLOCK;
+    
+    private boolean needsSmoothedRetentionUpdate = true;
     
     /** 
      * Exponential average of current level - used for computing visible level.
@@ -1544,7 +1546,8 @@ public class LavaCell extends AbstractLavaCell
     @Override
     protected void invalidateLocalFloorDependencies()
     {
-        this.rawRetainedUnits = RETENTION_NEEDS_UPDATE;
+        this.needsRawRetentionUpdate = true;
+        this.needsSmoothedRetentionUpdate = true;
         this.invalidateNeighborFloorDependencies();
         
         int x = this.x();
@@ -1574,7 +1577,7 @@ public class LavaCell extends AbstractLavaCell
     public int getRawRetainedUnits()
     {
         // provide default value until retention can be updated
-        return this.rawRetainedUnits == RETENTION_NEEDS_UPDATE ? this.fluidUnits() : this.rawRetainedUnits;
+        return this.rawRetainedUnits;
     }
     
     /** see {@link #rawRetainedLevel} */
@@ -1583,7 +1586,7 @@ public class LavaCell extends AbstractLavaCell
         if(this.isDeleted) return;
         
      // calculation relies on having current connections
-        if(this.rawRetainedUnits == RETENTION_NEEDS_UPDATE && !this.isConnectionUpdateNeeded())
+        if(this.needsRawRetentionUpdate && !this.isConnectionUpdateNeeded())
         {
             this.updateRawRetention();
         }
@@ -1592,6 +1595,8 @@ public class LavaCell extends AbstractLavaCell
     /** see {@link #rawRetainedLevel} */
     private void updateRawRetention()
     {
+        this.needsRawRetentionUpdate = false;
+        
         int depth = this.isBottomFlow() 
                 ? this.getFlowFloorRawRetentionDepth()
                 : (int)(locator.cellChunk.cells.sim.terrainHelper()
@@ -1675,7 +1680,7 @@ public class LavaCell extends AbstractLavaCell
     public int getSmoothedRetainedUnits()
     {
         // provide default value until retention can be updated
-        return this.smoothedRetainedUnits == RETENTION_NEEDS_UPDATE ? this.fluidUnits() : this.smoothedRetainedUnits;
+        return this.smoothedRetainedUnits;
     }
 
     /** 
@@ -1685,7 +1690,7 @@ public class LavaCell extends AbstractLavaCell
      */
     public void invalidateNeighborFloorDependencies()
     {
-        if(this.smoothedRetainedUnits != RETENTION_NEEDS_UPDATE) this.smoothedRetainedUnits = RETENTION_NEEDS_UPDATE;
+        this.needsSmoothedRetentionUpdate = true;
     }
 
     /** see {@link #smoothedRetainedUnits} */
@@ -1694,7 +1699,7 @@ public class LavaCell extends AbstractLavaCell
         if(this.isDeleted) return;
         
         // calculation relies on having current connections
-        if(this.smoothedRetainedUnits == RETENTION_NEEDS_UPDATE && !this.isConnectionUpdateNeeded())
+        if(this.needsSmoothedRetentionUpdate && !this.isConnectionUpdateNeeded())
         {
             this.updateSmoothedRetention();
         }
@@ -1704,6 +1709,7 @@ public class LavaCell extends AbstractLavaCell
     private void updateSmoothedRetention()
     {
 
+        this.needsSmoothedRetentionUpdate = false;
         int count = 1;
         int total = this.getRawRetainedUnits();
         
