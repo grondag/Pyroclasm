@@ -591,9 +591,12 @@ public class LavaCell extends AbstractLavaCell
      * 
      * @param xOffset must be in range -1 to +1
      * @param zPositive must be in range -1 to +1
+     * @Param allowUpslope if false, will not consider cells that have a higher floor than this cell
+     *     and for diagonal cells this means the directly adjacent cell must be lower than this cell and 
+     *     at the same level or lower than the diagonal cell
      * @return LavaCell that was checked, null if none was checked, self if xOffset == 0 and zOffset == 0
      */
-    private LavaCell getFloorNeighbor(int xOffset, int zOffset)
+    private @Nullable LavaCell getFloorNeighbor(int xOffset, int zOffset, boolean allowUpslope)
     {
         //handling is different for directly adjacent vs. diagonally adjacent
         if(xOffset == 0)
@@ -604,46 +607,52 @@ public class LavaCell extends AbstractLavaCell
             }
             else
             {
-                return getLowestNeighborDirectlyAdjacent(this.locator.cellChunk.cells, xOffset, zOffset);
+                LavaCell result = getLowestNeighborDirectlyAdjacent(this.locator.cellChunk.cells, xOffset, zOffset);
+                return allowUpslope || result == null  || result.floorLevel() <= this.floorLevel() ? result : null;
             }
         }
         else if(zOffset == 0)
         {
-            return getLowestNeighborDirectlyAdjacent(this.locator.cellChunk.cells, xOffset, zOffset);
+            LavaCell result = getLowestNeighborDirectlyAdjacent(this.locator.cellChunk.cells, xOffset, zOffset);
+            return allowUpslope || result == null  || result.floorLevel() <= this.floorLevel() ? result : null;
         }
         else
         {
             // diagonally adjacent
             LavaCells cells = this.locator.cellChunk.cells;
 
-            LavaCell nX = getLowestNeighborDirectlyAdjacent(cells, xOffset, 0);
-            if(nX != null)
+            @Nullable LavaCell nXZ = null;
+            @Nullable LavaCell nX = getLowestNeighborDirectlyAdjacent(cells, xOffset, 0);
+            if(nX != null && (allowUpslope || nX.floorLevel() <= this.floorLevel()))
             {
-                nX = nX.getLowestNeighborDirectlyAdjacent(cells, xOffset, zOffset);
+                nXZ = nX.getLowestNeighborDirectlyAdjacent(cells, xOffset, zOffset);
+                nXZ = allowUpslope || nXZ == null  || nXZ.floorLevel() <= nX.floorLevel() ? nXZ: null;
             }
             
-            LavaCell nZ = getLowestNeighborDirectlyAdjacent(cells, 0, zOffset);
-            if(nZ != null)
+            @Nullable LavaCell nZX = null;
+            @Nullable LavaCell nZ = getLowestNeighborDirectlyAdjacent(cells, 0, zOffset);
+            if(nZ != null && (allowUpslope || nZ.floorLevel() <= this.floorLevel()))
             {
-                nZ = nZ.getLowestNeighborDirectlyAdjacent(cells, xOffset, zOffset);
+                nZX = nZ.getLowestNeighborDirectlyAdjacent(cells, xOffset, zOffset);
+                nZX = allowUpslope || nZX == null  || nZX.floorLevel() <= nZ.floorLevel() ? nZX: null;
             }
             
-            if(nX == null) 
+            if(nXZ == null) 
             {
-                return nZ;
+                return nZX;
             }
-            else if(nZ == null)
+            else if(nZX == null)
             {
-                return nX;
+                return nXZ;
             }
             else
             {
-                return(nX.floorLevel() < nZ.floorLevel() ? nX : nZ);
+                return(nXZ.floorLevel() < nZX.floorLevel() ? nXZ : nZX);
             }
         }
     }
     
-    private LavaCell getLowestNeighborDirectlyAdjacent(LavaCells cells, int xOffset, int zOffset)
+    private @Nullable LavaCell getLowestNeighborDirectlyAdjacent(LavaCells cells, int xOffset, int zOffset)
     {
         LavaCell candidate = cells.getEntryCell(this.x() + xOffset, this.z() + zOffset);
         if(candidate == null) return null;
@@ -1378,10 +1387,12 @@ public class LavaCell extends AbstractLavaCell
                 public int compare(@Nullable LavaConnection o1, @Nullable LavaConnection o2)
                 {
                     return ComparisonChain.start()
-                            // larger drops start
+                            // larger surface drop first
+                            .compare(o2.getSurfaceDiff(), o1.getSurfaceDiff())
+                            // larger floor drop first
                             .compare(o2.getSortDrop(), o1.getSortDrop())
-                            // random breaks ties
-                            .compare(o1.rand, o2.rand)
+                            // arbitrary tie breaker
+                            .compare(o1.id, o2.id)
                             .result();
                 }
             });
@@ -1533,29 +1544,30 @@ public class LavaCell extends AbstractLavaCell
     @Override
     protected void invalidateLocalFloorDependencies()
     {
+        this.isDropDirty = true;
         this.rawRetainedUnits = RETENTION_NEEDS_UPDATE;
         this.invalidateNeighborFloorDependencies();
         
         int x = this.x();
         int z = this.z();
         
-        LavaCell neighbor = this.getFloorNeighbor(x - 1, z);
+        LavaCell neighbor = this.getFloorNeighbor(x - 1, z, true);
         if(neighbor != null) neighbor.invalidateNeighborFloorDependencies();
         
-        neighbor = this.getFloorNeighbor(x + 1, z);
+        neighbor = this.getFloorNeighbor(x + 1, z, true);
         if(neighbor != null) neighbor.invalidateNeighborFloorDependencies();
-        neighbor = this.getFloorNeighbor(x, z - 1);
+        neighbor = this.getFloorNeighbor(x, z - 1, true);
         if(neighbor != null) neighbor.invalidateNeighborFloorDependencies();
-        neighbor = this.getFloorNeighbor(x, z + 1);
+        neighbor = this.getFloorNeighbor(x, z + 1, true);
         if(neighbor != null) neighbor.invalidateNeighborFloorDependencies();
         
-        neighbor = this.getFloorNeighbor(x - 1, z - 1);
+        neighbor = this.getFloorNeighbor(x - 1, z - 1, true);
         if(neighbor != null) neighbor.invalidateNeighborFloorDependencies();
-        neighbor = this.getFloorNeighbor(x - 1, z + 1);
+        neighbor = this.getFloorNeighbor(x - 1, z + 1, true);
         if(neighbor != null) neighbor.invalidateNeighborFloorDependencies();
-        neighbor = this.getFloorNeighbor(x + 1, z - 1);
+        neighbor = this.getFloorNeighbor(x + 1, z - 1, true);
         if(neighbor != null) neighbor.invalidateNeighborFloorDependencies();
-        neighbor = this.getFloorNeighbor(x + 1, z + 1);
+        neighbor = this.getFloorNeighbor(x + 1, z + 1, true);
         if(neighbor != null) neighbor.invalidateNeighborFloorDependencies();
     }
     
@@ -1570,6 +1582,8 @@ public class LavaCell extends AbstractLavaCell
     public void updateRawRetentionIfNeeded()
     {
         if(this.isDeleted) return;
+        
+        this.updateDropIfNeeded();
         
      // calculation relies on having current connections
         if(this.rawRetainedUnits == RETENTION_NEEDS_UPDATE && !this.isConnectionUpdateNeeded())
@@ -1656,7 +1670,7 @@ public class LavaCell extends AbstractLavaCell
      */
     private int getFloorUnitsForNeighbor(int xOffset, int zOffset, int defaultValue)
     {
-        LavaCell neighbor = this.getFloorNeighbor(xOffset, zOffset);
+        LavaCell neighbor = this.getFloorNeighbor(xOffset, zOffset, true);
         return neighbor == null ? defaultValue : neighbor.floorUnits();
     }
     
@@ -1664,7 +1678,8 @@ public class LavaCell extends AbstractLavaCell
     public int getSmoothedRetainedUnits()
     {
         // provide default value until retention can be updated
-        return this.smoothedRetainedUnits == RETENTION_NEEDS_UPDATE ? this.fluidUnits() : this.smoothedRetainedUnits;
+        //return this.smoothedRetainedUnits == RETENTION_NEEDS_UPDATE ? this.fluidUnits() : this.smoothedRetainedUnits;
+        return Math.max(LavaSimulator.FLUID_UNITS_PER_QUARTER_BLOCK, LavaSimulator.FLUID_UNITS_PER_BLOCK_AND_A_QUARTER - LavaSimulator.FLUID_UNITS_PER_BLOCK * this.drop() / LavaSimulator.LEVELS_PER_BLOCK);
     }
 
     /** 
@@ -1674,6 +1689,7 @@ public class LavaCell extends AbstractLavaCell
      */
     public void invalidateNeighborFloorDependencies()
     {
+        this.isDropDirty = true;
         if(this.smoothedRetainedUnits != RETENTION_NEEDS_UPDATE) this.smoothedRetainedUnits = RETENTION_NEEDS_UPDATE;
     }
 
@@ -1696,23 +1712,23 @@ public class LavaCell extends AbstractLavaCell
         int count = 1;
         int total = this.getRawRetainedUnits();
         
-        LavaCell neighbor = this.getFloorNeighbor(-1, 0);
+        LavaCell neighbor = this.getFloorNeighbor(-1, 0, true);
         if(neighbor != null) { count++; total += neighbor.getRawRetainedUnits(); }
         
-        neighbor = this.getFloorNeighbor( 1,  0);
+        neighbor = this.getFloorNeighbor( 1,  0, true);
         if(neighbor != null) { count++; total += neighbor.getRawRetainedUnits(); }
-        neighbor = this.getFloorNeighbor( 0, -1);
+        neighbor = this.getFloorNeighbor( 0, -1, true);
         if(neighbor != null) { count++; total += neighbor.getRawRetainedUnits(); }
-        neighbor = this.getFloorNeighbor( 0,  1);
+        neighbor = this.getFloorNeighbor( 0,  1, true);
         if(neighbor != null) { count++; total += neighbor.getRawRetainedUnits(); }
         
-        neighbor = this.getFloorNeighbor(-1, -1);
+        neighbor = this.getFloorNeighbor(-1, -1, true);
         if(neighbor != null) { count++; total += neighbor.getRawRetainedUnits(); }
-        neighbor = this.getFloorNeighbor(-1,  1);
+        neighbor = this.getFloorNeighbor(-1,  1, true);
         if(neighbor != null) { count++; total += neighbor.getRawRetainedUnits(); }
-        neighbor = this.getFloorNeighbor( 1, -1);
+        neighbor = this.getFloorNeighbor( 1, -1, true);
         if(neighbor != null) { count++; total += neighbor.getRawRetainedUnits(); }
-        neighbor = this.getFloorNeighbor( 1,  1);
+        neighbor = this.getFloorNeighbor( 1,  1, true);
         if(neighbor != null) { count++; total += neighbor.getRawRetainedUnits(); }        
         
         if(this.isBottomFlow())
@@ -2035,7 +2051,57 @@ public class LavaCell extends AbstractLavaCell
 //            this.changeLevel(this.locator.cellChunk.cells.sim.getTickIndex(), -LavaSimulator.FLUID_UNITS_PER_BLOCK);
 //        }
 //    }
+    
+    // EXPERIMENTAL
+    // FIXME: remove (including references) if not kept
+    private int lowestNeighborFloor = 0;
+    private int drop = 0;
+    private boolean isDropDirty = true;
+    
+    public int drop()
+    {
+        return this.drop;
+    }
+    
+    public int lowestNeighborFloor()
+    {
+        return this.lowestNeighborFloor;
+    }
+    
+    private void updateDropIfNeeded()
+    {
         
+        if(isDropDirty)
+        {
+            this.isDropDirty = false;
+            int lowestNeighborFloorLevel = this.floorLevel();
+            
+            LavaCell neighbor;
+            
+            neighbor = this.getFloorNeighbor( 0, -1, false);
+            if(neighbor != null) lowestNeighborFloorLevel = Math.min(neighbor.floorLevel(), lowestNeighborFloorLevel); 
+            neighbor = this.getFloorNeighbor( 0,  1, false);
+            if(neighbor != null) lowestNeighborFloorLevel = Math.min(neighbor.floorLevel(), lowestNeighborFloorLevel); 
+            neighbor = this.getFloorNeighbor(-1, -1, false);
+            if(neighbor != null) lowestNeighborFloorLevel = Math.min(neighbor.floorLevel(), lowestNeighborFloorLevel); 
+            neighbor = this.getFloorNeighbor(-1, 0, false);
+            if(neighbor != null) lowestNeighborFloorLevel = Math.min(neighbor.floorLevel(), lowestNeighborFloorLevel); 
+            neighbor = this.getFloorNeighbor(-1,  1, false);
+            if(neighbor != null) lowestNeighborFloorLevel = Math.min(neighbor.floorLevel(), lowestNeighborFloorLevel); 
+            neighbor = this.getFloorNeighbor( 1, -1, false);
+            if(neighbor != null) lowestNeighborFloorLevel = Math.min(neighbor.floorLevel(), lowestNeighborFloorLevel); 
+            neighbor = this.getFloorNeighbor( 1,  0, false);
+            if(neighbor != null) lowestNeighborFloorLevel = Math.min(neighbor.floorLevel(), lowestNeighborFloorLevel); 
+            neighbor = this.getFloorNeighbor( 1,  1, false);
+            if(neighbor != null) lowestNeighborFloorLevel = Math.min(neighbor.floorLevel(), lowestNeighborFloorLevel); 
+            
+            this.drop = this.floorLevel() - lowestNeighborFloorLevel;
+            this.lowestNeighborFloor =  lowestNeighborFloorLevel;
+        }
+    }
+    
+    // END EXPERIMENTAL
+    
     // CELL-COLUMN COORDINATION / SYNCHONIZATION CLASS
     
     static private class CellLocator

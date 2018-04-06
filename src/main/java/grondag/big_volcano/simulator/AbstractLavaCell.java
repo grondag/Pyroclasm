@@ -320,6 +320,21 @@ public abstract class AbstractLavaCell
      * PRESSURE SURFACE STUFF
      ******************************************************/
     
+    public int pressureSurfaceUnits()
+    {
+        int floorUnits = this.floorUnits();
+        int volumeUnits = this.ceilingUnits() - floorUnits;
+        int fluidUnits = this.fluidUnits();
+        
+        return pressureSurface(floorUnits, volumeUnits, fluidUnits);
+    }
+    
+    public int pressureSurfaceLevel()
+    {
+        int units = this.pressureSurfaceUnits();
+        return units == 0 ? 0 : Math.max(1, units / LavaSimulator.FLUID_UNITS_PER_LEVEL);
+    }
+    
     public static int pressureSurface(int floorUnitsIn, int volumeUnitsIn, int fluidUnitsIn)
     {
         return fluidUnitsIn > volumeUnitsIn

@@ -7,6 +7,9 @@ import java.util.concurrent.Executor;
 
 import javax.annotation.Nullable;
 
+import com.google.common.base.Objects;
+import com.google.common.collect.ComparisonChain;
+
 import grondag.big_volcano.BigActiveVolcano;
 import grondag.big_volcano.Configurator;
 import grondag.exotic_matter.concurrency.CountedJob;
@@ -198,7 +201,17 @@ public class LavaCells implements Iterable<LavaCell>
             @Override
             public int compare(@Nullable Object o1, @Nullable Object o2)
             {
-                return Integer.compare(((CellChunk)o2).validationPriority(), ((CellChunk)o1).validationPriority());
+                if(o1 == null) 
+                    return o2 == null ? 0 : -1;
+                else if(o2 == null)
+                    return 1;
+                
+                return ComparisonChain.start()
+                        // lower tick first
+                        .compare(((CellChunk)o1).lastValidationTick(), ((CellChunk)o2).lastValidationTick())
+                        // higher priority first
+                        .compare(((CellChunk)o2).validationPriority(), ((CellChunk)o1).validationPriority())
+                        .result();
             }
         });
         
@@ -318,7 +331,7 @@ public class LavaCells implements Iterable<LavaCell>
      * Also returns null if chunk has not been loaded.
      * Thread safe.
      */
-    public LavaCell getEntryCell(int x, int z)
+    public @Nullable LavaCell getEntryCell(int x, int z)
     {
         CellChunk chunk = cellChunks.get(PackedBlockPos.getPackedChunkPos(x, z));
         return chunk == null ? null : chunk.getEntryCell(x, z);

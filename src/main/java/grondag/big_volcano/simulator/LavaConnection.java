@@ -172,17 +172,8 @@ public class LavaConnection
             return;
         }
         
-        int floorUnits1 = this.firstCell.floorUnits();
-        int volumeUnits1 = this.firstCell.ceilingUnits() - floorUnits1;
-        
-        int floorUnits2 = this.secondCell.floorUnits();
-        int volumeUnits2 = this.secondCell.ceilingUnits() - floorUnits2;
-        
-        int fluidUnits1 = this.firstCell.fluidUnits();
-        int fluidUnits2 = this.secondCell.fluidUnits();
-        
-        int surface1 = AbstractLavaCell.pressureSurface(floorUnits1, volumeUnits1, fluidUnits1);
-        int surface2 = AbstractLavaCell.pressureSurface(floorUnits2, volumeUnits2, fluidUnits2);
+        int surface1 = this.firstCell.pressureSurfaceUnits();
+        int surface2 = this.secondCell.pressureSurfaceUnits();
         
         if(surface1 == surface2)
         {
@@ -194,6 +185,11 @@ public class LavaConnection
         {
             if(this.setFlowLimitsThisTick(this.firstCell, this.secondCell, surface1, surface2, this.isDirectionOneToTwo))
             {
+                final int floorUnits1 = this.firstCell.floorUnits();
+                final int volumeUnits1 = this.firstCell.ceilingUnits() - floorUnits1;
+                final int floorUnits2 = this.secondCell.floorUnits();
+                final int volumeUnits2 = this.secondCell.ceilingUnits() - floorUnits2;
+                
                 this.isDirectionOneToTwo = true;
                 this.isFlowEnabled = true;
                 this.floorUnitsFrom = floorUnits1;
@@ -211,6 +207,11 @@ public class LavaConnection
         {
             if(this.setFlowLimitsThisTick(this.secondCell, this.firstCell, surface2, surface1, !this.isDirectionOneToTwo))
             {
+                final int floorUnits1 = this.firstCell.floorUnits();
+                final int volumeUnits1 = this.firstCell.ceilingUnits() - floorUnits1;
+                final int floorUnits2 = this.secondCell.floorUnits();
+                final int volumeUnits2 = this.secondCell.ceilingUnits() - floorUnits2;
+                
                 this.isDirectionOneToTwo = false;
                 this.isFlowEnabled = true;
                 this.floorUnitsFrom = floorUnits2;
@@ -594,14 +595,22 @@ public class LavaConnection
     }
     
     /** 
-     * Absolute difference in base elevation, or if base is same, in retained level.
-     * Measured in fluid levels
-     * Zero if there is no difference or if either block is a barrier.
-     * Higher drop means higher priority for flowing. 
+     * Represents potential energy of flowing across this connection based on underlying terrain
+     * and irrespective of fluid contents. Higher number means higher potential and should be 
+     * given a higher priority for flow.  Zero means no potential / can't flow.
      */
     public int getSortDrop()
     {
         return Math.abs(this.firstCell.floorLevel() - this.secondCell.floorLevel());
+//        return Math.abs(this.firstCell.lowestNeighborFloor() - this.secondCell.lowestNeighborFloor());
+    }
+    
+    /**
+     * Absolute difference in fluid surface levels. Used for connection sorting.
+     */
+    public int getSurfaceDiff()
+    {
+        return Math.abs(this.firstCell.pressureSurfaceLevel() - this.secondCell.pressureSurfaceLevel());
     }
 
     public boolean isDirectionOneToTwo()
@@ -617,7 +626,7 @@ public class LavaConnection
     /**
      * Should be null if non-active
      */
-    public SortBucket getSortBucket()
+    public @Nullable SortBucket getSortBucket()
     {
         return this.sortBucket;
     }

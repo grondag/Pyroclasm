@@ -1,6 +1,7 @@
 package grondag.big_volcano.simulator;
 
 
+import java.util.Iterator;
 import java.util.concurrent.Executor;
 import java.util.function.Predicate;
 
@@ -14,7 +15,7 @@ import grondag.exotic_matter.concurrency.SimpleConcurrentList;
 import grondag.exotic_matter.simulator.Simulator;
 
 @SuppressWarnings("unused")
-public class LavaConnections
+public class LavaConnections  implements Iterable<LavaConnection>
 {
     private final SimpleConcurrentList<LavaConnection> connectionList;
     
@@ -227,6 +228,12 @@ public class LavaConnections
         this.isSortCurrent = true;
         
 //        sortRefreshPerf.endRun();
+    }
+
+    @Override
+    public Iterator<LavaConnection> iterator()
+    {
+        return this.connectionList.iterator();
     }
     
 //    /**

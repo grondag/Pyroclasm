@@ -199,6 +199,11 @@ public class Configurator
                 + "Client-side only."})
         public boolean enableDebugRender = true;
 
+
+        @Comment({"Enable render of lava connection flow potentials."
+                + "Client-side only."})
+        public boolean enableFlowRender;
+
         /** Contains block objects configured to be destroyed by lava */
         public static final IdentityHashMap<Block, Block> blocksDestroyedByLava = new IdentityHashMap<Block, Block>();
 

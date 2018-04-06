@@ -4,6 +4,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import grondag.big_volcano.BigActiveVolcano;
 import grondag.big_volcano.Configurator;
+import grondag.exotic_matter.simulator.Simulator;
 import grondag.exotic_matter.varia.PackedBlockPos;
 /**
  * Container for all cells in a world chunk.
@@ -39,6 +40,12 @@ public class CellChunk
     /** number of ticks this chunk has been unloadable - unload when reaches threshold */
     private int unloadTickCount = 0;
 
+    /**
+     * Simulation tick during which this chunk was last validated.
+     * Used to prioritize chunks for validation - older chunks first.
+     */
+    private long lastValidationTick = 0;
+    
     private final LavaCell[] entryCells = new LavaCell[256];
 
     /** number of cells in the chunk */
@@ -122,6 +129,14 @@ public class CellChunk
     }
     
     /**
+     * Tick during which this chunk was last validated, or zero if has never been validated.
+     */
+    public long lastValidationTick()
+    {
+        return this.lastValidationTick;
+    }
+    
+    /**
      * Validates any cells that have been marked for individual validation.
      * 
      * Will return without doing any validation if a full validation is already needed.
@@ -155,6 +170,7 @@ public class CellChunk
                 }
             }
             this.validationCount.set(0);
+            this.lastValidationTick = Simulator.instance().getTick();
         }
         
         return true;
@@ -197,6 +213,7 @@ public class CellChunk
             //  this.isLoaded = true;
             this.needsFullValidation = false;
             this.validationCount.set(0);
+            this.lastValidationTick = Simulator.instance().getTick();
         }
     }
 
