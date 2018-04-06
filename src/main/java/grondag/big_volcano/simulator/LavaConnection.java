@@ -599,16 +599,15 @@ public class LavaConnection
      * and irrespective of fluid contents. Higher number means higher potential and should be 
      * given a higher priority for flow.  Zero means no potential / can't flow.
      */
-    public int getSortDrop()
+    public int getTerrainDrop()
     {
         return Math.abs(this.firstCell.floorLevel() - this.secondCell.floorLevel());
-//        return Math.abs(this.firstCell.lowestNeighborFloor() - this.secondCell.lowestNeighborFloor());
     }
     
     /**
      * Absolute difference in fluid surface levels. Used for connection sorting.
      */
-    public int getSurfaceDiff()
+    public int getSurfaceDrop()
     {
         return Math.abs(this.firstCell.pressureSurfaceLevel() - this.secondCell.pressureSurfaceLevel());
     }

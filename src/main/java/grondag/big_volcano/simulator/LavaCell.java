@@ -1390,9 +1390,9 @@ public class LavaCell extends AbstractLavaCell
                 {
                     return ComparisonChain.start()
                             // larger surface drop first
-                            .compare(o2.getSurfaceDiff(), o1.getSurfaceDiff())
+                            .compare(o2.getSurfaceDrop(), o1.getSurfaceDrop())
                             // larger floor drop first
-                            .compare(o2.getSortDrop(), o1.getSortDrop())
+                            .compare(o2.getTerrainDrop(), o1.getTerrainDrop())
                             // arbitrary tie breaker
                             .compare(o1.id, o2.id)
                             .result();
