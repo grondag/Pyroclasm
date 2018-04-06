@@ -1544,7 +1544,6 @@ public class LavaCell extends AbstractLavaCell
     @Override
     protected void invalidateLocalFloorDependencies()
     {
-        this.isDropDirty = true;
         this.rawRetainedUnits = RETENTION_NEEDS_UPDATE;
         this.invalidateNeighborFloorDependencies();
         
@@ -1582,8 +1581,6 @@ public class LavaCell extends AbstractLavaCell
     public void updateRawRetentionIfNeeded()
     {
         if(this.isDeleted) return;
-        
-        this.updateDropIfNeeded();
         
      // calculation relies on having current connections
         if(this.rawRetainedUnits == RETENTION_NEEDS_UPDATE && !this.isConnectionUpdateNeeded())
@@ -1678,8 +1675,7 @@ public class LavaCell extends AbstractLavaCell
     public int getSmoothedRetainedUnits()
     {
         // provide default value until retention can be updated
-        //return this.smoothedRetainedUnits == RETENTION_NEEDS_UPDATE ? this.fluidUnits() : this.smoothedRetainedUnits;
-        return Math.max(LavaSimulator.FLUID_UNITS_PER_QUARTER_BLOCK, LavaSimulator.FLUID_UNITS_PER_BLOCK_AND_A_QUARTER - LavaSimulator.FLUID_UNITS_PER_BLOCK * this.drop() / LavaSimulator.LEVELS_PER_BLOCK);
+        return this.smoothedRetainedUnits == RETENTION_NEEDS_UPDATE ? this.fluidUnits() : this.smoothedRetainedUnits;
     }
 
     /** 
@@ -1689,7 +1685,6 @@ public class LavaCell extends AbstractLavaCell
      */
     public void invalidateNeighborFloorDependencies()
     {
-        this.isDropDirty = true;
         if(this.smoothedRetainedUnits != RETENTION_NEEDS_UPDATE) this.smoothedRetainedUnits = RETENTION_NEEDS_UPDATE;
     }
 
@@ -2052,55 +2047,6 @@ public class LavaCell extends AbstractLavaCell
 //        }
 //    }
     
-    // EXPERIMENTAL
-    // FIXME: remove (including references) if not kept
-    private int lowestNeighborFloor = 0;
-    private int drop = 0;
-    private boolean isDropDirty = true;
-    
-    public int drop()
-    {
-        return this.drop;
-    }
-    
-    public int lowestNeighborFloor()
-    {
-        return this.lowestNeighborFloor;
-    }
-    
-    private void updateDropIfNeeded()
-    {
-        
-        if(isDropDirty)
-        {
-            this.isDropDirty = false;
-            int lowestNeighborFloorLevel = this.floorLevel();
-            
-            LavaCell neighbor;
-            
-            neighbor = this.getFloorNeighbor( 0, -1, false);
-            if(neighbor != null) lowestNeighborFloorLevel = Math.min(neighbor.floorLevel(), lowestNeighborFloorLevel); 
-            neighbor = this.getFloorNeighbor( 0,  1, false);
-            if(neighbor != null) lowestNeighborFloorLevel = Math.min(neighbor.floorLevel(), lowestNeighborFloorLevel); 
-            neighbor = this.getFloorNeighbor(-1, -1, false);
-            if(neighbor != null) lowestNeighborFloorLevel = Math.min(neighbor.floorLevel(), lowestNeighborFloorLevel); 
-            neighbor = this.getFloorNeighbor(-1, 0, false);
-            if(neighbor != null) lowestNeighborFloorLevel = Math.min(neighbor.floorLevel(), lowestNeighborFloorLevel); 
-            neighbor = this.getFloorNeighbor(-1,  1, false);
-            if(neighbor != null) lowestNeighborFloorLevel = Math.min(neighbor.floorLevel(), lowestNeighborFloorLevel); 
-            neighbor = this.getFloorNeighbor( 1, -1, false);
-            if(neighbor != null) lowestNeighborFloorLevel = Math.min(neighbor.floorLevel(), lowestNeighborFloorLevel); 
-            neighbor = this.getFloorNeighbor( 1,  0, false);
-            if(neighbor != null) lowestNeighborFloorLevel = Math.min(neighbor.floorLevel(), lowestNeighborFloorLevel); 
-            neighbor = this.getFloorNeighbor( 1,  1, false);
-            if(neighbor != null) lowestNeighborFloorLevel = Math.min(neighbor.floorLevel(), lowestNeighborFloorLevel); 
-            
-            this.drop = this.floorLevel() - lowestNeighborFloorLevel;
-            this.lowestNeighborFloor =  lowestNeighborFloorLevel;
-        }
-    }
-    
-    // END EXPERIMENTAL
     
     // CELL-COLUMN COORDINATION / SYNCHONIZATION CLASS
     
