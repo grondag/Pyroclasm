@@ -42,9 +42,9 @@ public class VolcanoManager implements ISimulationTickable, ISimulationTopNode
     private static final String NBT_VOLCANO_NODE_TAG_ACTIVE = NBTDictionary.claim("volcActive");
     private static final String NBT_VOLCANO_NODE_TAG_LAST_ACTIVATION_TICK = NBTDictionary.claim("volcLastTick");
     
-    private HashMap<Location, VolcanoNode> nodes = new HashMap<Location, VolcanoNode>();
+    private final HashMap<Location, VolcanoNode> nodes = new HashMap<Location, VolcanoNode>();
     
-    private VolcanoNode activeNode = null; 
+    private @Nullable VolcanoNode activeNode = null; 
     private boolean isDirty = true;
     
     private LinkedList<Ticket> tickets = new LinkedList<Ticket>();
@@ -149,14 +149,8 @@ public class VolcanoManager implements ISimulationTickable, ISimulationTopNode
         }
     }
 
-    public VolcanoNode findNode(BlockPos pos, int dimensionID)
+    public @Nullable VolcanoNode findNode(BlockPos pos, int dimensionID)
     {
-        if(nodes == null)
-        {
-            BigActiveVolcano.INSTANCE.warn("Volcano simulation manager not properly initialized."
-                    + " Volcano simulation state will be invalid.");
-            return null;
-        }
         return this.nodes.get(new Location(pos, dimensionID));
     }
     
@@ -177,12 +171,12 @@ public class VolcanoManager implements ISimulationTickable, ISimulationTopNode
     public void deserializeNBT(@Nullable NBTTagCompound nbt)
     {
         this.activeNode = null;
-        nodes = new HashMap<Location, VolcanoNode>();
+        nodes.clear();
         
         if(nbt != null)
         {
             NBTTagList nbtSubNodes = nbt.getTagList(NBT_VOLCANO_NODES, 10);
-            if( nbtSubNodes != null && !nbtSubNodes.hasNoTags())
+            if( !nbtSubNodes.hasNoTags())
             {
                 for (int i = 0; i < nbtSubNodes.tagCount(); ++i)
                 {
@@ -227,7 +221,7 @@ public class VolcanoManager implements ISimulationTickable, ISimulationTopNode
          * will only be updated by server tick thread.
          */
         private int weight = 0;
-        private VolcanoStage stage;
+        private @Nullable VolcanoStage stage;
         
         private int height = 0;
         
@@ -236,7 +230,7 @@ public class VolcanoManager implements ISimulationTickable, ISimulationTopNode
         /** stores total world time of last TE update */
         private volatile long keepAlive;
         
-        private Location location;
+        private @Nullable Location location;
         
         private boolean isDirty;
         
@@ -247,7 +241,7 @@ public class VolcanoManager implements ISimulationTickable, ISimulationTopNode
          */
         private volatile int lastActivationTick;
         
-        public VolcanoNode(Location location)
+        public VolcanoNode(@Nullable Location location)
         {
             this.location = location;
         }
@@ -408,7 +402,7 @@ public class VolcanoManager implements ISimulationTickable, ISimulationTopNode
         public int getY() { return this.location.getY(); }
         public int getZ() { return this.location.getZ(); }
         public int getDimension() { return this.location.dimensionID(); }
-        public Location getLocation() { return this.location; }
+        public @Nullable Location getLocation() { return this.location; }
         public int getWeight() { return this.weight; }
         public boolean isActive() { return this.isActive; }
         public int getLastActivationTick() { return this.lastActivationTick; }

@@ -1,6 +1,7 @@
 package grondag.big_volcano;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -59,7 +60,7 @@ public class BigActiveVolcano  implements IGrondagMod
     private static Logger log;
 
     @Override
-    public Logger getLog()
+    public @Nullable Logger getLog()
     {
         // allow access to log during unit testing or other debug scenarios
         if(BigActiveVolcano.log == null) BigActiveVolcano.log = LogManager.getLogger();

@@ -254,7 +254,7 @@ public class WorldStateBuffer implements IBlockAccess
     // FOLLOWING ARE UNSUPPORTED
     
     @Override
-    public TileEntity getTileEntity(@Nonnull BlockPos pos)
+    public @Nullable TileEntity getTileEntity(@Nonnull BlockPos pos)
     {
         return this.realWorld.getTileEntity(pos);
     }

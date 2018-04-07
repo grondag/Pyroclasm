@@ -7,7 +7,6 @@ import java.util.concurrent.Executor;
 
 import javax.annotation.Nullable;
 
-import com.google.common.base.Objects;
 import com.google.common.collect.ComparisonChain;
 
 import grondag.big_volcano.BigActiveVolcano;

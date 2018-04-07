@@ -1,7 +1,6 @@
 package grondag.big_volcano.init;
 
 import grondag.big_volcano.BigActiveVolcano;
-import grondag.big_volcano.Configurator;
 import grondag.big_volcano.core.VolcanoBlock;
 import grondag.big_volcano.lava.CoolingBasaltBlock;
 import grondag.big_volcano.lava.LavaBlock;

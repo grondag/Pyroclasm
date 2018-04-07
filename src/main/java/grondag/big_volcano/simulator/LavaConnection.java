@@ -8,7 +8,6 @@ import javax.annotation.Nullable;
 
 import grondag.big_volcano.Configurator;
 import grondag.big_volcano.simulator.LavaConnections.SortBucket;
-import grondag.exotic_matter.simulator.Simulator;
 
 public class LavaConnection
 {

@@ -1,6 +1,7 @@
 package grondag.big_volcano.lava;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import grondag.big_volcano.simulator.LavaCell;
 import grondag.big_volcano.simulator.LavaSimulator;
@@ -119,7 +120,7 @@ public class LavaBlock extends TerrainDynamicBlock
 
     @Override
     @Optional.Method(modid = "theoneprobe")
-    public void addProbeInfo(ProbeMode mode, IProbeInfo probeInfo, EntityPlayer player, World world, IBlockState blockState, IProbeHitData data)
+    public void addProbeInfo(@Nullable ProbeMode mode, @Nullable IProbeInfo probeInfo, @Nullable EntityPlayer player, @Nullable World world, @Nullable IBlockState blockState, @Nullable IProbeHitData data)
     {
         super.addProbeInfo(mode, probeInfo, player, world, blockState, data);
         LavaSimulator sim = Simulator.instance().getNode(LavaSimulator.class);

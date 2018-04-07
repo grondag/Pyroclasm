@@ -3,6 +3,7 @@ package grondag.big_volcano.core;
 import java.util.Random;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import grondag.big_volcano.BigActiveVolcano;
 import net.minecraft.block.Block;
@@ -34,7 +35,7 @@ public class VolcanoBlock extends Block implements ITileEntityProvider {
 
 
     @Override
-    public TileEntity createNewTileEntity(@Nonnull World worldIn, int meta)
+    public @Nullable TileEntity createNewTileEntity(@Nonnull World worldIn, int meta)
     {
         return new VolcanoTileEntity();
     }

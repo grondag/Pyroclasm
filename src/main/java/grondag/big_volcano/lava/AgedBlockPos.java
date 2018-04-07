@@ -1,8 +1,6 @@
 package grondag.big_volcano.lava;
 
 
-import java.util.function.Predicate;
-
 import javax.annotation.Nullable;
 
 import grondag.exotic_matter.varia.PackedBlockPos;

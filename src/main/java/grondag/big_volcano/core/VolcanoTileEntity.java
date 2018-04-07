@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.concurrent.ThreadLocalRandom;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import grondag.big_volcano.BigActiveVolcano;
 import grondag.big_volcano.Configurator;
@@ -530,7 +531,7 @@ public class VolcanoTileEntity extends TileEntity implements ITickable
      * Client doesn't do anything.
      */
     @Override
-    public SPacketUpdateTileEntity getUpdatePacket()
+    public @Nullable SPacketUpdateTileEntity getUpdatePacket()
     {
         return null;
     }

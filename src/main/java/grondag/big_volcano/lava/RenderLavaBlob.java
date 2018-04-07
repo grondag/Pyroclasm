@@ -3,6 +3,7 @@ package grondag.big_volcano.lava;
 import java.util.List;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import grondag.exotic_matter.render.QuadHelper;
 import grondag.exotic_matter.render.RawQuad;
@@ -73,7 +74,7 @@ public class RenderLavaBlob extends Render<EntityLavaBlob>
      * Returns the location of an entity's texture. Doesn't seem to be called unless you call Render.bindEntityTexture.
      */
     @Override
-    protected ResourceLocation getEntityTexture(@Nonnull EntityLavaBlob entity)
+    protected @Nullable ResourceLocation getEntityTexture(@Nonnull EntityLavaBlob entity)
     {
         return TEXTURE;
     }
