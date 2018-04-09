@@ -268,9 +268,11 @@ public class LavaConnection
             return false;
         }
            
-     
-        this.flowRemainingThisTick =  flowWindow / 4;
-        this.maxFlowPerStep = flowWindow / 16;
+        //FIXME: put back or accept new way and simply code
+//        this.flowRemainingThisTick =  flowWindow / 4;
+//        this.maxFlowPerStep = flowWindow / 16;
+        this.flowRemainingThisTick =  flowWindow;
+        this.maxFlowPerStep = flowWindow;
         return true;
     }
     
