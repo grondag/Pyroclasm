@@ -5,13 +5,13 @@ import java.util.List;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import grondag.exotic_matter.render.Poly;
 import grondag.exotic_matter.render.QuadHelper;
-import grondag.exotic_matter.render.RawQuad;
 import grondag.exotic_matter.render.Vertex;
+import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.GLAllocation;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.entity.Render;
 import net.minecraft.client.renderer.entity.RenderManager;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
@@ -33,7 +33,7 @@ public class RenderLavaBlob extends Render<EntityLavaBlob>
 
     private static final ResourceLocation TEXTURE = new ResourceLocation("big_volcano:textures/entity/lava.png");
 
-    private static final List<RawQuad> quads = QuadHelper.makeIcosahedron(new Vec3d(0,0,0), 0.5, new RawQuad());
+    private static final List<Poly> quads = QuadHelper.makeIcosahedron(new Vec3d(0,0,0), 0.5, new Poly());
 
     @Override
     public void doRender(@Nonnull EntityLavaBlob entity, double x, double y, double z, float entityYaw, float partialTicks)
@@ -91,7 +91,7 @@ public class RenderLavaBlob extends Render<EntityLavaBlob>
 
         vertexbuffer.begin(7, DefaultVertexFormats.POSITION_TEX_NORMAL);
 
-        for(RawQuad q : quads)
+        for(Poly q : quads)
         {
             for(int i = 0; i < 4; i++)
             {
