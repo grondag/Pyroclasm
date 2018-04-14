@@ -96,7 +96,7 @@ public class RenderLavaBlob extends Render<EntityLavaBlob>
             for(int i = 0; i < 4; i++)
             {
                 Vertex v = q.getVertex(i);
-                Vec3d n = v.getNormal();
+                Vec3d n = new Vec3d(v.normalX, v.normalY, v.normalZ);
                 vertexbuffer.pos(v.x, v.y, v.z).tex(v.u, v.v).normal((float)n.x, (float)n.y, (float)n.z).endVertex();
             }
         }
