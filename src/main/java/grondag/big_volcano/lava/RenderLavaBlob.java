@@ -5,6 +5,7 @@ import java.util.List;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import grondag.exotic_matter.render.IPolygon;
 import grondag.exotic_matter.render.Poly;
 import grondag.exotic_matter.render.QuadHelper;
 import grondag.exotic_matter.render.Vertex;
@@ -33,7 +34,7 @@ public class RenderLavaBlob extends Render<EntityLavaBlob>
 
     private static final ResourceLocation TEXTURE = new ResourceLocation("big_volcano:textures/entity/lava.png");
 
-    private static final List<Poly> quads = QuadHelper.makeIcosahedron(new Vec3d(0,0,0), 0.5, new Poly());
+    private static final List<IPolygon> quads = QuadHelper.makeIcosahedron(new Vec3d(0,0,0), 0.5, Poly.mutable(4));
 
     @Override
     public void doRender(@Nonnull EntityLavaBlob entity, double x, double y, double z, float entityYaw, float partialTicks)
@@ -91,7 +92,7 @@ public class RenderLavaBlob extends Render<EntityLavaBlob>
 
         vertexbuffer.begin(7, DefaultVertexFormats.POSITION_TEX_NORMAL);
 
-        for(Poly q : quads)
+        for(IPolygon q : quads)
         {
             for(int i = 0; i < 4; i++)
             {
@@ -104,8 +105,6 @@ public class RenderLavaBlob extends Render<EntityLavaBlob>
         Tessellator.getInstance().draw();
 
         GlStateManager.glEndList();
-
-
 
     }
 
