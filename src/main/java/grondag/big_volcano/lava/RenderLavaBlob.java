@@ -6,6 +6,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import grondag.exotic_matter.render.IPolygon;
+import grondag.exotic_matter.render.IPolygonVertex;
 import grondag.exotic_matter.render.Poly;
 import grondag.exotic_matter.render.QuadHelper;
 import grondag.exotic_matter.render.Vertex;
@@ -96,9 +97,9 @@ public class RenderLavaBlob extends Render<EntityLavaBlob>
         {
             for(int i = 0; i < 4; i++)
             {
-                Vertex v = q.getVertex(i);
-                Vec3d n = new Vec3d(v.normalX, v.normalY, v.normalZ);
-                vertexbuffer.pos(v.x, v.y, v.z).tex(v.u, v.v).normal((float)n.x, (float)n.y, (float)n.z).endVertex();
+                IPolygonVertex v = q.getVertex(i);
+                Vec3d n = new Vec3d(v.normalX(), v.normalY(), v.normalZ());
+                vertexbuffer.pos(v.x(), v.y(), v.z()).tex(v.u(), v.v()).normal((float)n.x, (float)n.y, (float)n.z).endVertex();
             }
         }
 
