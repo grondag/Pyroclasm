@@ -205,7 +205,7 @@ public class LavaConnections  implements Iterable<LavaConnection>
         @Override
         public boolean test(@Nullable LavaConnection t)
         {
-            return t.isDeleted() || t.getLastSortBucket() != t.getSortBucket();
+            return t == null || t.isDeleted() || t.getLastSortBucket() != t.getSortBucket();
         }
     };
     
