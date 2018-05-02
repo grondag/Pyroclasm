@@ -18,7 +18,7 @@ import grondag.exotic_matter.concurrency.PerformanceCounter;
 import grondag.exotic_matter.concurrency.SimpleConcurrentList;
 import grondag.exotic_matter.serialization.NBTDictionary;
 import grondag.exotic_matter.simulator.Simulator;
-import grondag.exotic_matter.varia.PackedBlockPos;
+import grondag.exotic_matter.varia.PackedChunkPos;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap.Entry;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import net.minecraft.nbt.NBTTagCompound;
@@ -318,7 +318,7 @@ public class LavaCells implements Iterable<LavaCell>
      */
     public LavaCell getCellIfExists(int x, int y, int z)
     {
-        CellChunk chunk = cellChunks.get(PackedBlockPos.getPackedChunkPos(x, z));
+        CellChunk chunk = cellChunks.get(PackedChunkPos.getPackedChunkPos(x, z));
         if(chunk == null) return null;
         LavaCell entryCell = chunk.getEntryCell(x, z);
         return entryCell == null ? null : entryCell.getCellIfExists(y);
@@ -332,7 +332,7 @@ public class LavaCells implements Iterable<LavaCell>
      */
     public @Nullable LavaCell getEntryCell(int x, int z)
     {
-        CellChunk chunk = cellChunks.get(PackedBlockPos.getPackedChunkPos(x, z));
+        CellChunk chunk = cellChunks.get(PackedChunkPos.getPackedChunkPos(x, z));
         return chunk == null ? null : chunk.getEntryCell(x, z);
     }
     
@@ -352,16 +352,16 @@ public class LavaCells implements Iterable<LavaCell>
      */
     public CellChunk getOrCreateCellChunk(int xBlock, int zBlock)
     {
-        CellChunk chunk = cellChunks.get(PackedBlockPos.getPackedChunkPos(xBlock, zBlock));
+        CellChunk chunk = cellChunks.get(PackedChunkPos.getPackedChunkPos(xBlock, zBlock));
         if(chunk == null)
         {
             synchronized(this)
             {
                 //confirm not added by another thread
-                chunk = cellChunks.get(PackedBlockPos.getPackedChunkPos(xBlock, zBlock));
+                chunk = cellChunks.get(PackedChunkPos.getPackedChunkPos(xBlock, zBlock));
                 if(chunk == null)
                 {
-                    chunk = new CellChunk(PackedBlockPos.getPackedChunkPos(xBlock, zBlock), this);
+                    chunk = new CellChunk(PackedChunkPos.getPackedChunkPos(xBlock, zBlock), this);
                     this.cellChunks.put(chunk.packedChunkPos, chunk);
                 }
             }
@@ -515,8 +515,8 @@ public class LavaCells implements Iterable<LavaCell>
         BigActiveVolcano.INSTANCE.info(this.cellChunks.size() + " loaded cell chunks");
         for(CellChunk chunk : this.cellChunks.values())
         {
-            BigActiveVolcano.INSTANCE.info("xStart=" + PackedBlockPos.getChunkXStart(chunk.packedChunkPos)
-                + " zStart=" + PackedBlockPos.getChunkZStart(chunk.packedChunkPos)
+            BigActiveVolcano.INSTANCE.info("xStart=" + PackedChunkPos.getChunkXStart(chunk.packedChunkPos)
+                + " zStart=" + PackedChunkPos.getChunkZStart(chunk.packedChunkPos)
                 + " activeCount=" + chunk.getActiveCount() + " entryCount=" + chunk.getEntryCount());
             
         }

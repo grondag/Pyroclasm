@@ -1,7 +1,7 @@
 package grondag.big_volcano.simulator;
 
 import grondag.big_volcano.simulator.WorldStateBuffer.ChunkBuffer;
-import grondag.exotic_matter.varia.PackedBlockPos;
+import grondag.exotic_matter.varia.PackedChunkPos;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.world.chunk.Chunk;
 
@@ -15,10 +15,10 @@ public class ColumnChunkBuffer
     
     public void readChunk(Chunk chunk)
     {
-        this.packedChunkPos = PackedBlockPos.getPackedChunkPos(chunk);
+        this.packedChunkPos = PackedChunkPos.getPackedChunkPos(chunk);
         
-        final int xStart = PackedBlockPos.getChunkXStart(packedChunkPos);
-        final int zStart = PackedBlockPos.getChunkZStart(packedChunkPos);
+        final int xStart = PackedChunkPos.getChunkXStart(packedChunkPos);
+        final int zStart = PackedChunkPos.getChunkZStart(packedChunkPos);
         
         //chunk data is optimized for horizontal plane access
         //we are optimized for column access
@@ -39,8 +39,8 @@ public class ColumnChunkBuffer
     {
         this.packedChunkPos = chunkBuffer.getPackedChunkPos();
         
-        final int xStart = PackedBlockPos.getChunkXStart(packedChunkPos);
-        final int zStart = PackedBlockPos.getChunkZStart(packedChunkPos);
+        final int xStart = PackedChunkPos.getChunkXStart(packedChunkPos);
+        final int zStart = PackedChunkPos.getChunkZStart(packedChunkPos);
         
         //chunk data is optimized for horizontal plane access
         //we are optimized for column access

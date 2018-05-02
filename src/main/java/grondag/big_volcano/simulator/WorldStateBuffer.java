@@ -28,6 +28,7 @@ import grondag.exotic_matter.serialization.NBTDictionary;
 import grondag.exotic_matter.simulator.Simulator;
 import grondag.exotic_matter.terrain.TerrainStaticBlock;
 import grondag.exotic_matter.varia.PackedBlockPos;
+import grondag.exotic_matter.varia.PackedChunkPos;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
@@ -91,7 +92,7 @@ public class WorldStateBuffer implements IBlockAccess
     
     public IBlockState getBlockState(int x, int y, int z)
     {                
-        ChunkBuffer chunk = chunks.get(PackedBlockPos.getPackedChunkPos(x, z));
+        ChunkBuffer chunk = chunks.get(PackedChunkPos.getPackedChunkPos(x, z));
         
         if(chunk == null) 
         {            
@@ -124,7 +125,7 @@ public class WorldStateBuffer implements IBlockAccess
      */
     public void clearBlockState(BlockPos pos)
     {
-        ChunkBuffer chunk = this.getChunkBufferIfExists(PackedBlockPos.getPackedChunkPos(pos));
+        ChunkBuffer chunk = this.getChunkBufferIfExists(PackedChunkPos.getPackedChunkPos(pos));
         if(chunk != null)
         {
             chunk.clearBlockState(pos.getX(), pos.getY(), pos.getZ());
@@ -140,7 +141,7 @@ public class WorldStateBuffer implements IBlockAccess
     
     private ChunkBuffer getChunkBuffer(int blockX, int blockZ)
     {
-        long packedChunkPos = PackedBlockPos.getPackedChunkPos(blockX, blockZ);
+        long packedChunkPos = PackedChunkPos.getPackedChunkPos(blockX, blockZ);
         
         ChunkBuffer chunk = chunks.get(packedChunkPos);
         
@@ -546,8 +547,8 @@ public class WorldStateBuffer implements IBlockAccess
         
         public Collection<BlockPos> getAdjustmentPositions(long packedChunkPos)
         {
-            this.chunkXStart = PackedBlockPos.getChunkXStart(packedChunkPos);
-            this.chunkZStart = PackedBlockPos.getChunkZStart(packedChunkPos);
+            this.chunkXStart = PackedChunkPos.getChunkXStart(packedChunkPos);
+            this.chunkZStart = PackedChunkPos.getChunkZStart(packedChunkPos);
             bits.andNot(exclusions);
             return bits.stream().mapToObj(i -> getBlockPos(i)).collect(Collectors.toList());
         }
@@ -697,8 +698,8 @@ public class WorldStateBuffer implements IBlockAccess
             int count = this.dataCount.get();
             int allRemaining = count;
             
-            int chunkStartX = PackedBlockPos.getChunkXStart(this.packedChunkpos);
-            int chunkStartZ = PackedBlockPos.getChunkZStart(this.packedChunkpos);
+            int chunkStartX = PackedChunkPos.getChunkXStart(this.packedChunkpos);
+            int chunkStartZ = PackedChunkPos.getChunkZStart(this.packedChunkpos);
             
 //            HardScience.log.info(sim.getTickIndex() + " Applying " + count + " block updates for chunk with startX=" + chunkStartX + " and startZ=" + chunkStartZ);
             
@@ -764,8 +765,8 @@ public class WorldStateBuffer implements IBlockAccess
         private int writeSaveData(int[] saveData, int startingIndex)
         {
             int allRemaining = this.size();
-            int chunkStartX = PackedBlockPos.getChunkXStart(this.packedChunkpos);
-            int chunkStartZ = PackedBlockPos.getChunkZStart(this.packedChunkpos);
+            int chunkStartX = PackedChunkPos.getChunkXStart(this.packedChunkpos);
+            int chunkStartZ = PackedChunkPos.getChunkZStart(this.packedChunkpos);
             
             for(int y = 0; y < 256; y++)
             {

@@ -3,7 +3,7 @@ package grondag.big_volcano;
 import org.junit.Test;
 
 import grondag.big_volcano.simulator.WorldStateBuffer;
-import grondag.exotic_matter.varia.PackedBlockPos;
+import grondag.exotic_matter.varia.PackedChunkPos;
 
 public class WorldStateBufferTest
 {
@@ -27,7 +27,7 @@ public class WorldStateBufferTest
         
         at.excludeAdjustmentNeededAt(3, 12, 8);
         
-        at.getAdjustmentPositions(PackedBlockPos.getPackedChunkPos(3, 7)).forEach(p -> System.out.println(p.toString()));
+        at.getAdjustmentPositions(PackedChunkPos.getPackedChunkPos(3, 7)).forEach(p -> System.out.println(p.toString()));
     
     }
 

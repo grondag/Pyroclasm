@@ -3,7 +3,7 @@ package grondag.big_volcano.simulator;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import grondag.big_volcano.simulator.WorldStateBuffer.ChunkBuffer;
-import grondag.exotic_matter.varia.PackedBlockPos;
+import grondag.exotic_matter.varia.PackedChunkPos;
 import net.minecraft.world.chunk.Chunk;
 /**
  * Manages snapshots of chunk data to be used for creating and updating lava cells.
@@ -36,7 +36,7 @@ public class CellChunkLoader
         {
             // nothing in world buffer, so can use raw chunk from world
             this.queueChunkBuffer(worldBuffer.realWorld
-                    .getChunkFromChunkCoords(PackedBlockPos.getChunkXPos(packedChunkPos), PackedBlockPos.getChunkZPos(packedChunkPos)));
+                    .getChunkFromChunkCoords(PackedChunkPos.getChunkXPos(packedChunkPos), PackedChunkPos.getChunkZPos(packedChunkPos)));
         }
         else
         {

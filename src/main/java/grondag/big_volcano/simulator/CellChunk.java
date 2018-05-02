@@ -5,7 +5,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import grondag.big_volcano.BigActiveVolcano;
 import grondag.big_volcano.Configurator;
 import grondag.exotic_matter.simulator.Simulator;
-import grondag.exotic_matter.varia.PackedBlockPos;
+import grondag.exotic_matter.varia.PackedChunkPos;
 /**
  * Container for all cells in a world chunk.
  * When a chunk is loaded (or updated) all cells that can exist in the chunk are created.
@@ -75,8 +75,8 @@ public class CellChunk
     CellChunk(long packedChunkPos, LavaCells cells)
     {
         this.packedChunkPos = packedChunkPos;
-        this.xStart = PackedBlockPos.getChunkXStart(packedChunkPos);
-        this.zStart = PackedBlockPos.getChunkZStart(packedChunkPos);
+        this.xStart = PackedChunkPos.getChunkXStart(packedChunkPos);
+        this.zStart = PackedChunkPos.getChunkZStart(packedChunkPos);
         this.cells = cells;
         
         if(Configurator.VOLCANO.enableLavaChunkBufferTrace)

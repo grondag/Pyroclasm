@@ -10,7 +10,7 @@ import grondag.exotic_matter.serialization.IReadWriteNBT;
 import grondag.exotic_matter.serialization.NBTDictionary;
 import grondag.exotic_matter.simulator.Simulator;
 import grondag.exotic_matter.simulator.persistence.IDirtKeeper;
-import grondag.exotic_matter.varia.PackedBlockPos;
+import grondag.exotic_matter.varia.PackedChunkPos;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.math.ChunkPos;
 
@@ -73,7 +73,7 @@ public class VolcanoNode implements IReadWriteNBT, IDirtKeeper
         
         public long packedChunkPos()
         {
-            return PackedBlockPos.getPackedChunkPos(this.position);
+            return PackedChunkPos.getPackedChunkPos(this.position);
         }
         
         @Override
@@ -132,7 +132,7 @@ public class VolcanoNode implements IReadWriteNBT, IDirtKeeper
             this.weight = nbt.getInteger(NBT_VOLCANO_NODE_TAG_WEIGHT);                  
             this.height = nbt.getInteger(NBT_VOLCANO_NODE_TAG_HEIGHT);
             this.stage = VolcanoStage.values()[nbt.getInteger(NBT_VOLCANO_NODE_TAG_STAGE)];
-            this.position = PackedBlockPos.unpackChunkPos(nbt.getLong(NBT_VOLCANO_NODE_TAG_POSITION));
+            this.position = PackedChunkPos.unpackChunkPos(nbt.getLong(NBT_VOLCANO_NODE_TAG_POSITION));
             this.isActive = nbt.getBoolean(NBT_VOLCANO_NODE_TAG_ACTIVE);
             this.lastActivationTick = nbt.getInteger(NBT_VOLCANO_NODE_TAG_LAST_ACTIVATION_TICK);
         }
@@ -146,7 +146,7 @@ public class VolcanoNode implements IReadWriteNBT, IDirtKeeper
                 nbt.setInteger(NBT_VOLCANO_NODE_TAG_WEIGHT, this.weight);
                 nbt.setInteger(NBT_VOLCANO_NODE_TAG_HEIGHT, this.height);
                 nbt.setInteger(NBT_VOLCANO_NODE_TAG_STAGE, this.stage.ordinal());
-                nbt.setLong(NBT_VOLCANO_NODE_TAG_POSITION, PackedBlockPos.getPackedChunkPos(this.position));
+                nbt.setLong(NBT_VOLCANO_NODE_TAG_POSITION, PackedChunkPos.getPackedChunkPos(this.position));
                 nbt.setBoolean(NBT_VOLCANO_NODE_TAG_ACTIVE, this.isActive);
                 nbt.setInteger(NBT_VOLCANO_NODE_TAG_LAST_ACTIVATION_TICK, this.lastActivationTick);
             }
