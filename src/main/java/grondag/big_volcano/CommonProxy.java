@@ -3,7 +3,6 @@ package grondag.big_volcano;
 import grondag.big_volcano.init.ModBlocks;
 import grondag.big_volcano.init.ModEntities;
 import grondag.big_volcano.init.ModRecipes;
-import grondag.big_volcano.init.ModTileEntities;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
@@ -14,7 +13,6 @@ public class CommonProxy
 	{
 		BigActiveVolcano.setLog(event.getModLog());
 		Configurator.recalcDerived();
-		ModTileEntities.preInit(event);
 		ModEntities.preInit(event);
 	}
 

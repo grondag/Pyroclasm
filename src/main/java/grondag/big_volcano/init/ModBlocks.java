@@ -1,7 +1,6 @@
 package grondag.big_volcano.init;
 
 import grondag.big_volcano.BigActiveVolcano;
-import grondag.big_volcano.core.VolcanoBlock;
 import grondag.big_volcano.lava.CoolingBasaltBlock;
 import grondag.big_volcano.lava.LavaBlock;
 import grondag.exotic_matter.block.SuperSimpleBlock;
@@ -70,8 +69,6 @@ public class ModBlocks
         workingModel.setColorMap(PaintLayer.BASE, BlockColorMapProvider.COLOR_BASALT);
         event.getRegistry().register(new SuperSimpleBlock(prefix("basalt_cobble"), ModSubstances.BASALT, workingModel).setCreativeTab(BigActiveVolcano.tabMod));
 
-        event.getRegistry().register(new VolcanoBlock().setCreativeTab(BigActiveVolcano.tabMod));
-        
         workingModel = new ModelState();
         workingModel.setShape(ModShapes.TERRAIN_HEIGHT);
         workingModel.setTexture(PaintLayer.BASE, ModTextures.BIGTEX_BASALT_COOL_ZOOM);

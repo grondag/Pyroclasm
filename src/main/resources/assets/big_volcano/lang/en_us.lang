@@ -44,6 +44,8 @@ texture.basalt_hot=Hot Basalt
 texture.basalt_very_hot=Very Hot Basalt
 texture.basalt_hint=Basalt Hint
 
-
+#COMMANDS
+commands.volcano.usage=Use /volcano <status | mark | unmark | wake | pause | sleep> 
+commands.volcano.mark.usage=Marks all nearby volcanos by placing a pillar of blocks
 
 

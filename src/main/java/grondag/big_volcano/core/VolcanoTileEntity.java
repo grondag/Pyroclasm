@@ -15,7 +15,7 @@ import grondag.big_volcano.simulator.LavaCell;
 import grondag.big_volcano.simulator.LavaCells;
 import grondag.big_volcano.simulator.LavaSimulator;
 import grondag.big_volcano.simulator.VolcanoManager;
-import grondag.big_volcano.simulator.VolcanoManager.VolcanoNode;
+import grondag.big_volcano.simulator.VolcanoNode;
 import grondag.exotic_matter.model.ISuperBlock;
 import grondag.exotic_matter.serialization.NBTDictionary;
 import grondag.exotic_matter.simulator.Simulator;
@@ -97,19 +97,7 @@ public class VolcanoTileEntity extends TileEntity implements ITickable
         }
     }
 
-    public static enum VolcanoStage
-    {
-        NEW,
-        /** Clearing central bore, verifying can see sky */
-        CLEARING,
-        /** Can see sky and blowing out lava */
-        FLOWING,
-        /** Flow temporarily stopped to allow for cooling. */
-        COOLING,
-        /** Waiting for activation */
-        DORMANT,
-        DEAD
-    }
+    
 
 
 //    private void makeHaze() {
@@ -165,12 +153,12 @@ public class VolcanoTileEntity extends TileEntity implements ITickable
             }
             else
             {
-                this.node = volcanoSim.findNode(this.pos, this.world.provider.getDimension());
+//                this.node = volcanoSim.findNode(this.pos, this.world.provider.getDimension());
                 
                 if(node == null)
                 {
                     BigActiveVolcano.INSTANCE.info("Setting up new Volcano Node @" + this.pos.toString());
-                    this.node = volcanoSim.createNode(this.pos,this.world.provider.getDimension());
+//                    this.node = volcanoSim.createNode(this.pos,this.world.provider.getDimension());
                     this.stage = VolcanoStage.DORMANT;
                 }
                 else
@@ -222,7 +210,7 @@ public class VolcanoTileEntity extends TileEntity implements ITickable
 
         if(isNodeUpdateNeeded || this.stage != oldStage || (this.ticksActive & 0xFF) == 0xFF )
         {
-            node.updateWorldState(ticksActive + 1000, level, stage);
+//            node.updateWorldState(ticksActive + 1000, level, stage);
             this.markDirty();
         }
 
