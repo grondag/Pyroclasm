@@ -92,7 +92,7 @@ public class WorldStateBuffer implements IBlockAccess
     
     public IBlockState getBlockState(int x, int y, int z)
     {                
-        ChunkBuffer chunk = chunks.get(PackedChunkPos.getPackedChunkPos(x, z));
+        ChunkBuffer chunk = chunks.get(PackedChunkPos.getPackedChunkPosFromBlockXZ(x, z));
         
         if(chunk == null) 
         {            
@@ -141,7 +141,7 @@ public class WorldStateBuffer implements IBlockAccess
     
     private ChunkBuffer getChunkBuffer(int blockX, int blockZ)
     {
-        long packedChunkPos = PackedChunkPos.getPackedChunkPos(blockX, blockZ);
+        long packedChunkPos = PackedChunkPos.getPackedChunkPosFromBlockXZ(blockX, blockZ);
         
         ChunkBuffer chunk = chunks.get(packedChunkPos);
         

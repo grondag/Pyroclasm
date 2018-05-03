@@ -33,10 +33,6 @@ public class ModItems
         itemReg.register(new LavaBlobItem().setRegistryName("lava_blob").setUnlocalizedName("lava_blob").setCreativeTab(BigActiveVolcano.tabMod));
         
         itemReg.register(new TerrainWand().setCreativeTab(BigActiveVolcano.tabMod));
-        
-        ItemBlock volcanoItemBlock = new ItemBlock(ModBlocks.volcano_block);
-        volcanoItemBlock.setRegistryName(ModBlocks.volcano_block.getRegistryName());
-        itemReg.register(volcanoItemBlock);
     }
 
   

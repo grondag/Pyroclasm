@@ -318,7 +318,7 @@ public class LavaCells implements Iterable<LavaCell>
      */
     public LavaCell getCellIfExists(int x, int y, int z)
     {
-        CellChunk chunk = cellChunks.get(PackedChunkPos.getPackedChunkPos(x, z));
+        CellChunk chunk = cellChunks.get(PackedChunkPos.getPackedChunkPosFromBlockXZ(x, z));
         if(chunk == null) return null;
         LavaCell entryCell = chunk.getEntryCell(x, z);
         return entryCell == null ? null : entryCell.getCellIfExists(y);
@@ -332,7 +332,7 @@ public class LavaCells implements Iterable<LavaCell>
      */
     public @Nullable LavaCell getEntryCell(int x, int z)
     {
-        CellChunk chunk = cellChunks.get(PackedChunkPos.getPackedChunkPos(x, z));
+        CellChunk chunk = cellChunks.get(PackedChunkPos.getPackedChunkPosFromBlockXZ(x, z));
         return chunk == null ? null : chunk.getEntryCell(x, z);
     }
     
@@ -352,16 +352,16 @@ public class LavaCells implements Iterable<LavaCell>
      */
     public CellChunk getOrCreateCellChunk(int xBlock, int zBlock)
     {
-        CellChunk chunk = cellChunks.get(PackedChunkPos.getPackedChunkPos(xBlock, zBlock));
+        CellChunk chunk = cellChunks.get(PackedChunkPos.getPackedChunkPosFromBlockXZ(xBlock, zBlock));
         if(chunk == null)
         {
             synchronized(this)
             {
                 //confirm not added by another thread
-                chunk = cellChunks.get(PackedChunkPos.getPackedChunkPos(xBlock, zBlock));
+                chunk = cellChunks.get(PackedChunkPos.getPackedChunkPosFromBlockXZ(xBlock, zBlock));
                 if(chunk == null)
                 {
-                    chunk = new CellChunk(PackedChunkPos.getPackedChunkPos(xBlock, zBlock), this);
+                    chunk = new CellChunk(PackedChunkPos.getPackedChunkPosFromBlockXZ(xBlock, zBlock), this);
                     this.cellChunks.put(chunk.packedChunkPos, chunk);
                 }
             }

@@ -27,7 +27,7 @@ public class WorldStateBufferTest
         
         at.excludeAdjustmentNeededAt(3, 12, 8);
         
-        at.getAdjustmentPositions(PackedChunkPos.getPackedChunkPos(3, 7)).forEach(p -> System.out.println(p.toString()));
+        at.getAdjustmentPositions(PackedChunkPos.getPackedChunkPosFromBlockXZ(3, 7)).forEach(p -> System.out.println(p.toString()));
     
     }
 

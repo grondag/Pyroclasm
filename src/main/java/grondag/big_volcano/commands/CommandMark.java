@@ -1,6 +1,9 @@
 package grondag.big_volcano.commands;
 
+import java.util.Map;
+
 import grondag.big_volcano.BigActiveVolcano;
+import grondag.big_volcano.core.VolcanoStage;
 import grondag.big_volcano.simulator.VolcanoManager;
 import grondag.exotic_matter.simulator.Simulator;
 import net.minecraft.command.CommandBase;
@@ -39,8 +42,10 @@ public class CommandMark extends CommandBase
         {
             VolcanoManager vm = Simulator.instance().getNode(VolcanoManager.class);
             World world = sender.getEntityWorld();
-            for(BlockPos pos : vm.nearbyVolcanos(sender.getPosition()))
+            for(Map.Entry<BlockPos, VolcanoStage> entry : vm.nearbyVolcanos(sender.getPosition()).entrySet())
             {
+                BlockPos pos = entry.getKey();
+                
                 for(int y = 255; y > 64; y--)
                 {
                     BlockPos target = new BlockPos(pos.getX(), y, pos.getZ());

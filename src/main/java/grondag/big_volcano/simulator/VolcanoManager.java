@@ -3,20 +3,30 @@ package grondag.big_volcano.simulator;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Function;
+import java.util.function.LongFunction;
 
 import javax.annotation.Nullable;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 
+import grondag.big_volcano.BigActiveVolcano;
+import grondag.big_volcano.core.VolcanoStage;
 import grondag.exotic_matter.ExoticMatter;
 import grondag.exotic_matter.serialization.NBTDictionary;
 import grondag.exotic_matter.simulator.ISimulationTickable;
 import grondag.exotic_matter.simulator.Simulator;
 import grondag.exotic_matter.simulator.persistence.ISimulationTopNode;
 import grondag.exotic_matter.varia.BlueNoise;
+import grondag.exotic_matter.varia.PackedChunkPos;
 import grondag.exotic_matter.varia.Useful;
+import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+import it.unimi.dsi.fastutil.longs.Long2ObjectMaps;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import net.minecraft.init.Blocks;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.util.math.BlockPos;
@@ -33,11 +43,20 @@ public class VolcanoManager implements ISimulationTickable, ISimulationTopNode
     private static final String NBT_VOLCANO_NODES = NBTDictionary.claim("volcNodes");
     private static final String NBT_VOLCANO_MANAGER_IS_CREATED = NBTDictionary.claim("volcExists");
     
-    private World world;
+    @SuppressWarnings("serial")
+    public static class VolcanoCommandException extends Exception
+    {
+        public VolcanoCommandException(String message)
+        {
+            super(message);
+        }
+    }
     
-    private final Long2ObjectOpenHashMap<VolcanoNode> nodes = new Long2ObjectOpenHashMap<VolcanoNode>();
+    private @Nullable World world;
     
-    final Long2ObjectOpenHashMap<VolcanoNode> activeNodes = new Long2ObjectOpenHashMap<VolcanoNode>();
+    private final Long2ObjectMap<VolcanoNode> nodes = Long2ObjectMaps.synchronize(new Long2ObjectOpenHashMap<VolcanoNode>());
+    
+    final Long2ObjectMap<VolcanoNode> activeNodes =  Long2ObjectMaps.synchronize(new Long2ObjectOpenHashMap<VolcanoNode>());
     
     private boolean isDirty = true;
     
@@ -49,7 +68,13 @@ public class VolcanoManager implements ISimulationTickable, ISimulationTopNode
     @Override
     public void afterCreated(Simulator sim)
     {
+        this.world = sim.getWorld();
         this.noise = BlueNoise.create(256, 24, sim.getWorld().getSeed());
+    }
+    
+    public int dimension()
+    {
+        return this.world == null ? Integer.MIN_VALUE : this.world.provider.getDimension();
     }
     
     public boolean isVolcanoChunk(Chunk chunk)
@@ -72,7 +97,31 @@ public class VolcanoManager implements ISimulationTickable, ISimulationTopNode
         return isVolcanoChunk(pos.getX() >> 4, pos.getZ() >> 4);
     }
     
-    public @Nullable BlockPos nearestVolcano(BlockPos pos)
+    public @Nullable BlockPos nearestVolcanoPos(BlockPos pos)
+    {
+        ChunkPos cp = nearestVolcanoChunk(pos);
+        return cp == null ? null : blockPosFromChunkPos(cp);
+    }
+    
+    private VolcanoNode getOrCreateNode(ChunkPos chunkPos)
+    {
+        long key = PackedChunkPos.getPackedChunkPos(chunkPos);
+        VolcanoNode node;
+        
+        node = this.nodes.computeIfAbsent(key, new Function<Long, VolcanoNode>()
+        {
+            @Override
+            public VolcanoNode apply(Long k)
+            {
+                VolcanoManager.this.setDirty();
+                return new VolcanoNode(VolcanoManager.this, chunkPos);
+            }
+        });
+        
+        return node;
+    }
+    
+    private @Nullable ChunkPos nearestVolcanoChunk(BlockPos pos)
     {
         final int originX = pos.getX() >> 4;
         final int originZ = pos.getZ() >> 4;
@@ -83,18 +132,58 @@ public class VolcanoManager implements ISimulationTickable, ISimulationTopNode
             int chunkZ = originZ + vec.getZ();
             if(isVolcanoChunk(chunkX, chunkZ))
             {
-                return new BlockPos((chunkX << 4) + 7, 0, (chunkZ << 4));
+                return new ChunkPos(chunkX, chunkZ);
             }
         }
         return null;
     }
     
-    public List<BlockPos> nearbyVolcanos(BlockPos pos)
+    /**
+     * Returns x, z position of volcano if successful. Null otherwise.
+     */
+    public @Nullable BlockPos wakeNearest(BlockPos blockPos) throws VolcanoCommandException
+    {
+        ChunkPos cp = nearestVolcanoChunk(blockPos);
+        if(cp == null) return null;
+        
+        // see if loaded
+        VolcanoNode node = this.getOrCreateNode(cp);
+        
+        if(node.isActive()) throw new VolcanoCommandException("commands.volcano.wake.already_awake");
+        
+        if(!node.isActive()) node.activate();
+        
+        return node.isActive() ? blockPosFromChunkPos(cp) : null;
+    }
+    
+    public @Nullable VolcanoNode nearestActiveVolcano(BlockPos pos)
+    {
+        if(this.activeNodes.isEmpty()) return null;
+        
+        final int originX = pos.getX() >> 4;
+        final int originZ = pos.getZ() >> 4;
+        VolcanoNode result = null;
+        
+        int bestDist = Integer.MAX_VALUE;
+        
+        for(VolcanoNode node : this.activeNodes.values())
+        {
+            ChunkPos p = node.chunkPos();
+            int d = (int) Math.sqrt(Useful.squared(p.x - originX) + Useful.squared(p.z - originZ));
+            if(d < bestDist)
+            {
+                result = node;
+            }
+        }
+        return result;
+    }
+    
+    public Map<BlockPos, VolcanoStage> nearbyVolcanos(BlockPos pos)
     {
         final int originX = pos.getX() >> 4;
         final int originZ = pos.getZ() >> 4;
         
-        ImmutableList.Builder<BlockPos> builder = ImmutableList.builder();
+        ImmutableMap.Builder<BlockPos, VolcanoStage> builder = ImmutableMap.builder();
         
         for(Vec3i vec : Useful.DISTANCE_SORTED_CIRCULAR_OFFSETS)
         {
@@ -102,10 +191,24 @@ public class VolcanoManager implements ISimulationTickable, ISimulationTopNode
             int chunkZ = originZ + vec.getZ();
             if(isVolcanoChunk(chunkX, chunkZ))
             {
-                builder.add(new BlockPos((chunkX << 4) + 7, 0, (chunkZ << 4)));
+                VolcanoStage stage = VolcanoStage.DORMANT;
+                
+                VolcanoNode node = this.nodes.get(PackedChunkPos.getPackedChunkPosFromChunkXZ(chunkX, chunkZ));
+                if(node != null) stage = node.getStage();
+                builder.put(blockPosFromChunkPos(chunkX, chunkZ), stage);
             }
         }
         return builder.build();
+    }
+    
+    static BlockPos blockPosFromChunkPos(ChunkPos pos)
+    {
+        return blockPosFromChunkPos(pos.x, pos.z);
+    }
+    
+    static BlockPos blockPosFromChunkPos(int chunkX, int chunkZ)
+    {
+        return new BlockPos((chunkX << 4) + 7, 0, (chunkZ << 4));
     }
     
     /** not thread-safe - to be called on world sever thread */
@@ -231,7 +334,7 @@ public class VolcanoManager implements ISimulationTickable, ISimulationTopNode
                     VolcanoNode node = new VolcanoNode(this, null);
                     node.deserializeNBT(nbtSubNodes.getCompoundTagAt(i));
                     nodes.put(node.packedChunkPos(), node);
-                    if(node.isActive) this.activeNodes.put(node.packedChunkPos(), node);
+                    if(node.isActive()) this.activeNodes.put(node.packedChunkPos(), node);
                 }   
             }
         }
@@ -240,7 +343,7 @@ public class VolcanoManager implements ISimulationTickable, ISimulationTopNode
     @Override
     public void serializeNBT(NBTTagCompound nbt)
     {
-        // always save *something* to prevent "not checked" warning when there are no volcanos
+        // always save *something* to prevent warning when there are no volcanos
         nbt.setBoolean(NBT_VOLCANO_MANAGER_IS_CREATED, true);
         
         // Do start because any changes made after this point aren't guaranteed to be saved

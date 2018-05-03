@@ -47,5 +47,14 @@ texture.basalt_hint=Basalt Hint
 #COMMANDS
 commands.volcano.usage=Use /volcano <status | mark | unmark | wake | pause | sleep> 
 commands.volcano.mark.usage=Marks all nearby volcanos by placing a pillar of blocks
+commands.volcano.dimension_disabled=Volcanos not enabled in this dimension
+commands.volcano.status_header=Volcanos within 64 chunks
+commands.volcano.status=Distance: %d  X: %d  Z: %d  Status: %s
+commands.volcano.wake.already_awake=Nearest volcano is already awake
+commands.volcano.wake.fail=No volcano found nearby or was unable to wake it up
+commands.volcano.wake.success=Successfully activated volcano located at x=%d, z=%d
+commands.volcano.sleep.no_active_found=No active volcano found nearby
+commands.volcano.sleep.fail=Unable to put nearest volcano to sleep.  Reason unknown.
+commands.volcano.sleep.success=Successfully quieted volcano located at x=%d, z=%d
 
 

@@ -9,13 +9,20 @@ import grondag.big_volcano.core.VolcanoStage;
 import grondag.exotic_matter.serialization.IReadWriteNBT;
 import grondag.exotic_matter.serialization.NBTDictionary;
 import grondag.exotic_matter.simulator.Simulator;
-import grondag.exotic_matter.simulator.persistence.IDirtKeeper;
+import grondag.exotic_matter.simulator.persistence.IDirtListener;
 import grondag.exotic_matter.varia.PackedChunkPos;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 
-public class VolcanoNode implements IReadWriteNBT, IDirtKeeper
+public class VolcanoNode implements IReadWriteNBT, IDirtListener
     {
+        static final String NBT_VOLCANO_NODE_TAG_LAST_ACTIVATION_TICK = NBTDictionary.claim("volcLastTick");
+        static final String NBT_VOLCANO_NODE_TAG_POSITION  = NBTDictionary.claim("volPos");
+        static final String NBT_VOLCANO_NODE_TAG_STAGE = NBTDictionary.claim("volcStage");
+        static final String NBT_VOLCANO_NODE_TAG_HEIGHT = NBTDictionary.claim("volcHeight");
+        static final String NBT_VOLCANO_NODE_TAG_WEIGHT = NBTDictionary.claim("volcWeight");
+    
         /**
          * Parent reference
          */
@@ -28,18 +35,11 @@ public class VolcanoNode implements IReadWriteNBT, IDirtKeeper
          * will only be updated by server tick thread.
          */
         private int weight = 0;
-        private @Nullable VolcanoStage stage;
+        private VolcanoStage stage = VolcanoStage.DORMANT;
         
         private int height = 0;
         
-        volatile boolean isActive = false;
-        
-        /** stores total world time of last TE update */
-        private volatile long keepAlive;
-        
         private ChunkPos position;
-        
-        private boolean isDirty;
         
         /** 
          * Last time (sim ticks) this volcano became active.
@@ -48,18 +48,6 @@ public class VolcanoNode implements IReadWriteNBT, IDirtKeeper
          */
         private volatile int lastActivationTick;
 
-        static final String NBT_VOLCANO_NODE_TAG_LAST_ACTIVATION_TICK = NBTDictionary.claim("volcLastTick");
-
-        static final String NBT_VOLCANO_NODE_TAG_ACTIVE = NBTDictionary.claim("volcActive");
-
-        static final String NBT_VOLCANO_NODE_TAG_POSITION  = NBTDictionary.claim("volPos");
-
-        static final String NBT_VOLCANO_NODE_TAG_STAGE = NBTDictionary.claim("volcStage");
-
-        static final String NBT_VOLCANO_NODE_TAG_HEIGHT = NBTDictionary.claim("volcHeight");
-
-        static final String NBT_VOLCANO_NODE_TAG_WEIGHT = NBTDictionary.claim("volcWeight");
-        
         public VolcanoNode(VolcanoManager volcanoManager, ChunkPos position)
         {
             this.volcanoManager = volcanoManager;
@@ -77,19 +65,9 @@ public class VolcanoNode implements IReadWriteNBT, IDirtKeeper
         }
         
         @Override
-        public void setSaveDirty(boolean isDirty)
+        public void setDirty()
         {
-            if(isDirty != this.isDirty)
-            {
-                this.isDirty = isDirty;
-                if(isDirty) this.volcanoManager.setSaveDirty(true);
-            }
-        }
-        
-        @Override
-        public boolean isSaveDirty()
-        {
-            return this.isDirty;
+            this.volcanoManager.setDirty();
         }
         
         /** 
@@ -113,7 +91,6 @@ public class VolcanoNode implements IReadWriteNBT, IDirtKeeper
                 this.stage = newStage;
                 isDirty = true;
             }
-            this.keepAlive = Simulator.instance().getWorld().getTotalWorldTime();
             
             if(isDirty) this.setDirty();
 //            HardScience.log.info("keepAlive=" + this.keepAlive);
@@ -133,7 +110,6 @@ public class VolcanoNode implements IReadWriteNBT, IDirtKeeper
             this.height = nbt.getInteger(NBT_VOLCANO_NODE_TAG_HEIGHT);
             this.stage = VolcanoStage.values()[nbt.getInteger(NBT_VOLCANO_NODE_TAG_STAGE)];
             this.position = PackedChunkPos.unpackChunkPos(nbt.getLong(NBT_VOLCANO_NODE_TAG_POSITION));
-            this.isActive = nbt.getBoolean(NBT_VOLCANO_NODE_TAG_ACTIVE);
             this.lastActivationTick = nbt.getInteger(NBT_VOLCANO_NODE_TAG_LAST_ACTIVATION_TICK);
         }
 
@@ -142,19 +118,17 @@ public class VolcanoNode implements IReadWriteNBT, IDirtKeeper
         {
             synchronized(this)
             {
-                this.setSaveDirty(false);
                 nbt.setInteger(NBT_VOLCANO_NODE_TAG_WEIGHT, this.weight);
                 nbt.setInteger(NBT_VOLCANO_NODE_TAG_HEIGHT, this.height);
                 nbt.setInteger(NBT_VOLCANO_NODE_TAG_STAGE, this.stage.ordinal());
                 nbt.setLong(NBT_VOLCANO_NODE_TAG_POSITION, PackedChunkPos.getPackedChunkPos(this.position));
-                nbt.setBoolean(NBT_VOLCANO_NODE_TAG_ACTIVE, this.isActive);
                 nbt.setInteger(NBT_VOLCANO_NODE_TAG_LAST_ACTIVATION_TICK, this.lastActivationTick);
             }
         }
         
         public boolean wantsToActivate()
         {
-            if(this.isActive || this.height >= Configurator.VOLCANO.maxYLevel) return false;
+            if(this.isActive() || this.height >= Configurator.VOLCANO.maxYLevel) return false;
             
             int dormantTime = Simulator.instance().getTick() - this.lastActivationTick;
             
@@ -167,38 +141,58 @@ public class VolcanoNode implements IReadWriteNBT, IDirtKeeper
 
         }
         
+        public boolean isActive()
+        {
+            return this.stage.isActive;
+        }
+
         public void activate()
         {
             synchronized(this)
             {
-                if(!this.isActive)
+                if(!this.isActive())
                 {
-                    this.isActive = true;
+                    this.stage = VolcanoStage.ACTIVE;
                     this.lastActivationTick = Simulator.instance().getTick();
-                    this.setSaveDirty(true);
                     this.volcanoManager.activeNodes.put(this.packedChunkPos(), this);
                     this.volcanoManager.isChunkloadingDirty = true;
-                    this.keepAlive = Simulator.instance().getWorld().getTotalWorldTime();
+                    this.setDirty();
                 }
             }
         }
 
-        public void deActivate()
+        public void sleep()
         {
             synchronized(this)
             {
-                if(this.isActive)
+                if(this.stage != VolcanoStage.DORMANT)
                 {
-                    this.isActive = false;
-                    this.setSaveDirty(true);
+                    this.stage = VolcanoStage.DORMANT;
                     this.volcanoManager.activeNodes.remove(this.packedChunkPos());
                     this.volcanoManager.isChunkloadingDirty = true;
+                    this.setDirty();
+                }
+            }
+        }
+        
+        public void disable()
+        {
+            synchronized(this)
+            {
+                if(this.stage != VolcanoStage.DEAD)
+                {
+                    this.stage = VolcanoStage.DEAD;
+                    this.volcanoManager.activeNodes.remove(this.packedChunkPos());
+                    this.volcanoManager.isChunkloadingDirty = true;
+                    this.setDirty();
                 }
             }
         }
         
         public int getWeight() { return this.weight; }
-        public boolean isActive() { return this.isActive; }
         public int getLastActivationTick() { return this.lastActivationTick; }
+        public VolcanoStage getStage() { return this.stage; }
+        /** Y coordinate will always be 0 */
+        public BlockPos blockPos() { return VolcanoManager.blockPosFromChunkPos(this.position); }
 
     }
