@@ -6,16 +6,19 @@ import javax.annotation.Nullable;
 
 import grondag.big_volcano.Configurator;
 import grondag.big_volcano.core.VolcanoStage;
+import grondag.big_volcano.lava.EntityLavaBlob;
 import grondag.exotic_matter.serialization.IReadWriteNBT;
 import grondag.exotic_matter.serialization.NBTDictionary;
+import grondag.exotic_matter.simulator.ISimulationTickable;
 import grondag.exotic_matter.simulator.Simulator;
 import grondag.exotic_matter.simulator.persistence.IDirtListener;
 import grondag.exotic_matter.varia.PackedChunkPos;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
+import net.minecraft.util.math.Vec3d;
 
-public class VolcanoNode implements IReadWriteNBT, IDirtListener
+public class VolcanoNode implements IReadWriteNBT, IDirtListener, ISimulationTickable
     {
         static final String NBT_VOLCANO_NODE_TAG_LAST_ACTIVATION_TICK = NBTDictionary.claim("volcLastTick");
         static final String NBT_VOLCANO_NODE_TAG_POSITION  = NBTDictionary.claim("volPos");
@@ -68,39 +71,6 @@ public class VolcanoNode implements IReadWriteNBT, IDirtListener
         public void setDirty()
         {
             this.volcanoManager.setDirty();
-        }
-        
-        /** 
-         * Called by TE from world tick thread.
-         */
-        public void updateWorldState(int newWeight, int newHeight, VolcanoStage newStage)
-        {
-            boolean isDirty = false;
-            if(newWeight != weight)
-            {
-                this.weight = newWeight;
-                isDirty = true;
-            }
-            if(newHeight != height)
-            {
-                this.height = newHeight;
-                isDirty = true;
-            }
-            if(newStage != stage)
-            {
-                this.stage = newStage;
-                isDirty = true;
-            }
-            
-            if(isDirty) this.setDirty();
-//            HardScience.log.info("keepAlive=" + this.keepAlive);
-        }
-        
-        
-        /** called periodically on server tick thread by volcano manager when this is the active node */
-        public void update()
-        {
-           //TODO: needed?
         }
         
         @Override
@@ -194,5 +164,46 @@ public class VolcanoNode implements IReadWriteNBT, IDirtListener
         public VolcanoStage getStage() { return this.stage; }
         /** Y coordinate will always be 0 */
         public BlockPos blockPos() { return VolcanoManager.blockPosFromChunkPos(this.position); }
+        
+        @Override
+        public boolean doesUpdateOnTick() { return true; }
+        
+        @Override
+        public void doOnTick()
+        {
+            if((Simulator.instance().getTick() & 0xF) == 0xF)
+            {
+                BlockPos pos = this.blockPos();
+                EntityLavaBlob blob = new EntityLavaBlob(this.volcanoManager.world, LavaSimulator.FLUID_UNITS_PER_BLOCK, new Vec3d(pos.getX(), 255, pos.getZ()), Vec3d.ZERO);
+                this.volcanoManager.world.spawnEntity(blob);
+            }
+        }
+        
+        @Override
+        public boolean doesUpdateOffTick() { return true; }
+        
+        @Override
+        public void doOffTick()
+        {
+            switch(this.stage)
+            {
+         case ACTIVE:
+             break;
+         case CLEARING:
+             break;
+         case COOLING:
+             break;
+         case FLOWING:
+             break;
+             
+         case DORMANT:
+         case DEAD:
+         case NEW:
+         default:
+             assert false : "Non-active volcano getting update tick.";
+             break;
+            
+            }
+        }
 
     }

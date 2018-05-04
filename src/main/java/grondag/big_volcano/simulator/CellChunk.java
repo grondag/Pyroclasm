@@ -324,7 +324,8 @@ public class CellChunk
 
                 if(entryCell == null)
                 {
-                    assert false : "Null entry cell in chunk being unloaded.";
+                    BigActiveVolcano.INSTANCE.warn("Null entry cell in chunk being unloaded"); 
+                    //assert false : "Null entry cell in chunk being unloaded.";
                     continue;
                 }
                 

@@ -2,18 +2,14 @@ package grondag.big_volcano.simulator;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
-import java.util.function.LongFunction;
 
 import javax.annotation.Nullable;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
-import grondag.big_volcano.BigActiveVolcano;
 import grondag.big_volcano.core.VolcanoStage;
 import grondag.exotic_matter.ExoticMatter;
 import grondag.exotic_matter.serialization.NBTDictionary;
@@ -26,7 +22,6 @@ import grondag.exotic_matter.varia.Useful;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMaps;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
-import net.minecraft.init.Blocks;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.util.math.BlockPos;
@@ -52,7 +47,7 @@ public class VolcanoManager implements ISimulationTickable, ISimulationTopNode
         }
     }
     
-    private @Nullable World world;
+    @Nullable World world;
     
     private final Long2ObjectMap<VolcanoNode> nodes = Long2ObjectMaps.synchronize(new Long2ObjectOpenHashMap<VolcanoNode>());
     
@@ -260,6 +255,14 @@ public class VolcanoManager implements ISimulationTickable, ISimulationTopNode
                 }
             }
         }
+        
+        if(!this.activeNodes.isEmpty())
+        {
+            for(VolcanoNode node : this.activeNodes.values())
+            {
+                node.doOnTick();
+            }
+        }
     }
     
     /**
@@ -309,7 +312,7 @@ public class VolcanoManager implements ISimulationTickable, ISimulationTopNode
         {
             for(VolcanoNode active : activeNodes.values())
             {
-                active.update();
+                active.doOffTick();
             }
         }
     }
