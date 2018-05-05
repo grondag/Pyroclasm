@@ -91,7 +91,10 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable
     /** Set true when doing block placements so we known not to register them as newly placed lava. */
     protected boolean itMe = false;
     
-    private float loadFactor = 0;
+    /**
+     * Starts > 1  so lava doesn't flow until we get an actual sample of load.
+     */
+    private float loadFactor = 1.1f;
     
     private final BlockEventHandler placementHandler = new BlockEventHandler()
     {
@@ -212,9 +215,6 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable
     
     /**
      * Adds lava in or on top of the given cell.
-     * Should only force resynch with world when you know you removed a barrier and simulation
-     * needs to know the cell is now open.  Otherwise if this addition is occurs
-     * after an earlier one but before block update resynch will cause earlier addition to be lost.
      */
     public void addLava(BlockPos pos, int amount)
     {
@@ -425,7 +425,16 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable
     {
         if(itMe) return;
         LavaCell entry = this.cells.getEntryCell(pos.getX(), pos.getZ());
-        if(entry != null) entry.setValidationNeeded(true);      
+        if(entry == null) 
+        {
+            // TODO: see if chunk needs validation?
+            // for example, if a block is broken in a chunk that has lava cells
+            // but the block is in a column that doesn't have any air space?
+        }
+        else
+        {
+            entry.setValidationNeeded(true);      
+        }
     }
     
     /**

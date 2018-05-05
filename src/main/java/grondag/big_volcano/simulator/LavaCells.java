@@ -1,6 +1,7 @@
 package grondag.big_volcano.simulator;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.concurrent.Executor;
@@ -22,6 +23,7 @@ import grondag.exotic_matter.varia.PackedChunkPos;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap.Entry;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.math.BlockPos;
 
 
 public class LavaCells implements Iterable<LavaCell>
@@ -193,31 +195,33 @@ public class LavaCells implements Iterable<LavaCell>
         
         this.processChunks.clear();
         
-        final Object[] candidates = this.cellChunks.values().toArray();
-        
-        Arrays.sort(candidates, new Comparator<Object>()
-        {
-            @Override
-            public int compare(@Nullable Object o1, @Nullable Object o2)
-            {
-                if(o1 == null) 
-                    return o2 == null ? 0 : -1;
-                else if(o2 == null)
-                    return 1;
-                
-                return ComparisonChain.start()
-                        // lower tick first
-                        .compare(((CellChunk)o1).lastValidationTick(), ((CellChunk)o2).lastValidationTick())
-                        // higher priority first
-                        .compare(((CellChunk)o2).validationPriority(), ((CellChunk)o1).validationPriority())
-                        .result();
-            }
-        });
+        final Object[] candidates = this.cellChunks.values()
+                .stream()
+                .filter( c -> c.isNew() || c.validationPriority() > 0)
+                .sorted( new Comparator<Object>()
+                    {
+                        @Override
+                        public int compare(@Nullable Object o1, @Nullable Object o2)
+                        {
+                            if(o1 == null) 
+                                return o2 == null ? 0 : -1;
+                            else if(o2 == null)
+                                return 1;
+                            
+                            return ComparisonChain.start()
+                                    // lower tick first
+                                    .compare(((CellChunk)o1).lastValidationTick(), ((CellChunk)o2).lastValidationTick())
+                                    // higher priority first
+                                    .compare(((CellChunk)o2).validationPriority(), ((CellChunk)o1).validationPriority())
+                                    .result();
+                        }
+                    })
+                .toArray();
         
         for(Object chunk : candidates)
         {
             CellChunk c = (CellChunk)chunk;
-            if(c.isNew() || (this.processChunks.size() < MAX_CHUNKS_PER_TICK && c.validationPriority() > 0))
+            if(c.isNew() || (this.processChunks.size() < MAX_CHUNKS_PER_TICK))
             {
                 this.processChunks.add(c);
             }
@@ -310,13 +314,18 @@ public class LavaCells implements Iterable<LavaCell>
 //        return cellChunk == null ? false : cellChunk.isLoaded();
 //    }
     
+    public @Nullable LavaCell getCellIfExists(BlockPos pos)
+    {
+        return this.getCellIfExists(pos.getX(), pos.getY(), pos.getZ());
+    }
+    
     /**
      * Retrieves cell at the given block position.
      * Returns null if the given location does not contain a cell.
      * Also returns NULL if cell chunk has not yet been loaded.
      * Thread safe.
      */
-    public LavaCell getCellIfExists(int x, int y, int z)
+    public @Nullable LavaCell getCellIfExists(int x, int y, int z)
     {
         CellChunk chunk = cellChunks.get(PackedChunkPos.getPackedChunkPosFromBlockXZ(x, z));
         if(chunk == null) return null;
@@ -367,6 +376,16 @@ public class LavaCells implements Iterable<LavaCell>
             }
         }
         return chunk;
+    }
+    
+    public Collection<CellChunk> allChunks()
+    {
+        return this.cellChunks.values();
+    }
+    
+    public @Nullable CellChunk getCellChunk(int xBlock, int zBlock)
+    {
+        return cellChunks.get(PackedChunkPos.getPackedChunkPosFromBlockXZ(xBlock, zBlock));
     }
     
     /** 

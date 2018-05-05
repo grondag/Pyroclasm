@@ -146,6 +146,8 @@ public class CellChunk
      */
     public boolean validateMarkedCells()
     {
+        this.lastValidationTick = Simulator.instance().getTick();
+        
         if(this.isUnloaded || this.needsFullLoadOrValidation() || this.validationCount.get() == 0) return false;
 
         synchronized(this)
@@ -170,7 +172,7 @@ public class CellChunk
                 }
             }
             this.validationCount.set(0);
-            this.lastValidationTick = Simulator.instance().getTick();
+            
         }
         
         return true;
@@ -262,13 +264,26 @@ public class CellChunk
         
         if(this.activeCount.decrementAndGet() == 0)
         {
-            this.cells.getOrCreateCellChunk(this.xStart + 16, this.zStart).release();
-            this.cells.getOrCreateCellChunk(this.xStart - 16, this.zStart).release();
-            this.cells.getOrCreateCellChunk(this.xStart, this.zStart + 16).release();
-            this.cells.getOrCreateCellChunk(this.xStart, this.zStart - 16).release();
+            this.releaseChunkIfExists(this.xStart + 16, this.zStart);
+            this.releaseChunkIfExists(this.xStart - 16, this.zStart);
+            this.releaseChunkIfExists(this.xStart, this.zStart + 16);
+            this.releaseChunkIfExists(this.xStart, this.zStart - 16);
         }
     }
 
+    private void releaseChunkIfExists(int blockX, int blockZ)
+    {
+        CellChunk chunk = this.cells.getCellChunk(blockX, blockZ);
+        if(chunk == null)
+        {
+            assert false : "Neighboring cell chunk not found during release - expected it to be loaded.";
+        }
+        else
+        {
+            chunk.release();
+        }
+    }
+    
     /**
      * Call when a neighboring chunk becomes active (has active cells) to force this
      * chunk to be and stay loaded. (Getting a reference to this chunk to call retain() will cause it to be created.)
@@ -298,7 +313,8 @@ public class CellChunk
         
         if(this.isUnloaded) return false;
         
-        if(this.activeCount.get() == 0 && this.retainCount.get() == 0)
+        //  complete validation before unloading because may be new info that could cause chunk to remain loaded
+        if(this.activeCount.get() == 0 && this.retainCount.get() == 0 && this.validationCount.get() == 0)
         {
             return this.unloadTickCount++ >= TICK_UNLOAD_THRESHOLD;
         }

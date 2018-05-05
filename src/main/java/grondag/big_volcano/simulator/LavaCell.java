@@ -70,7 +70,9 @@ public class LavaCell extends AbstractLavaCell
    
     private boolean isCoolingDisabled = false;
     
+    //TODO: remove when TE is gone - isCoolingDisabled should be enough
     /** true if is in an active flowing volcano bore and should generate lava */
+    @Deprecated
     private boolean isBoreCell = false;
 
     
@@ -166,7 +168,7 @@ public class LavaCell extends AbstractLavaCell
         // important that ceiling is set before clearPendingLevelUpdates because is used as a clamp
         this.setCeilingLevel(ceiling);
         this.emptyCell();
-        this.clearPendingLevelUpdates();
+        this.clearBlockUpdate();
         this.locator.cellChunk.cells.add(this);
     }
     
@@ -193,7 +195,7 @@ public class LavaCell extends AbstractLavaCell
         // important that ceiling is set before clearPendingLevelUpdates because is used as a clamp
         this.setCeilingLevel(ceiling);
         this.emptyCell();
-        this.clearPendingLevelUpdates();
+        this.clearBlockUpdate();
         cells.add(this);
         this.updateActiveStatus();
     }
@@ -209,14 +211,25 @@ public class LavaCell extends AbstractLavaCell
 //        this.lastSurfaceLevel = this.worldSurfaceLevel();
 //    }
     
-    private boolean hasPendingLevelUpdates()
+    /**
+     * True if this cell contains lava (or may have) and world should be updated to match.
+     * If true, cell will be marked as active for purpose of cell chunk loading.
+     * @return
+     */
+    private boolean shouldBeActive()
     {
-        return this.worldSurfaceLevel() != (this.avgFluidSurfaceLevelWithPrecision >> 6);
-    }
-    
-    private void clearPendingLevelUpdates()
-    {
-        this.avgFluidSurfaceLevelWithPrecision = (this.worldSurfaceLevel() << 6);
+        if(this.isDeleted) return false;
+        
+        if(this.isEmpty())
+        {
+            return this.worldSurfaceLevel() != this.getAverageFluidSurfaceLevel();
+        }
+        else
+        {
+            // not empty
+            return true;
+        }
+        
     }
     
     /** 
@@ -1411,7 +1424,7 @@ public class LavaCell extends AbstractLavaCell
     /** maintains indication of whether or not this cell must remain loaded */
     public void updateActiveStatus()
     {
-        boolean shouldBeActive = !this.isDeleted && (!this.isEmpty() || this.hasPendingLevelUpdates());
+        boolean shouldBeActive = this.shouldBeActive();
         
         if(this.isActive)
         {
@@ -1513,10 +1526,19 @@ public class LavaCell extends AbstractLavaCell
      */
     public void clearBlockUpdate()
     {
-        this.avgFluidSurfaceLevelWithPrecision = this.worldSurfaceLevel() << 6;
-        this.clearPendingLevelUpdates();
+        this.setAverageFluidSurfaceLevel(this.worldSurfaceLevel());
         this.lastVisibleLevel = this.getCurrentVisibleLevel();
 //        this.updateActiveStatus();
+    }
+    
+    public int getAverageFluidSurfaceLevel()
+    {
+        return this.avgFluidSurfaceLevelWithPrecision >> 6;
+    }
+    
+    public void setAverageFluidSurfaceLevel(int newAverage)
+    {
+        this.avgFluidSurfaceLevelWithPrecision = newAverage << 6;
     }
     
     /**
@@ -1524,7 +1546,7 @@ public class LavaCell extends AbstractLavaCell
      */
     public int getCurrentVisibleLevel()
     {
-        return Math.min(this.ceilingLevel(), (this.avgFluidSurfaceLevelWithPrecision >> 6));
+        return Math.min(this.ceilingLevel(), this.getAverageFluidSurfaceLevel());
     }
 
     /**
@@ -1546,6 +1568,9 @@ public class LavaCell extends AbstractLavaCell
     @Override
     protected void invalidateLocalFloorDependencies()
     {
+        // new floor means average surface level is invalid - reset to actual
+        this.setAverageFluidSurfaceLevel(this.worldSurfaceLevel());
+        
         this.needsRawRetentionUpdate = true;
         this.needsSmoothedRetentionUpdate = true;
         this.invalidateNeighborFloorDependencies();
@@ -1874,7 +1899,7 @@ public class LavaCell extends AbstractLavaCell
         final int lastVisible = this.getLastVisibleLevel();
         
 
-        final int avgLevel = this.avgFluidSurfaceLevelWithPrecision >> 6;
+        final int avgLevel = this.getAverageFluidSurfaceLevel();
         final int surfaceLevel = this.worldSurfaceLevel();
         
         if(avgLevel != surfaceLevel) 

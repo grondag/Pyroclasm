@@ -120,6 +120,7 @@ public class VolcanoTileEntity extends TileEntity implements ITickable
      */
     private boolean isBroken = false;
     
+    @SuppressWarnings("unused")
     @Override
     public void update() 
     {

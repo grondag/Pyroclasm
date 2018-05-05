@@ -6,7 +6,6 @@ import javax.annotation.Nullable;
 
 import grondag.big_volcano.Configurator;
 import grondag.big_volcano.core.VolcanoStage;
-import grondag.big_volcano.lava.EntityLavaBlob;
 import grondag.exotic_matter.serialization.IReadWriteNBT;
 import grondag.exotic_matter.serialization.NBTDictionary;
 import grondag.exotic_matter.simulator.ISimulationTickable;
@@ -16,7 +15,6 @@ import grondag.exotic_matter.varia.PackedChunkPos;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
-import net.minecraft.util.math.Vec3d;
 
 public class VolcanoNode implements IReadWriteNBT, IDirtListener, ISimulationTickable
     {
@@ -29,7 +27,9 @@ public class VolcanoNode implements IReadWriteNBT, IDirtListener, ISimulationTic
         /**
          * Parent reference
          */
-        private final VolcanoManager volcanoManager;
+        final VolcanoManager volcanoManager;
+        
+        private final LavaSimulator lavaSim;
         
         /** 
          * Occasionally updated by TE based on how
@@ -44,17 +44,22 @@ public class VolcanoNode implements IReadWriteNBT, IDirtListener, ISimulationTic
         
         private ChunkPos position;
         
+        private @Nullable VolcanoStateMachine stateMachine = null;
+        
         /** 
          * Last time (sim ticks) this volcano became active.
          * If 0, has never been active.
          * If the volcano is active, can be used to calculate how long it has been so.
          */
         private volatile int lastActivationTick;
+        
+        private int lavaCooldownTicks;
 
         public VolcanoNode(VolcanoManager volcanoManager, ChunkPos position)
         {
             this.volcanoManager = volcanoManager;
             this.position = position;
+            this.lavaSim = Simulator.instance().getNode(LavaSimulator.class);
         }
         
         public ChunkPos chunkPos()
@@ -122,7 +127,7 @@ public class VolcanoNode implements IReadWriteNBT, IDirtListener, ISimulationTic
             {
                 if(!this.isActive())
                 {
-                    this.stage = VolcanoStage.ACTIVE;
+                    this.stage = VolcanoStage.FLOWING;
                     this.lastActivationTick = Simulator.instance().getTick();
                     this.volcanoManager.activeNodes.put(this.packedChunkPos(), this);
                     this.volcanoManager.isChunkloadingDirty = true;
@@ -171,11 +176,49 @@ public class VolcanoNode implements IReadWriteNBT, IDirtListener, ISimulationTic
         @Override
         public void doOnTick()
         {
-            if((Simulator.instance().getTick() & 0xF) == 0xF)
+            switch(this.stage)
             {
-                BlockPos pos = this.blockPos();
-                EntityLavaBlob blob = new EntityLavaBlob(this.volcanoManager.world, LavaSimulator.FLUID_UNITS_PER_BLOCK, new Vec3d(pos.getX(), 255, pos.getZ()), Vec3d.ZERO);
-                this.volcanoManager.world.spawnEntity(blob);
+                 
+                 case COOLING:
+                 {
+                     if(this.lavaSim.loadFactor() > Configurator.VOLCANO.cooldownTargetLoadFactor)
+                     {
+                         this.lavaCooldownTicks = 0;
+                     }
+                     else
+                     {
+                         if(this.lavaCooldownTicks++ > Configurator.VOLCANO.cooldownWaitTicks) this.stage = VolcanoStage.FLOWING;
+                     }
+                     break;
+                 }
+                     
+                 case FLOWING:
+                 {
+                     if(this.lavaSim.loadFactor() > 1)
+                     {
+                         this.stage = VolcanoStage.COOLING;
+                         this.lavaCooldownTicks = 0;
+                     }
+                     else
+                     {
+                         VolcanoStateMachine m = this.stateMachine;
+                         
+                         if(m == null)
+                         {
+                             m = new VolcanoStateMachine(this);
+                             this.stateMachine = m;
+                         }
+                         m.doOnTick();
+                     }
+                     break;
+                 }
+                 
+                 case DORMANT:
+                 case DEAD:
+                 default:
+                     assert false : "Non-active volcano getting update tick.";
+                     break;
+                
             }
         }
         
@@ -187,21 +230,17 @@ public class VolcanoNode implements IReadWriteNBT, IDirtListener, ISimulationTic
         {
             switch(this.stage)
             {
-         case ACTIVE:
-             break;
-         case CLEARING:
-             break;
-         case COOLING:
-             break;
-         case FLOWING:
-             break;
-             
-         case DORMANT:
-         case DEAD:
-         case NEW:
-         default:
-             assert false : "Non-active volcano getting update tick.";
-             break;
+                case FLOWING:
+                    break;
+    
+                case COOLING:
+                 break;
+                 
+                 case DORMANT:
+                 case DEAD:
+                 default:
+                     assert false : "Non-active volcano getting update tick.";
+                     break;
             
             }
         }

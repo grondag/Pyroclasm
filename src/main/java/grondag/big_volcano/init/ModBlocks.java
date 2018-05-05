@@ -201,4 +201,28 @@ public class ModBlocks
         ((CoolingBasaltBlock)ModBlocks.basalt_dynamic_very_hot_height).setCoolingBlockInfo((TerrainDynamicBlock) ModBlocks.basalt_dynamic_hot_height, 4);
         ((CoolingBasaltBlock)ModBlocks.basalt_dynamic_very_hot_filler).setCoolingBlockInfo((TerrainDynamicBlock) ModBlocks.basalt_dynamic_hot_filler, 4);
     }
+    
+    public static boolean isVolcanoBlock(Block block)
+    {
+        if(!(block instanceof ISuperBlock)) return false;
+        
+        return block == ModBlocks.basalt_cool_dynamic_height
+                || block == ModBlocks.basalt_cool_dynamic_filler
+                || block == ModBlocks.basalt_cool_static_height
+                || block == ModBlocks.basalt_cool_static_filler
+                || block == ModBlocks.basalt_cut
+                
+                || block == ModBlocks.basalt_dynamic_cooling_height
+                || block == ModBlocks.basalt_dynamic_cooling_filler
+                || block == ModBlocks.basalt_dynamic_warm_height
+                || block == ModBlocks.basalt_dynamic_warm_filler
+        
+                || block == ModBlocks.basalt_dynamic_hot_height
+                || block == ModBlocks.basalt_dynamic_hot_filler
+                || block == ModBlocks.basalt_dynamic_very_hot_height
+                || block == ModBlocks.basalt_dynamic_very_hot_filler
+                || block == ModBlocks.lava_dynamic_height
+                || block == ModBlocks.lava_dynamic_filler;
+    }
+
 }

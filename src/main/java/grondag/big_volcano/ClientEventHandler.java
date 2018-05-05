@@ -5,6 +5,7 @@ import javax.annotation.Nullable;
 import org.lwjgl.opengl.GL11;
 
 import grondag.big_volcano.simulator.AbstractLavaCell;
+import grondag.big_volcano.simulator.CellChunk;
 import grondag.big_volcano.simulator.LavaCell;
 import grondag.big_volcano.simulator.LavaConnection;
 import grondag.big_volcano.simulator.LavaConnections.SortBucket;
@@ -57,7 +58,11 @@ public class ClientEventHandler
         GlStateManager.enablePolygonOffset();
         GlStateManager.doPolygonOffset(-1, -1);
         
-        if(Configurator.VOLCANO.enableDebugRender) lavaSim.cells.forEach(c -> renderCell(tessellator, bufferBuilder, c));
+        if(Configurator.VOLCANO.enableDebugRender)
+        {
+            lavaSim.cells.forEach(c -> renderCell(tessellator, bufferBuilder, c));
+            for(Object c : lavaSim.cells.allChunks().toArray()) { renderCellChunk(tessellator, bufferBuilder, (CellChunk)c); }
+        }
         
         if(Configurator.VOLCANO.enableFlowRender) lavaSim.connections.forEach(c -> renderFlow(tessellator, bufferBuilder, c));
        
@@ -141,4 +146,19 @@ public class ClientEventHandler
 //            RenderGlobal.drawBoundingBox(bufferBuilder, box.minX, box.minY, box.minZ, box.maxX, box.maxY, box.maxZ, 0.7f, 0.7f, 0.7f, 1f);
 //        }
     }
+    
+    private static void renderCellChunk(Tessellator tessellator, BufferBuilder bufferBuilder, @Nullable CellChunk chunk)
+    {
+        if(chunk == null || chunk.isUnloaded()) return;
+        
+        AxisAlignedBB box = new AxisAlignedBB(chunk.xStart, 0, chunk.zStart, chunk.xStart + 16, 255, chunk.zStart + 16);
+        
+        if(ClientProxy.camera() == null || !ClientProxy.camera().isBoundingBoxInFrustum(box)) return;
+        
+            GlStateManager.glLineWidth(2.0F);
+            
+            bufferBuilder.begin(GL11.GL_LINE_STRIP, DefaultVertexFormats.POSITION_COLOR);
+            RenderGlobal.drawBoundingBox(bufferBuilder, box.minX, box.minY, box.minZ, box.maxX, box.maxY, box.maxZ, 0.7F, 1f, 1f, 1f);
+            tessellator.draw();
+        }
 }

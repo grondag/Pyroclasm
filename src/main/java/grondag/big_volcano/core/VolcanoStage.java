@@ -2,10 +2,10 @@ package grondag.big_volcano.core;
 
 public enum VolcanoStage
 {
+    @Deprecated
     NEW(true),
-    /** Active, but not doing anything specific right now. */
-    ACTIVE(true),
     /** Clearing central bore, verifying can see sky */
+    @Deprecated
     CLEARING(true),
     /** Can see sky and blowing out lava */
     FLOWING(true),

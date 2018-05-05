@@ -1,5 +1,6 @@
 package grondag.big_volcano.simulator;
 
+import grondag.big_volcano.BigActiveVolcano;
 import grondag.big_volcano.init.ModBlocks;
 import grondag.big_volcano.lava.LavaTerrainHelper;
 import grondag.exotic_matter.model.TerrainBlockHelper;
@@ -74,6 +75,7 @@ public enum BlockType
         if(state.getMaterial().isReplaceable()) return BlockType.SPACE;
         
         Block block = state.getBlock();
+        
         int height = TerrainBlockHelper.getFlowHeightFromState(state);
         if(height == 0)
         {
