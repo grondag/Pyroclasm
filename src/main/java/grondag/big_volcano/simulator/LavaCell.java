@@ -1430,7 +1430,7 @@ public class LavaCell extends AbstractLavaCell
         {
             if(!shouldBeActive) 
             {
-                this.locator.cellChunk.decrementActiveCount();
+                this.locator.cellChunk.decrementActiveCount(this.x(), this.z());
                 this.isActive = false;
             }
         }
@@ -1438,7 +1438,7 @@ public class LavaCell extends AbstractLavaCell
         {
             if(shouldBeActive) 
             {
-                this.locator.cellChunk.incrementActiveCount();
+                this.locator.cellChunk.incrementActiveCount(this.x(), this.z());
                 this.isActive = true;
             }
         }

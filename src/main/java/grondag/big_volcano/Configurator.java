@@ -195,10 +195,13 @@ public class Configurator
         @RangeInt(min = 2, max = 2001)
         public int lavaCoolingPropagationMax = 40;
 
-        @Comment({"Enable render of lava cell / chunk buffer bounding boxes for debug purposes."
+        @Comment({"Enable render of lava cell bounding boxes for debug purposes."
                 + "Client-side only."})
-        public boolean enableDebugRender = true;
+        public boolean enableLavaCellDebugRender = false;
 
+        @Comment({"Enable render of lava cell chunk bounding boxes for debug purposes."
+                + "Client-side only."})
+        public boolean enableLavaChunkDebugRender = false;
 
         @Comment({"Enable render of lava connection flow potentials."
                 + "Client-side only."})

@@ -33,7 +33,13 @@ public class CellChunk
     
     public final int xStart;
     public final int zStart;
+    
+    /**  High x coordinate - INCLUSIVE */
+    private final int xEnd;
 
+    /**  High z coordinate - INCLUSIVE */
+    private final int zEnd;
+    
     /**  unload chunks when they have been unloadable this many ticks */
     private final static int TICK_UNLOAD_THRESHOLD = 20;
     
@@ -56,6 +62,18 @@ public class CellChunk
 
     /** count of cells in this chunk containing lava */
     private final AtomicInteger activeCount = new AtomicInteger(0);
+    
+    /** count of cells along the low X edge of this chunk containing lava - used for neighbor loading*/
+    private final AtomicInteger activeCountLowX = new AtomicInteger(0);
+    
+    /** count of cells along the high X edge of this chunk containing lava - used for neighbor loading*/
+    private final AtomicInteger activeCountHighX = new AtomicInteger(0);
+    
+    /** count of cells along the low Z edge of this chunk containing lava - used for neighbor loading*/
+    private final AtomicInteger activeCountLowZ = new AtomicInteger(0);
+    
+    /** count of cells along the high Z edge of this chunk containing lava - used for neighbor loading*/
+    private final AtomicInteger activeCountHighZ = new AtomicInteger(0);
 
     /** count of neighboring active chunks that have requested this chunk to remain loaded*/
     private final AtomicInteger retainCount = new AtomicInteger(0);
@@ -77,6 +95,9 @@ public class CellChunk
         this.packedChunkPos = packedChunkPos;
         this.xStart = PackedChunkPos.getChunkXStart(packedChunkPos);
         this.zStart = PackedChunkPos.getChunkZStart(packedChunkPos);
+        this.xEnd = this.xStart + 15;
+        this.zEnd = this.zStart + 15;
+        
         this.cells = cells;
         
         if(Configurator.VOLCANO.enableLavaChunkBufferTrace)
@@ -240,34 +261,67 @@ public class CellChunk
      * The chunk must already exist at this point but will force it to be and stay loaded.
      * Will also cause neighboring chunks to be loaded so that lava can flow into them.
      */
-    public void incrementActiveCount()
+    public void incrementActiveCount(int blockX, int blockZ)
     {
         if(this.isUnloaded) return;
 
-        if(this.activeCount.incrementAndGet()  == 1)
+        this.activeCount.incrementAndGet();
+        
+       // create (if needed) and retain neighbors if newly have lava at the edge of this chunk
+        if(blockX == this.xStart)
         {
-            // create (if needed) and retain all neighbors
-            this.cells.getOrCreateCellChunk(this.xStart + 16, this.zStart).retain();
-            this.cells.getOrCreateCellChunk(this.xStart - 16, this.zStart).retain();
-            this.cells.getOrCreateCellChunk(this.xStart, this.zStart + 16).retain();
-            this.cells.getOrCreateCellChunk(this.xStart, this.zStart - 16).retain();
+            if(this.activeCountLowX.incrementAndGet() == 1) 
+                this.cells.getOrCreateCellChunk(this.xStart - 16, this.zStart).retain();
         }
+        else if(blockX == this.xEnd)
+        {
+            if(this.activeCountHighX.incrementAndGet() == 1) 
+                this.cells.getOrCreateCellChunk(this.xStart + 16, this.zStart).retain();
+        }
+        else if(blockZ == this.zStart)
+        {
+            if(this.activeCountLowZ.incrementAndGet() == 1) 
+                this.cells.getOrCreateCellChunk(this.xStart, this.zStart - 16).retain();
+        }
+        else if(blockZ == this.zEnd)
+        {
+            if(this.activeCountHighZ.incrementAndGet() == 1) 
+                this.cells.getOrCreateCellChunk(this.xStart, this.zStart + 16).retain();
+        }
+            
     }
 
     /**
      * Call when any cell in this chunk becomes inactive.
      * When no more cells are active will allow this and neighboring chunks to be unloaded.
      */
-    public void decrementActiveCount()
+    public void decrementActiveCount(int blockX, int blockZ)
     {
         if(this.isUnloaded) return;
         
+        // release neighbors if no longer have lava at the edge of this chunk
+        if(blockX == this.xStart)
+        {
+            if(this.activeCountLowX.decrementAndGet() == 0) 
+                this.releaseChunkIfExists(this.xStart - 16, this.zStart);
+        }
+        else if(blockX == this.xEnd)
+        {
+            if(this.activeCountHighX.decrementAndGet() == 0) 
+                this.releaseChunkIfExists(this.xStart + 16, this.zStart);
+        }
+        else if(blockZ == this.zStart)
+        {
+            if(this.activeCountLowZ.decrementAndGet() == 0) 
+                this.releaseChunkIfExists(this.xStart, this.zStart - 16);
+        }
+        else if(blockZ == this.zEnd)
+        {
+            if(this.activeCountHighZ.decrementAndGet() == 0) 
+                this.releaseChunkIfExists(this.xStart, this.zStart + 16);
+        }
         if(this.activeCount.decrementAndGet() == 0)
         {
-            this.releaseChunkIfExists(this.xStart + 16, this.zStart);
-            this.releaseChunkIfExists(this.xStart - 16, this.zStart);
-            this.releaseChunkIfExists(this.xStart, this.zStart + 16);
-            this.releaseChunkIfExists(this.xStart, this.zStart - 16);
         }
     }
 

@@ -184,7 +184,7 @@ public class VolcanoStateMachine implements ISimulationTickable
      
 
     //TODO: make confiurable
-    private final static int OPERATIONS_PER_TICK = 8;
+    private final static int OPERATIONS_PER_TICK = 64;
     
     @Override
     public void doOnTick()

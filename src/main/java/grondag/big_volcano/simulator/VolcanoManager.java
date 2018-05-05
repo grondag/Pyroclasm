@@ -203,7 +203,7 @@ public class VolcanoManager implements ISimulationTickable, ISimulationTopNode
     
     static BlockPos blockPosFromChunkPos(int chunkX, int chunkZ)
     {
-        return new BlockPos((chunkX << 4) + 7, 0, (chunkZ << 4));
+        return new BlockPos((chunkX << 4) + 7, 0, (chunkZ << 4) + 7);
     }
     
     /** not thread-safe - to be called on world sever thread */

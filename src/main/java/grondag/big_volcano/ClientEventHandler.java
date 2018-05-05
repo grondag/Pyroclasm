@@ -33,7 +33,7 @@ public class ClientEventHandler
     @SubscribeEvent()
     public static void renderWorldLastEvent(RenderWorldLastEvent event)
     {
-        if(!(Configurator.VOLCANO.enableDebugRender || Configurator.VOLCANO.enableFlowRender)) return;
+        if(!(Configurator.VOLCANO.enableLavaCellDebugRender || Configurator.VOLCANO.enableLavaChunkDebugRender || Configurator.VOLCANO.enableFlowRender)) return;
         
         LavaSimulator lavaSim = Simulator.instance().getNode(LavaSimulator.class);
         if(lavaSim == null) return;
@@ -58,9 +58,13 @@ public class ClientEventHandler
         GlStateManager.enablePolygonOffset();
         GlStateManager.doPolygonOffset(-1, -1);
         
-        if(Configurator.VOLCANO.enableDebugRender)
+        if(Configurator.VOLCANO.enableLavaCellDebugRender)
         {
             lavaSim.cells.forEach(c -> renderCell(tessellator, bufferBuilder, c));
+        }
+        
+        if(Configurator.VOLCANO.enableLavaChunkDebugRender)
+        {
             for(Object c : lavaSim.cells.allChunks().toArray()) { renderCellChunk(tessellator, bufferBuilder, (CellChunk)c); }
         }
         
