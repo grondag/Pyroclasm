@@ -530,10 +530,10 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable
         
         this.doStep();
         this.doStep();
-//        this.doStep();
-//        this.doStep();
-//        this.doStep();
-//        this.doStep();
+        this.doStep();
+        this.doStep();
+        this.doStep();
+        this.doStep();
         this.doLastStep();
         
         // Add or update cells from world as needed
@@ -739,12 +739,20 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable
         int x = cell.x();
         int z = cell.z();
         
+        int lavaCheckY = cell.floorY() - 1;
+        
         // check two above cell top to catch filler blocks
         for(int y = cell.floorY(); y <= cell.worldSurfaceY() + 2; y++)
         {
             this.coolLava(PackedBlockPos.pack(x, y, z));
         }
         cell.coolAndShrink();
+        
+        // turn vanilla lava underneath into basalt
+        while(lavaCheckY > 0 && this.worldBuffer.getBlockState(x, lavaCheckY, z).getBlock() == Blocks.LAVA)
+        {
+            this.worldBuffer.setBlockState(x, lavaCheckY--, z, ModBlocks.basalt_cut.getDefaultState(), Blocks.LAVA.getDefaultState());
+        }
     }
 
 

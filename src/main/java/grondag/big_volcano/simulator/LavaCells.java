@@ -96,14 +96,6 @@ public class LavaCells implements Iterable<LavaCell>
         @Override
         public void doJobTask(LavaCell operand)
         {
-            // TODO: remove or confirm the check for pressure
-            // It is here because tile-entity version of volcano can
-            // be placed manually above an open space, which becomes
-            // the bore cell and simply builds up pressure forever
-            if(operand.isBoreCell() && operand.fluidUnits() < operand.volumeUnits())
-            {
-                operand.addLava(LavaSimulator.FLUID_UNITS_PER_TICK);
-            }
             operand.updateActiveStatus();
             operand.updateConnectionsIfNeeded(sim);
         }

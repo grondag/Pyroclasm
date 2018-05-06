@@ -20,6 +20,7 @@ import grondag.exotic_matter.varia.SimpleUnorderedArrayList;
 import io.netty.util.internal.ThreadLocalRandom;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.init.Blocks;
+import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
@@ -1457,7 +1458,11 @@ public class LavaCell extends AbstractLavaCell
     
     /**
      * True if this cell has not had a flow in a configured number of ticks
-     * and it has fewer than four connections to cells that have intersecting lava. (Is on an edge.)
+     * and it has connections to cells with interconnecting lava on fewer
+     * than four sides. (Is on an edge.) </p>
+     * 
+     * Note that we can't use the simple count of connections to test this,
+     * because cells can have more than one connection per side.
      */
     public boolean canCool(int simTickIndex)
     {
@@ -1466,12 +1471,37 @@ public class LavaCell extends AbstractLavaCell
         
         if(this.connections.size() < 4) return true;
         
-        int hotCount = 0;
+        int sideFlags = 0;
+        
         for(int i = this.connections.size() - 1; i >= 0; i--)
         {
             final LavaCell other = this.connections.get(i).getOther(this);
-            if(other.fluidUnits() > 0 && this.canFluidConnect(other)) hotCount++;
-            if(hotCount >= 3) return false;
+            if(other.fluidUnits() > 0 && this.canFluidConnect(other))
+            {
+                if(other.x() == this.x())
+                {
+                    if(other.z() > this.z())
+                    {
+                        sideFlags |= 1;
+                    }
+                    else
+                    {
+                        sideFlags |= 2;
+                    }
+                }
+                else
+                {
+                    if(other.x() > this.x())
+                    {
+                        sideFlags |= 4;
+                    }
+                    else
+                    {
+                        sideFlags |= 8;
+                    }
+                }
+            }
+            if(sideFlags == 15) return false;
         }
         
         return true;

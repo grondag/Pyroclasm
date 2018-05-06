@@ -227,6 +227,8 @@ public class LavaTerrainHelper
         if (TerrainBlockHelper.isFlowHeight(block)) return false;
         
         if(block == Blocks.AIR) return true;
+        
+        if(block == Blocks.LAVA) return false;
 
         Material material = state.getMaterial();
         

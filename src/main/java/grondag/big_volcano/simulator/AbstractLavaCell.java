@@ -16,8 +16,9 @@ public abstract class AbstractLavaCell
      * 
      * Larger numbers mean the fluid is less compressible which is more realistic.
      * Unclear at this time what the performance effects are of higher/lower values.
+     * Higher numbers probably result in slower flow through long tunnels.
      */
-    public static final int PRESSURE_FACTOR = 100;
+    public static final int PRESSURE_FACTOR = 20;
     public static final int PRESSURE_FACTOR_PLUS = PRESSURE_FACTOR + 1;
     public static final int PRESSURE_FACTOR_MINUS = PRESSURE_FACTOR - 1;
     public static final int PRESSURE_FACTOR_X2 = PRESSURE_FACTOR * 2;
@@ -204,8 +205,8 @@ public abstract class AbstractLavaCell
     {
         if(this.fluidUnits.addAndGet(deltaUnits) < 0)
         {
-            assert false : String.format("Negative fluid units detected.  NewAmount=%1$d Delta=%2$d cellID=%3$d", this.fluidUnits.get(), deltaUnits, this.id);
             this.fluidUnits.set(0);
+            assert false : String.format("Negative fluid units detected.  NewAmount=%1$d Delta=%2$d cellID=%3$d", this.fluidUnits.get(), deltaUnits, this.id);
         }
         
     }
@@ -224,11 +225,11 @@ public abstract class AbstractLavaCell
     {
         int newUnits = expectedPriorUnits + deltaUnits;
         
-        if(newUnits < 0)
-        {
-            newUnits = 0;
-            assert false : String.format("Negative fluid units detected.  PriorAmount=%1$d Deltar=%2$d cellID=%3$d", expectedPriorUnits, deltaUnits, this.id);
-        }
+//        if(newUnits < 0)
+//        {
+//            newUnits = 0;
+//            assert false : String.format("Negative fluid units detected.  PriorAmount=%1$d Deltar=%2$d cellID=%3$d", expectedPriorUnits, deltaUnits, this.id);
+//        }
       
         return this.fluidUnits.compareAndSet(expectedPriorUnits, expectedPriorUnits + deltaUnits);
     }

@@ -6,6 +6,7 @@ import grondag.big_volcano.lava.LavaTerrainHelper;
 import grondag.exotic_matter.model.TerrainBlockHelper;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
+import net.minecraft.init.Blocks;
 
 // possible cell content
 public enum BlockType
@@ -72,9 +73,12 @@ public enum BlockType
     
     public static BlockType getBlockTypeFromBlockState(IBlockState state)
     {
+        Block block = state.getBlock();
+        
+        if(block == Blocks.LAVA) return BlockType.BARRIER;
+        
         if(state.getMaterial().isReplaceable()) return BlockType.SPACE;
         
-        Block block = state.getBlock();
         
         int height = TerrainBlockHelper.getFlowHeightFromState(state);
         if(height == 0)

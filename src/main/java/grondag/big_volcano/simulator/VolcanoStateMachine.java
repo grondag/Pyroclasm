@@ -166,12 +166,26 @@ public class VolcanoStateMachine implements ISimulationTickable
      */
     private int maxCeilingLevel;
     
+    /**
+     * At the end of the current {@link #flow()} iteration through all bore cells
+     * this is the total of lava units in all bore cells <em>before</em> the addition of
+     * any lava added this pass.  Used with {@link #totalBoreUnitsLastPass} to 
+     * detect if lava is flowing out of the bore.
+     */
+    private long totalBoreUnitsThisPass = 0;
     
     /**
-     * Set to false at the start of flow operation pass
-     * and set to true if lava added to any cell.
+     * Total lava units added to bore cells during this iteration of {@link #flow()}.
+     * Used at the end of the pass to compute {@link #totalBoreUnitsLastPass}
      */
-    private boolean didFlowThisPass = false;
+    private long lavaAddeddThisPass = 0;
+    
+    /**
+     * Value of {@link #totalBoreUnitsThisPass} plus lava added ({@link #lavaAddeddThisPass} 
+     * at the end of the previous {@link #flow()} pass.
+     */
+    private long totalBoreUnitsLastPass = 0;
+    
     
     public VolcanoStateMachine(VolcanoNode volcano)
     {
@@ -371,16 +385,23 @@ public class VolcanoStateMachine implements ISimulationTickable
             offsetIndex = 0;
         }
 
-        if(this.offsetIndex == 0) this.didFlowThisPass = false;
+        if(this.offsetIndex == 0)
+        {
+            this.lavaAddeddThisPass = 0;
+            this.totalBoreUnitsThisPass = 0;
+            this.lavaAddeddThisPass = 0;
+        }
         
         
         LavaCell cell = this.boreCells.get(this.offsetIndex++);
+        
+        this.totalBoreUnitsThisPass += cell.fluidUnits();
         
         if(cell.worldSurfaceLevel() < cell.ceilingLevel())
         {
             // cell has room, add lava
             cell.addLava(LavaSimulator.FLUID_UNITS_PER_LEVEL);
-            this.didFlowThisPass = true;
+            this.lavaAddeddThisPass += LavaSimulator.FLUID_UNITS_PER_LEVEL;
         }
         else if(cell.ceilingLevel() < this.maxCeilingLevel)
         {
@@ -411,8 +432,15 @@ public class VolcanoStateMachine implements ISimulationTickable
         {
             // if we've gone past the last offset, can go to next stage
             offsetIndex = 0;
+            
+            boolean didFlowThisPass = this.lavaAddeddThisPass > 0;
+            boolean didLeakageHappen = this.totalBoreUnitsThisPass < this.totalBoreUnitsLastPass;
+            
+            this.totalBoreUnitsLastPass = this.totalBoreUnitsThisPass + this.lavaAddeddThisPass;
+            this.totalBoreUnitsThisPass = 0;
+            this.lavaAddeddThisPass = 0;
 
-            return didFlowThisPass ? Operation.FLOW : Operation.FIND_WEAKNESS;
+            return didFlowThisPass || didLeakageHappen ? Operation.FLOW : Operation.FIND_WEAKNESS;
         }
         else
         {
@@ -546,19 +574,32 @@ public class VolcanoStateMachine implements ISimulationTickable
 
     private BlockPos findMoundSpot()
     {
-        BlockPos best = null;
         int lowest = 255;
-        int rx = (int) (ThreadLocalRandom.current().nextGaussian() * Configurator.VOLCANO.moundRadius);
-        int rz = (int) (ThreadLocalRandom.current().nextGaussian() * Configurator.VOLCANO.moundRadius);
         
-        // find lowest point near the selected point
-        for(int i = 0; i < 9; i++)
+        ThreadLocalRandom r = ThreadLocalRandom.current();
+        // should give us the distance from origin for a sample from a bivariate normal distribution
+        // probably a more elegant way to do it, but whatever
+        double dx = r.nextGaussian() * Configurator.VOLCANO.moundRadius;
+        double dz = r.nextGaussian() * Configurator.VOLCANO.moundRadius;
+        int distance = (int) Math.sqrt(dx * dx + dz * dz);
+        
+        int bestX = 0;
+        int bestZ = 0;
+        
+        // find lowest point at the given distance
+        // intended to fill in low areas before high areas but still keep normal mound shape
+        for(int i = 0; i <= 20; i++)
         {
-            int x = this.center.getX() + rx + Useful.DISTANCE_SORTED_CIRCULAR_OFFSETS[i].getX();
-            int z = this.center.getZ() + rz + Useful.DISTANCE_SORTED_CIRCULAR_OFFSETS[i].getZ();
+            double angle = 2 * Math.PI * r.nextDouble();
+            int x = (int) Math.round(this.center.getX() + distance * Math.cos(angle));
+            int z = (int) Math.round(this.center.getZ() + distance * Math.sin(angle));
             int y = this.world.getHeight(x, z);
             
+            //FIXME: remove
+//            if(x == 327 && z == 103)
+//                System.out.println("boop");
             
+       
             while(y > 0 && LavaTerrainHelper.canLavaDisplace(this.lavaSim.worldBuffer().getBlockState(x, y - 1, z)))
             {
                 y--;
@@ -567,9 +608,31 @@ public class VolcanoStateMachine implements ISimulationTickable
             if(y < lowest)
             {
                lowest = y;
-               best = new BlockPos(x, y, z);
+               bestX = x;
+               bestZ = z;
             }
         }
+        
+        BlockPos best = new BlockPos(bestX, lowest, bestZ);
+        
+        // found the general location, now nudge to directly nearby blocks if any are lower
+        for(int i = 1; i < 9; i++)
+        {
+            int x = best.getX() + Useful.getDistanceSortedCircularOffset(i).getX();
+            int z = best.getZ() + Useful.getDistanceSortedCircularOffset(i).getZ();
+            int y = this.world.getHeight(x, z);
+            
+            while(y > 0 && LavaTerrainHelper.canLavaDisplace(this.lavaSim.worldBuffer().getBlockState(x, y - 1, z)))
+            {
+                y--;
+            }
+            
+            if(y < best.getY())
+            {
+                best = new BlockPos(x, y, z);
+            }
+        }
+        
         return best;
     }
   

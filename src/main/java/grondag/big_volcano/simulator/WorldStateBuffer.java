@@ -9,6 +9,8 @@ import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -194,27 +196,37 @@ public class WorldStateBuffer implements IBlockAccess
         final int minTickDiff = Configurator.VOLCANO.minBlockUpdateBufferTicks;
         final int maxTickDiff = Configurator.VOLCANO.maxBlockUpdateBufferTicks;
         final int maxChunkUpdates = Configurator.VOLCANO.maxChunkUpdatesPerTick;
-
+        
         ArrayList<ChunkBuffer> candidates = new ArrayList<ChunkBuffer>();
         
         // start pass removes empties and updates priority, puts into array for sorting
         Iterator<ChunkBuffer> things = chunks.values().iterator();
         while(things.hasNext())
         {
-            // should not be getting concurrent blockstate calls, so use this
-            // opportunity to clean out empty chunk buffers
+            // clean out empty chunk buffers if not in use
             ChunkBuffer buff = things.next();
-            if(buff.size() == 0)
+            final int tickDiff = currentTick - buff.ageStartTick;
+            
+            if(buff.size() == 0 && tickDiff > 20)
             {
-                things.remove();
-                this.usedBuffers.add(buff);
-                
-//                if(Output.DEBUG_MODE)
-//                    Output.info("Successful unqueud chunk buffer due to complete state reversion");
+                if(buff.lock.writeLock().tryLock())
+                {
+                    try
+                    {
+                        synchronized(this.chunkSynch)
+                        {
+                            things.remove();
+                            this.usedBuffers.add(buff);
+                        }
+                    }
+                    finally
+                    {
+                        buff.lock.writeLock().unlock();
+                    }
+                }
             }
             else
             {
-                int tickDiff = currentTick - buff.tickCreated;
                 if(tickDiff > minTickDiff)
                 {
                     buff.updatePriority = tickDiff * (tickDiff < maxTickDiff ? buff.requiredUpdateCount.get() : buff.size());
@@ -235,9 +247,7 @@ public class WorldStateBuffer implements IBlockAccess
         int doneCount = 0;
         for(ChunkBuffer buff : candidates)
         {
-            this.chunks.remove(buff.packedChunkpos);
             buff.applyBlockUpdates(tracker, sim);
-            this.usedBuffers.add(buff);
             
             // honor limit on chunk updates per tick
             if(++doneCount > maxChunkUpdates) break;
@@ -561,14 +571,29 @@ public class WorldStateBuffer implements IBlockAccess
         }
     }
     
-//    private static AtomicInteger recoveryCount = new AtomicInteger(0);
-    private static AtomicInteger totalCount = new AtomicInteger(0);
     
     public class ChunkBuffer
     {
         private long packedChunkpos;
         
-        private int tickCreated;
+        /**
+         * If the buffer contains no updates, this is the tick on
+         * which the buffer was created (if there have never been updates)
+         * or the tick on which the number of updates become zero (if there
+         * were updates but they were later undone).<p>
+         * 
+         * If the buffer does contain update, this is the tick on 
+         * which the first update occurred. <p>
+         * 
+         * Used to determine if empty buffers should be removed and 
+         * to prioritize application of buffers that contain updates.<p>
+         * 
+         * Not marked volatile, so threads iterating this collection
+         * could  potentially see stale values if accessing without locking.
+         * At worst, this should mean buffers may be removed or applied
+         * a tick or two later than they should have been, which is acceptable.
+         */
+        private int ageStartTick;
         
         private Chunk worldChunk = null;
         
@@ -581,6 +606,12 @@ public class WorldStateBuffer implements IBlockAccess
         
         private BlockStateBuffer[] states = new BlockStateBuffer[0x10000];
         
+        /**
+         * The "read" lock governs changes to the internal state of the buffer.
+         * The "write" lock governs synchronization with world and clearing of buffer.
+         */
+        public final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+        
         /** 
          * Used by {@link #applyBlockUpdates(AdjustmentTracker, LavaSimulator)} to 
          * maintain update priority sort order 
@@ -590,7 +621,7 @@ public class WorldStateBuffer implements IBlockAccess
         private ChunkBuffer(long packedChunkpos, int tickCreated)
         {
             this.packedChunkpos = packedChunkpos;
-            this.tickCreated = tickCreated;
+            this.ageStartTick = tickCreated;
             for(int i = 0; i < 256; i++)
             {
                 levelCounts[i] = new AtomicInteger(0);
@@ -600,7 +631,7 @@ public class WorldStateBuffer implements IBlockAccess
         private void renew(long packedChunkpos, int tickCreated)
         {
             this.packedChunkpos = packedChunkpos;
-            this.tickCreated = tickCreated;
+            this.ageStartTick = tickCreated;
             this.requiredUpdateCount.set(0);
             this.dataCount.set(0);
             this.worldChunk = null;
@@ -613,32 +644,41 @@ public class WorldStateBuffer implements IBlockAccess
         
         public IBlockState getBlockState(int x, int y, int z)
         {
-            BlockStateBuffer entry = states[getChunkStateKeyFromBlockPos(x, y, z)];
+            this.lock.readLock().lock();
             
-            if(entry == null)
+            try
             {
-//                HardScience.log.info("blockstate from world @" + x + ", " + y + ", " + z + " = " + 
-//                        realWorld.getChunkFromChunkCoords(x >> 4, z >> 4).getBlockState(x, y, z).toString());
+                BlockStateBuffer entry = states[getChunkStateKeyFromBlockPos(x, y, z)];
                 
-                assert isMCWorldAccessAppropriate : "Access to MC world in worldBuffer occurred outside expected time window.";
-                
-                if(this.worldChunk == null || !this.worldChunk.isLoaded())
+                if(entry == null)
                 {
-                    // prevent concurrent access to MC world chunk loading
-                    synchronized(realworldLock)
+//                    HardScience.log.info("blockstate from world @" + x + ", " + y + ", " + z + " = " + 
+//                            realWorld.getChunkFromChunkCoords(x >> 4, z >> 4).getBlockState(x, y, z).toString());
+                    
+                    assert isMCWorldAccessAppropriate : "Access to MC world in worldBuffer occurred outside expected time window.";
+                    
+                    if(this.worldChunk == null || !this.worldChunk.isLoaded())
                     {
-                        this.worldChunk = realWorld.getChunkFromChunkCoords(x >> 4, z >> 4);
+                        // prevent concurrent access to MC world chunk loading
+                        synchronized(realworldLock)
+                        {
+                            this.worldChunk = realWorld.getChunkFromChunkCoords(x >> 4, z >> 4);
+                        }
                     }
+                    
+                    return this.worldChunk.getBlockState(x, y, z);
                 }
-                
-                return this.worldChunk.getBlockState(x, y, z);
+                else
+                {
+//                    HardScience.log.info("blockstate from buffer @" + x + ", " + y + ", " + z + " = " + 
+//                            entry.newState.toString());
+                    
+                    return entry.newState;
+                }
             }
-            else
+            finally
             {
-//                HardScience.log.info("blockstate from buffer @" + x + ", " + y + ", " + z + " = " + 
-//                        entry.newState.toString());
-                
-                return entry.newState;
+                this.lock.readLock().unlock();
             }
         }
         
@@ -647,160 +687,211 @@ public class WorldStateBuffer implements IBlockAccess
          */
         public void clearBlockState(int x, int y, int z)
         {
-            states[getChunkStateKeyFromBlockPos(x, y, z)] = null;
-        }
-        
-        /**
-         * No mechanism here to make this threadsafe, however the lava simulator will never
-         * attempt to update the same cell concurrently, so should never be a collision.
-         */
-        private void setBlockState(int x, int y, int z, IBlockState newState, IBlockState expectedPriorState)
-        {
-            totalCount.incrementAndGet();
+            this.lock.readLock().lock();
             
-            int key = getChunkStateKeyFromBlockPos(x, y, z);
-            BlockStateBuffer state = states[key];
-            if(state == null)
+            try
             {
-                state = new BlockStateBuffer(newState, expectedPriorState);
-                this.states[key] = state;
-                this.dataCount.incrementAndGet();
-                this.levelCounts[y].incrementAndGet();
-                if(state.isRequired()) this.requiredUpdateCount.incrementAndGet();
-            }
-            else
-            {
-                if(newState == state.expectedPriorState)
+                final int key = getChunkStateKeyFromBlockPos(x, y, z);
+                BlockStateBuffer state = states[key];
+                if(state != null)
                 {
-//                    HardScience.log.info("Block state removed due to reversion");
-                    this.states[key] = null;
-                    this.dataCount.decrementAndGet();
+                    states[key] = null;
+                    
+                    // see comments for ageStartTick
+                    if(this.dataCount.decrementAndGet() == 0) this.ageStartTick = Simulator.instance().getTick();
+                    
                     this.levelCounts[y].decrementAndGet();
                     if(state.isRequired()) this.requiredUpdateCount.decrementAndGet();
+                }
+            }
+            finally
+            {
+                this.lock.readLock().unlock();
+            }
+        }
+        
+        private void setBlockState(int x, int y, int z, IBlockState newState, IBlockState expectedPriorState)
+        {
+            this.lock.readLock().lock();
+            
+            try
+            {
+                int key = getChunkStateKeyFromBlockPos(x, y, z);
+                BlockStateBuffer state = states[key];
+                if(state == null)
+                {
+                    state = new BlockStateBuffer(newState, expectedPriorState);
+                    this.states[key] = state;
                     
-//                    if((recoveryCount.getAndIncrement() & 0xFFF) == 0xFFF)
-//                        HardScience.log.info("BlockStateRecoveries = " + recoveryCount.get() + " of " + totalCount.get() + ", " + recoveryCount.get() * 100 / totalCount.get() + " percent recovery");
+                    // see comments for ageStartTick
+                    if(this.dataCount.incrementAndGet() == 1) this.ageStartTick = Simulator.instance().getTick();
+                    
+                    this.levelCounts[y].incrementAndGet();
+                    if(state.isRequired()) this.requiredUpdateCount.incrementAndGet();
                 }
                 else
                 {
-                    boolean wasRequired = state.isRequired();
-                    state.newState = newState;
-                    if(state.isRequired())
+                    if(newState == state.expectedPriorState)
                     {
-                        if(!wasRequired) this.requiredUpdateCount.incrementAndGet();
+                        this.states[key] = null;
+                        
+                        // see comments for ageStartTick
+                        if(this.dataCount.decrementAndGet() == 0) this.ageStartTick = Simulator.instance().getTick();
+                        
+                        this.levelCounts[y].decrementAndGet();
+                        if(state.isRequired()) this.requiredUpdateCount.decrementAndGet();
                     }
                     else
                     {
-                        if(wasRequired) this.requiredUpdateCount.decrementAndGet();
+                        boolean wasRequired = state.isRequired();
+                        state.newState = newState;
+                        if(state.isRequired())
+                        {
+                            if(!wasRequired) this.requiredUpdateCount.incrementAndGet();
+                        }
+                        else
+                        {
+                            if(wasRequired) this.requiredUpdateCount.decrementAndGet();
+                        }
                     }
                 }
+            }
+            finally
+            {
+                this.lock.readLock().unlock();
             }
         }
         
-        /** NOT thread safe */
         private void applyBlockUpdates(AdjustmentTracker tracker, LavaSimulator sim)
         {
-
-            tracker.clear();
-            int count = this.dataCount.get();
-            int allRemaining = count;
+            this.lock.writeLock().lock();
             
-            int chunkStartX = PackedChunkPos.getChunkXStart(this.packedChunkpos);
-            int chunkStartZ = PackedChunkPos.getChunkZStart(this.packedChunkpos);
-            
+            try
+            {
+                tracker.clear();
+                int count = this.dataCount.get();
+                int allRemaining = count;
+                
+                int chunkStartX = PackedChunkPos.getChunkXStart(this.packedChunkpos);
+                int chunkStartZ = PackedChunkPos.getChunkZStart(this.packedChunkpos);
+                
 //            HardScience.log.info(sim.getTickIndex() + " Applying " + count + " block updates for chunk with startX=" + chunkStartX + " and startZ=" + chunkStartZ);
-            
-            for(int y = 0; y < 256; y++)
-            {
-                if(this.levelCounts[y].get() > 0)
+                
+                for(int y = 0; y < 256; y++)
                 {
-                    int statesRemainingThisY = this.levelCounts[y].get();
-                    int indexStart = y << 8;
-                    int indexEnd = indexStart + 256;
-                    
-                    for(int i = indexStart; i < indexEnd; i++)
+                    if(this.levelCounts[y].get() > 0)
                     {
-                        if(this.states[i] != null)
+                        int statesRemainingThisY = this.levelCounts[y].get();
+                        int indexStart = y << 8;
+                        int indexEnd = indexStart + 256;
+                        
+                        for(int i = indexStart; i < indexEnd; i++)
                         {
-                            BlockStateBuffer bsb = states[i];
-                            
-                            int x = chunkStartX +  ((i >> 4) & 0xF);
-                            int z = chunkStartZ + (i & 0xF);
-                            
-                            if(TerrainBlockHelper.isFlowHeight(bsb.newState.getBlock()))
+                            if(this.states[i] != null)
                             {
-                                tracker.setAdjustmentNeededAround(x, y, z);
-                                // set to height block so no need to look for filler
-                                tracker.excludeAdjustmentNeededAt(x, y, z);
+                                BlockStateBuffer bsb = states[i];
+                                
+                                int x = chunkStartX +  ((i >> 4) & 0xF);
+                                int z = chunkStartZ + (i & 0xF);
+                                
+                                if(TerrainBlockHelper.isFlowHeight(bsb.newState.getBlock()))
+                                {
+                                    tracker.setAdjustmentNeededAround(x, y, z);
+                                    // set to height block so no need to look for filler
+                                    tracker.excludeAdjustmentNeededAt(x, y, z);
+                                }
+                                else if(TerrainBlockHelper.isFlowHeight(bsb.expectedPriorState.getBlock()))
+                                {
+                                    // difference here is simply that we allow fillers in the block being set
+                                    tracker.setAdjustmentNeededAround(x, y, z);
+                                }
+                                
+                                realWorld.setBlockState(new BlockPos( x, y, z), bsb.newState, 3);
+                                
+                                this.states[i] = null;
+                                allRemaining--;
+                                if(--statesRemainingThisY == 0) break;
                             }
-                            else if(TerrainBlockHelper.isFlowHeight(bsb.expectedPriorState.getBlock()))
-                            {
-                                // difference here is simply that we allow fillers in the block being set
-                                tracker.setAdjustmentNeededAround(x, y, z);
-                            }
-                      
-                            realWorld.setBlockState(new BlockPos( x, y, z), bsb.newState, 3);
-                            
-                            this.states[i] = null;
-                            allRemaining--;
-                            if(--statesRemainingThisY == 0) break;
                         }
+                        this.levelCounts[y].set(0);
                     }
-                    this.levelCounts[y].set(0);
+                    if(allRemaining == 0) break;
                 }
-                if(allRemaining == 0) break;
+                
+                for(BlockPos p : tracker.getAdjustmentPositions(this.packedChunkpos))
+                {
+                    if(adjustFillIfNeeded(p, sim)) count++;
+                }
+                
+                // drop all state and force any subsequent getState calls to refer to real world
+                // also resets the timer
+                this.renew(this.packedChunkpos, Simulator.instance().getTick());
+                
+                WorldStateBuffer.this.perfStateApplication.addCount(count);
             }
-
-            this.dataCount.set(0);
-            this.requiredUpdateCount.set(0);
-            
-            for(BlockPos p : tracker.getAdjustmentPositions(this.packedChunkpos))
+            finally
             {
-                if(adjustFillIfNeeded(p, sim)) count++;
+                this.lock.writeLock().unlock();
             }
-            
-            WorldStateBuffer.this.perfStateApplication.addCount(count);
 
         }
         
         private int size()
         {
-            return this.dataCount.get();
+            this.lock.readLock().lock();
+            
+            try
+            {
+                return this.dataCount.get();
+            }
+            finally
+            {
+                this.lock.readLock().unlock();
+            }
         }
         
         /** returns the next index that should be used */
         private int writeSaveData(int[] saveData, int startingIndex)
         {
-            int allRemaining = this.size();
-            int chunkStartX = PackedChunkPos.getChunkXStart(this.packedChunkpos);
-            int chunkStartZ = PackedChunkPos.getChunkZStart(this.packedChunkpos);
+            this.lock.readLock().lock();
             
-            for(int y = 0; y < 256; y++)
+            try
             {
-                if(this.levelCounts[y].get() > 0)
+                int allRemaining = this.size();
+                int chunkStartX = PackedChunkPos.getChunkXStart(this.packedChunkpos);
+                int chunkStartZ = PackedChunkPos.getChunkZStart(this.packedChunkpos);
+                
+                for(int y = 0; y < 256; y++)
                 {
-                    int statesRemainingThisY = this.levelCounts[y].get();
-                    int indexStart = y << 8;
-                    int indexEnd = indexStart + 256;
-                    
-                    for(int i = indexStart; i < indexEnd; i++)
+                    if(this.levelCounts[y].get() > 0)
                     {
-                        BlockStateBuffer state = this.states[i];
-                        if(state != null)
+                        int statesRemainingThisY = this.levelCounts[y].get();
+                        int indexStart = y << 8;
+                        int indexEnd = indexStart + 256;
+                        
+                        for(int i = indexStart; i < indexEnd; i++)
                         {
-                            saveData[startingIndex++] = chunkStartX + ((i  >> 4) & 0xF);
-                            saveData[startingIndex++] = y;
-                            saveData[startingIndex++] = chunkStartZ + (i & 0xF);
-                            saveData[startingIndex++] = Block.getStateId(state.newState);
-                            saveData[startingIndex++] = Block.getStateId(state.expectedPriorState);
-                            allRemaining--;
-                            if(--statesRemainingThisY == 0) break;
+                            BlockStateBuffer state = this.states[i];
+                            if(state != null)
+                            {
+                                saveData[startingIndex++] = chunkStartX + ((i  >> 4) & 0xF);
+                                saveData[startingIndex++] = y;
+                                saveData[startingIndex++] = chunkStartZ + (i & 0xF);
+                                saveData[startingIndex++] = Block.getStateId(state.newState);
+                                saveData[startingIndex++] = Block.getStateId(state.expectedPriorState);
+                                allRemaining--;
+                                if(--statesRemainingThisY == 0) break;
+                            }
                         }
                     }
+                    if(allRemaining == 0) break;
                 }
-                if(allRemaining == 0) break;
+                return startingIndex;
             }
-            return startingIndex;
+            finally
+            {
+                this.lock.readLock().unlock();
+            }
         }
         
         public long getPackedChunkPos()
