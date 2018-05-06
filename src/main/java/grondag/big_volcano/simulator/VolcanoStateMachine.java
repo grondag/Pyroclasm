@@ -18,6 +18,7 @@ import grondag.exotic_matter.simulator.ISimulationTickable;
 import grondag.exotic_matter.simulator.Simulator;
 import grondag.exotic_matter.varia.Useful;
 import net.minecraft.block.material.EnumPushReaction;
+import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.init.Blocks;
 import net.minecraft.util.math.BlockPos;
@@ -74,6 +75,13 @@ public class VolcanoStateMachine implements ISimulationTickable
 
     private static enum Operation
     {
+        /**
+         * Removes vanilla lava in bore and converts nearby vanilla lava to obsian. 
+         * Mostly for aesthetic reasons.
+         * Transitions to {@link #SETUP_CLEAR_AND_FILL}.
+         */
+        SETUP_CONVERT_LAVA,
+        
         /**
          * Ensures bottom of bore is lava.
          * Transitions to {@link #SETUP_FIND_CELLS}.
@@ -134,8 +142,13 @@ public class VolcanoStateMachine implements ISimulationTickable
     
     private static final int BORE_RADIUS = 5;
     
-    private static final int MAX_OFFSET = Useful.getLastDistanceSortedOffsetIndex(BORE_RADIUS);
+    private static final int MAX_BORE_OFFSET = Useful.getLastDistanceSortedOffsetIndex(BORE_RADIUS);
     
+    private static final int MAX_CONVERSION_OFFSET = Useful.getLastDistanceSortedOffsetIndex(BORE_RADIUS + 6);
+    
+    private static final int MAX_CONVERSION_Y = 70;
+    
+    @SuppressWarnings("unused")
     private final VolcanoNode volcano;
     
     private final LavaSimulator lavaSim;
@@ -146,7 +159,7 @@ public class VolcanoStateMachine implements ISimulationTickable
     
     private final BlockPos center;
     
-    private Operation operation = Operation.SETUP_CLEAR_AND_FILL;
+    private Operation operation = Operation.SETUP_CONVERT_LAVA;
     
     /**
      * List of bore cells at volcano floor, from center out. Will be
@@ -159,6 +172,11 @@ public class VolcanoStateMachine implements ISimulationTickable
      * that iterate that collection over more than one tick.
      */
     private int  offsetIndex = 0;
+    
+    /**
+     * For operations that must retain a y level as part of state, the current y level.
+     */
+    private int y  = 0;
 
     /**
      * Max ceiling level of any bore cell.
@@ -189,6 +207,7 @@ public class VolcanoStateMachine implements ISimulationTickable
     private long totalBoreUnitsLastPass = 0;
     
     
+    @SuppressWarnings("null")
     public VolcanoStateMachine(VolcanoNode volcano)
     {
         this.volcano = volcano;
@@ -213,6 +232,10 @@ public class VolcanoStateMachine implements ISimulationTickable
         {
             switch(this.operation)
             {
+                case SETUP_CONVERT_LAVA:
+                    this.operation = convertLava();
+                    break;
+                    
                 case SETUP_CLEAR_AND_FILL:
                     this.operation = setupClear();
                     break;
@@ -270,8 +293,7 @@ public class VolcanoStateMachine implements ISimulationTickable
     {
         
         // handle any kind of improper clean up or initialization
-        
-        if(this.offsetIndex >= MAX_OFFSET) 
+        if(this.offsetIndex >= MAX_BORE_OFFSET) 
         {
             assert false : "Improper initialization or cleanup in volcano state machine. Restarting.";
             offsetIndex = 0;
@@ -284,7 +306,7 @@ public class VolcanoStateMachine implements ISimulationTickable
             world.setBlockState(pos, TerrainBlockHelper.stateWithDiscreteFlowHeight(ModBlocks.lava_dynamic_height.getDefaultState(), TerrainState.BLOCK_LEVELS_INT));
         }
          
-        if(this.offsetIndex >= MAX_OFFSET)
+        if(this.offsetIndex >= MAX_BORE_OFFSET)
         {
             // if we've gone past the last offset, can go to next stage
             offsetIndex = 0;
@@ -301,7 +323,7 @@ public class VolcanoStateMachine implements ISimulationTickable
     private Operation setupFind()
     {
         
-        if(this.offsetIndex >= MAX_OFFSET) 
+        if(this.offsetIndex >= MAX_BORE_OFFSET) 
         {
             assert false : "Improper initialization or cleanup in volcano state machine. Restarting.";
             offsetIndex = 0;
@@ -326,7 +348,7 @@ public class VolcanoStateMachine implements ISimulationTickable
         cell.setCoolingDisabled(true);
         this.boreCells.add(cell);
         
-        if(this.offsetIndex >= MAX_OFFSET)
+        if(this.offsetIndex >= MAX_BORE_OFFSET)
         {
             // if we've gone past the last offset, can go to next stage
             offsetIndex = 0;
@@ -349,7 +371,7 @@ public class VolcanoStateMachine implements ISimulationTickable
     
     private Operation updateBoreLimits()
     {
-        if(this.offsetIndex >= MAX_OFFSET) 
+        if(this.offsetIndex >= MAX_BORE_OFFSET) 
         {
             assert false : "Improper initialization or cleanup in volcano state machine. Restarting.";
             offsetIndex = 0;
@@ -365,7 +387,7 @@ public class VolcanoStateMachine implements ISimulationTickable
             if(l > this.maxCeilingLevel) this.maxCeilingLevel = l;
         }
       
-        if(this.offsetIndex >= MAX_OFFSET)
+        if(this.offsetIndex >= MAX_BORE_OFFSET)
         {
             // if we've gone past the last offset, can go to next stage
             offsetIndex = 0;
@@ -383,7 +405,7 @@ public class VolcanoStateMachine implements ISimulationTickable
 
     private Operation flow()
     {
-        if(this.offsetIndex >= MAX_OFFSET) 
+        if(this.offsetIndex >= MAX_BORE_OFFSET) 
         {
             assert false : "Improper initialization or cleanup in volcano state machine. Restarting.";
             offsetIndex = 0;
@@ -436,7 +458,7 @@ public class VolcanoStateMachine implements ISimulationTickable
         }
         
       
-        if(this.offsetIndex >= MAX_OFFSET)
+        if(this.offsetIndex >= MAX_BORE_OFFSET)
         {
             // if we've gone past the last offset, can go to next stage
             offsetIndex = 0;
@@ -458,7 +480,7 @@ public class VolcanoStateMachine implements ISimulationTickable
   
     private Operation meltCheck()
     {
-        if(this.offsetIndex >= MAX_OFFSET) 
+        if(this.offsetIndex >= MAX_BORE_OFFSET) 
         {
             assert false : "Improper initialization or cleanup in volcano state machine. Restarting.";
             offsetIndex = 0;
@@ -477,7 +499,7 @@ public class VolcanoStateMachine implements ISimulationTickable
         }
         
       
-        if(this.offsetIndex >= MAX_OFFSET)
+        if(this.offsetIndex >= MAX_BORE_OFFSET)
         {
             // Update bore limits because block that was melted might
             // have opened up cell to a height above the current max.
@@ -507,7 +529,7 @@ public class VolcanoStateMachine implements ISimulationTickable
 
     private Operation pushBlocks()
     {
-        if(this.offsetIndex >= MAX_OFFSET) 
+        if(this.offsetIndex >= MAX_BORE_OFFSET) 
         {
             assert false : "Improper initialization or cleanup in volcano state machine. Restarting.";
             offsetIndex = 0;
@@ -518,7 +540,7 @@ public class VolcanoStateMachine implements ISimulationTickable
         if(this.pushBlock(new BlockPos(cell.x(), cell.ceilingY() + 1, cell.z())))
             cell.setValidationNeeded(true);
       
-        if(this.offsetIndex >= MAX_OFFSET)
+        if(this.offsetIndex >= MAX_BORE_OFFSET)
         {
             offsetIndex = 0;
             
@@ -644,4 +666,53 @@ public class VolcanoStateMachine implements ISimulationTickable
         return best;
     }
   
+    /**
+     * Removes vanilla lava inside bore and converts lava around it to obsidian.
+     */
+    private Operation convertLava()
+    {
+        // handle any kind of improper clean up or initialization
+        if(this.offsetIndex >= MAX_CONVERSION_OFFSET) 
+        {
+            assert false : "Improper initialization or cleanup in volcano state machine. Restarting.";
+            offsetIndex = 0;
+        }
+        
+        if(this.y >= MAX_CONVERSION_Y) 
+        {
+            assert false : "Improper initialization or cleanup in volcano state machine. Restarting.";
+            y = 0;
+        }
+      
+        BlockPos pos = borePosForLevel(offsetIndex, y);
+        
+        if(world.getBlockState(pos).getMaterial() == Material.LAVA)
+        {
+            if(offsetIndex < MAX_BORE_OFFSET)
+                world.setBlockToAir(pos);
+            else
+                world.setBlockState(pos, Blocks.OBSIDIAN.getDefaultState());
+        }
+         
+        
+        if(++offsetIndex >= MAX_CONVERSION_OFFSET)
+        {
+            // if we've gone past the last offset, can go to next stage
+            offsetIndex = 0;
+            
+            if(++y < MAX_CONVERSION_Y)
+            {
+                return Operation.SETUP_CONVERT_LAVA;
+            }
+            else
+            {
+                this.y = 0;
+                return Operation.SETUP_CLEAR_AND_FILL;
+            }
+        }
+        else
+        {
+            return Operation.SETUP_CONVERT_LAVA;
+        }
+    }
 }

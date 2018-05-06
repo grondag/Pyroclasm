@@ -206,7 +206,7 @@ public abstract class AbstractLavaCell
         if(this.fluidUnits.addAndGet(deltaUnits) < 0)
         {
             this.fluidUnits.set(0);
-            assert false : String.format("Negative fluid units detected.  NewAmount=%1$d Delta=%2$d cellID=%3$d", this.fluidUnits.get(), deltaUnits, this.id);
+//            assert false : String.format("Negative fluid units detected.  NewAmount=%1$d Delta=%2$d cellID=%3$d", this.fluidUnits.get(), deltaUnits, this.id);
         }
         
     }

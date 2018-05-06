@@ -113,12 +113,12 @@ public class WorldStateBuffer implements IBlockAccess
         }
     }
     
-    public void setBlockState(BlockPos pos, IBlockState newState, IBlockState expectedPriorState)
+    public void setBlockState(BlockPos pos, IBlockState newState, @Nullable IBlockState expectedPriorState)
     {
         this.setBlockState(pos.getX(), pos.getY(), pos.getZ(), newState, expectedPriorState);
     }
     
-    public void setBlockState(long packedPos, IBlockState newState, IBlockState expectedPriorState)
+    public void setBlockState(long packedPos, IBlockState newState, @Nullable IBlockState expectedPriorState)
     {
         this.setBlockState(PackedBlockPos.getX(packedPos), PackedBlockPos.getY(packedPos), PackedBlockPos.getZ(packedPos), newState, expectedPriorState);
     }
@@ -139,7 +139,7 @@ public class WorldStateBuffer implements IBlockAccess
         }
     }
     
-    public void setBlockState(int x, int y, int z, IBlockState newState, IBlockState expectedPriorState)
+    public void setBlockState(int x, int y, int z, IBlockState newState, @Nullable IBlockState expectedPriorState)
     {
         if(Configurator.VOLCANO.enablePerformanceLogging) this.stateSetCount++;
         
