@@ -252,7 +252,8 @@ public class LavaConnection
      */
     private boolean setFlowLimitsThisTick(LavaCell cellHigh, LavaCell cellLow, int surfaceHigh, int surfaceLow, boolean sameDirection)
     {
-        int min = sameDirection ? 2 : 100;
+        // don't flow into empty cells unless have enough for a full level
+        int min = cellLow.isEmpty() ? LavaSimulator.FLUID_UNITS_PER_LEVEL : sameDirection ? 2 : 100;
         int diff = surfaceHigh - surfaceLow;
         if(diff < min || cellHigh.isEmpty())
         {
@@ -260,8 +261,9 @@ public class LavaConnection
             return false;
         }
      
-        // want to flow faster if under pressure - so ignoring the ceiling of the low cell
-        int flowWindow = surfaceHigh - Math.max(cellHigh.floorUnits(), cellLow.floorUnits());
+        // want to flow faster if under pressure - so use surface of high cell if above low cell ceiling
+        // and if flowing into an open area use the max height of the low cell
+        int flowWindow = Math.max(surfaceHigh, cellLow.ceilingUnits()) - Math.max(cellHigh.floorUnits(), cellLow.floorUnits());
         //int flowWindow = Math.min(surfaceHigh, cellLow.ceilingUnits()) - Math.max(cellHigh.floorUnits(), cellLow.floorUnits());
         
         if(flowWindow < LavaSimulator.FLUID_UNITS_PER_LEVEL)
@@ -269,6 +271,9 @@ public class LavaConnection
             //cross-section too small
             return false;
         }
+        
+        // if open flow don't constrain
+        
         
         //FIXME: put back or accept new way and simplify code
 //        this.flowRemainingThisTick =  flowWindow / 4;

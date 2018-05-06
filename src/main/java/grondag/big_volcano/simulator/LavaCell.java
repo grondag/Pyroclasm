@@ -1139,7 +1139,7 @@ public class LavaCell extends AbstractLavaCell
                 }
                 else if( y < surfaceY)
                 {
-                    this.changeFluidUnits(-LavaSimulator.FLUID_UNITS_PER_BLOCK);
+                    this.changeFluidUnits(-Math.min(this.fluidUnits(), LavaSimulator.FLUID_UNITS_PER_BLOCK));
                     this.updateLastFlowTick();
                 }
             }
@@ -1635,6 +1635,12 @@ public class LavaCell extends AbstractLavaCell
         return this.rawRetainedUnits;
     }
     
+    /** {@link #rawRetainedLevel} + {@link #floorUnits()} */
+    public int getRawRetainedSurface()
+    {
+        return this.getRawRetainedUnits() + this.floorUnits();
+    }
+    
     /** see {@link #rawRetainedLevel} */
     public void updateRawRetentionIfNeeded()
     {
@@ -1766,34 +1772,36 @@ public class LavaCell extends AbstractLavaCell
 
         this.needsSmoothedRetentionUpdate = false;
         int count = 1;
-        int total = this.getRawRetainedUnits();
+        int total = this.getRawRetainedSurface();
         
         LavaCell neighbor = this.getFloorNeighbor(-1, 0, true);
-        if(neighbor != null) { count++; total += neighbor.getRawRetainedUnits(); }
+        if(neighbor != null) { count++; total += neighbor.getRawRetainedSurface(); }
         
         neighbor = this.getFloorNeighbor( 1,  0, true);
-        if(neighbor != null) { count++; total += neighbor.getRawRetainedUnits(); }
+        if(neighbor != null) { count++; total += neighbor.getRawRetainedSurface(); }
         neighbor = this.getFloorNeighbor( 0, -1, true);
-        if(neighbor != null) { count++; total += neighbor.getRawRetainedUnits(); }
+        if(neighbor != null) { count++; total += neighbor.getRawRetainedSurface(); }
         neighbor = this.getFloorNeighbor( 0,  1, true);
-        if(neighbor != null) { count++; total += neighbor.getRawRetainedUnits(); }
+        if(neighbor != null) { count++; total += neighbor.getRawRetainedSurface(); }
         
         neighbor = this.getFloorNeighbor(-1, -1, true);
-        if(neighbor != null) { count++; total += neighbor.getRawRetainedUnits(); }
+        if(neighbor != null) { count++; total += neighbor.getRawRetainedSurface(); }
         neighbor = this.getFloorNeighbor(-1,  1, true);
-        if(neighbor != null) { count++; total += neighbor.getRawRetainedUnits(); }
+        if(neighbor != null) { count++; total += neighbor.getRawRetainedSurface(); }
         neighbor = this.getFloorNeighbor( 1, -1, true);
-        if(neighbor != null) { count++; total += neighbor.getRawRetainedUnits(); }
+        if(neighbor != null) { count++; total += neighbor.getRawRetainedSurface(); }
         neighbor = this.getFloorNeighbor( 1,  1, true);
-        if(neighbor != null) { count++; total += neighbor.getRawRetainedUnits(); }        
+        if(neighbor != null) { count++; total += neighbor.getRawRetainedSurface(); }        
+        
+        final int smoothedRentionUnits = (total / count) - this.floorUnits();
         
         if(this.isBottomFlow())
         {
-            this.smoothedRetainedUnits = Math.min(this.volumeUnits(), total / count);
+            this.smoothedRetainedUnits = Math.min(this.volumeUnits(), Math.max(0, smoothedRentionUnits));
         }
         else
         {
-            this.smoothedRetainedUnits = Math.min(this.volumeUnits(), Math.max(LavaSimulator.FLUID_UNITS_PER_HALF_BLOCK, total / count));
+            this.smoothedRetainedUnits = Math.min(this.volumeUnits(), Math.max(LavaSimulator.FLUID_UNITS_PER_HALF_BLOCK, smoothedRentionUnits));
         }
        
     }

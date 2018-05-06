@@ -530,10 +530,10 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable
         
         this.doStep();
         this.doStep();
-        this.doStep();
-        this.doStep();
-        this.doStep();
-        this.doStep();
+//        this.doStep();
+//        this.doStep();
+//        this.doStep();
+//        this.doStep();
         this.doLastStep();
         
         // Add or update cells from world as needed
@@ -637,7 +637,10 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable
 
             float onTickLoad = (float)this.perfOnTick.runTime() / Configurator.Volcano.performanceBudgetOnTickNanos;
             float totalTickLoad = ((float)this.perfOnTick.runTime() + this.perfOffTick.runTime()) / Configurator.Volcano.performanceBudgetTotalNanos;
-            this.loadFactor = Math.max(onTickLoad, totalTickLoad);
+            float cellLoad = this.getCellCount() / (float) Configurator.VOLCANO.cellBudget;
+            float coolingLoad = this.basaltTracker.size() / (float) Configurator.VOLCANO.coolingBlockBudget;
+            
+            this.loadFactor = Math.max(Math.max(onTickLoad, totalTickLoad), Math.max(cellLoad, coolingLoad));
             
             if(Configurator.VOLCANO.enablePerformanceLogging) 
             {
@@ -663,8 +666,8 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable
 
             if(Configurator.VOLCANO.enablePerformanceLogging) 
             {
-                BigActiveVolcano.INSTANCE.info("totalCells=" + this.getCellCount() 
-                        + " connections=" + this.getConnectionCount() + " basaltBlocks=" + this.basaltTracker.size());
+                BigActiveVolcano.INSTANCE.info("totalCells = %d (%f load)  connections = %d  basaltBlocks = %d (%f load)", 
+                        this.getCellCount(), cellLoad, this.getConnectionCount(), this.basaltTracker.size(), coolingLoad);
                 
                 BigActiveVolcano.INSTANCE.info("Effective load factor is %f.  (onTick = %f, totalTick = %f)", this.loadFactor, onTickLoad, totalTickLoad);
                 

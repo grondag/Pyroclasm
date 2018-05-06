@@ -52,6 +52,10 @@ public class Configurator
 
     public static class Volcano
     {
+        @Comment("Volume of lava ejected from bore, in full blocks per second.  Does not include proectile lava volume.")
+        @RangeInt(min = 1, max = 64)
+        public int lavaBlocksPerSecond = 8;
+        
         @Comment("Fraction of alloted CPU usage must be drop below this before volcano in cooldown mode starts to flow again.")
         @RangeDouble(min = 0.3, max = 0.7)
         public float cooldownTargetLoadFactor = 0.5F;
@@ -109,7 +113,7 @@ public class Configurator
             "The actual number of chunk render updates can be higher due to effects on neighboring chunks.",
         "Higher numbers provide more realism but can negatively affect performance."})
         @RangeInt(min = 1, max = 10)
-        public int maxChunkUpdatesPerTick = 2;
+        public int maxChunkUpdatesPerTick = 1;
 
         @Comment({"Blocks that will be destroyed on contact by volcanic lava.",
             "Blocks should be listed in modname:blockname format.",
@@ -148,14 +152,12 @@ public class Configurator
         "Turning this off does NOT disable the minimal performance counting needed to detect simulation overload."})
         public boolean enablePerformanceLogging = false;
 
-        @RequiresMcRestart
         @Comment({"Number of seconds in each volcano fluid simulation performance sample.",
             "Larger numbers reduce log spam when performance logging is enabled.",
         "Smaller numbers (recommended) make fluid simulation performance throttling more responsive."})
         @RangeInt(min = 10, max = 120)
         public int performanceSampleInterval = 20;
 
-        @RequiresMcRestart
         @Comment({"Percentage of each server tick (1/20 of a second) that can be devoted to volcano fluid simulation.",
             "This is the single-threaded part of the simulation that interacts with the game world.",
             "Larger numbers will enable larger lava flows but casue simulation to compete with other in-game objects that tick.",
@@ -163,7 +165,6 @@ public class Configurator
         @RangeInt(min = 2, max = 30)
         public int onTickProcessingBudget = 5;
 
-        @RequiresMcRestart
         @Comment({"Percentage of elapsed time that can be devoted to volcano fluid simulation overall.",
             "This includes both single-threaded on-tick time and multi-threaded processing that occurs between server ticks.",
             "Larger numbers will enable larger lava flows but will consume more CPU used for other tasks on the machine where it runs.",
@@ -171,6 +172,21 @@ public class Configurator
         @RangeInt(min = 5, max = 60)
         public int totalProcessingBudget = 10;
 
+        @Comment({"Maximum number of lava cells to be tracked by lava simulator.",
+            "Lava flow will be throttled when in excess of this number.",
+            "While it can affect CPU consumption, CPU usage is controlled more directly via tick budgets.",
+            "Smaller numbers will mean smaller lava flows, lower memory consumption, and shorter/smaller world saves."})
+        @RangeInt(min = 10000, max = 20000000)
+        public int cellBudget = 100000;
+        
+        @Comment({"Maximum number of cooling basalt blocks to be tracked by lava simulator.",
+            "Lava flow will be throttled when in excess of this number.",
+            "While it can affect CPU consumption, CPU usage is controlled more directly via tick budgets.",
+            "Smaller numbers will cause more blocks to cool before lava starts flowing again and may also ",
+            "cause smaller lava flows, lower memory consumption, and shorter/smaller world saves."})
+        @RangeInt(min = 10000, max = 20000000)
+        public int coolingBlockBudget = 20000;
+        
         @RequiresMcRestart
         @Comment({"If true, volcano simulation will track and output the amount of fluid that flows across cell connections.",
             "Can cause additional overhead and log spam so should generally only be enabled for testing.",
@@ -183,7 +199,7 @@ public class Configurator
         
         @Comment({"If true, volcano simulation will output chunk buffer creation, load and unload.",
         "Will cause significant log spam so should only be enabled for debug and testing."})
-        public boolean enableLavaChunkBufferTrace = true;
+        public boolean enableLavaChunkBufferTrace = false;
 
         @Comment({"Once lava starts cooling, the minimum number of ticks (inclusive) an interior block has to wait after"
                 + "a neighbor successfully cools before it can also cool."})
@@ -205,7 +221,7 @@ public class Configurator
 
         @Comment({"Enable render of lava connection flow potentials."
                 + "Client-side only."})
-        public boolean enableFlowRender;
+        public boolean enableFlowDebugRender;
 
         /** Contains block objects configured to be destroyed by lava */
         public static final IdentityHashMap<Block, Block> blocksDestroyedByLava = new IdentityHashMap<Block, Block>();

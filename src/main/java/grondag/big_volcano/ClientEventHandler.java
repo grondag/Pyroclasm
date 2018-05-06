@@ -33,7 +33,7 @@ public class ClientEventHandler
     @SubscribeEvent()
     public static void renderWorldLastEvent(RenderWorldLastEvent event)
     {
-        if(!(Configurator.VOLCANO.enableLavaCellDebugRender || Configurator.VOLCANO.enableLavaChunkDebugRender || Configurator.VOLCANO.enableFlowRender)) return;
+        if(!(Configurator.VOLCANO.enableLavaCellDebugRender || Configurator.VOLCANO.enableLavaChunkDebugRender || Configurator.VOLCANO.enableFlowDebugRender)) return;
         
         LavaSimulator lavaSim = Simulator.instance().getNode(LavaSimulator.class);
         if(lavaSim == null) return;
@@ -68,7 +68,7 @@ public class ClientEventHandler
             for(Object c : lavaSim.cells.allChunks().toArray()) { renderCellChunk(tessellator, bufferBuilder, (CellChunk)c); }
         }
         
-        if(Configurator.VOLCANO.enableFlowRender) lavaSim.connections.forEach(c -> renderFlow(tessellator, bufferBuilder, c));
+        if(Configurator.VOLCANO.enableFlowDebugRender) lavaSim.connections.forEach(c -> renderFlow(tessellator, bufferBuilder, c));
        
         bufferBuilder.setTranslation(0, 0, 0);
         

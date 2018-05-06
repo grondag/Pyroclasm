@@ -1,6 +1,5 @@
 package grondag.big_volcano.simulator;
 
-import grondag.big_volcano.BigActiveVolcano;
 import grondag.big_volcano.init.ModBlocks;
 import grondag.big_volcano.lava.LavaTerrainHelper;
 import grondag.exotic_matter.model.TerrainBlockHelper;
