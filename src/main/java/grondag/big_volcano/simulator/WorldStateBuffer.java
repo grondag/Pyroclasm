@@ -22,6 +22,7 @@ import grondag.big_volcano.Configurator;
 import grondag.big_volcano.init.ModBlocks;
 import grondag.big_volcano.lava.CoolingBasaltBlock;
 import grondag.big_volcano.lava.LavaTerrainHelper;
+import grondag.big_volcano.lava.LavaTreeCutter;
 import grondag.exotic_matter.concurrency.PerformanceCollector;
 import grondag.exotic_matter.concurrency.PerformanceCounter;
 import grondag.exotic_matter.model.ISuperBlock;
@@ -75,10 +76,13 @@ public class WorldStateBuffer implements IBlockAccess
     
     public final PerformanceCounter perfStateApplication;
     
+    public final LavaTreeCutter lavaTreeCutter;
+    
     public WorldStateBuffer(World worldIn, boolean enablePerfCounting, PerformanceCollector perfCollector)
     {
         this.realWorld = worldIn;
         this.perfStateApplication = PerformanceCounter.create(enablePerfCounting, "World State Application", perfCollector);
+        this.lavaTreeCutter = new LavaTreeCutter(this);
     }
     
     @Override
@@ -420,6 +424,11 @@ public class WorldStateBuffer implements IBlockAccess
             {
                 return false;
             }
+        }
+        
+        if(baseState.getBlock().isWood(WorldStateBuffer.this, pos))
+        {
+            this.lavaTreeCutter.queueTreeCheck(pos.up());
         }
         
         if(newState.getBlock() instanceof CoolingBasaltBlock)
@@ -806,7 +815,14 @@ public class WorldStateBuffer implements IBlockAccess
                                     tracker.setAdjustmentNeededAround(x, y, z);
                                 }
                                 
-                                realWorld.setBlockState(new BlockPos( x, y, z), bsb.newState, 3);
+                                BlockPos pos = new BlockPos(x, y, z);
+                                
+                                if(bsb.expectedPriorState.getBlock().isWood(WorldStateBuffer.this, pos))
+                                {
+                                    WorldStateBuffer.this.lavaTreeCutter.queueTreeCheck(pos.up());
+                                }
+                                realWorld.setBlockState(pos, bsb.newState, 3);
+                                
                                 
                                 this.states[i] = null;
                                 allRemaining--;

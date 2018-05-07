@@ -74,6 +74,7 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable
     public final LavaBlobManager particleManager;
     private final BasaltTracker basaltTracker;
     
+    
 
     public final LavaCells cells = new LavaCells(this);
     public final LavaConnections connections = new LavaConnections(this);
@@ -466,6 +467,8 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable
         this.itMe = true;
         this.worldBuffer().applyBlockUpdates(this);
         this.itMe = false;
+        
+        this.worldBuffer().lavaTreeCutter.doOnTick();
         
         // For chunks that require a minority of cells to be validated, 
         // validate individual cells right now. 
