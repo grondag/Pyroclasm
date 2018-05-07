@@ -2,6 +2,7 @@ package grondag.big_volcano.lava;
 
 import java.util.ArrayDeque;
 import java.util.Comparator;
+import java.util.PriorityQueue;
 import java.util.Random;
 
 import javax.annotation.Nullable;
@@ -41,16 +42,26 @@ public class LavaTreeCutter implements ISimulationTickable
     
     @Nullable private IBlockState startState; 
     
-    private final ArrayDeque<Visit> toVisit = new ArrayDeque<>();
+    private final PriorityQueue<Visit> toVisit = new PriorityQueue<>(
+        new Comparator<Visit>() 
+        {
+            @SuppressWarnings("null")
+            @Override
+            public int compare(Visit o1, Visit o2)
+            {
+                return Byte.compare(o1.type, o2.type);
+            }
+        });
     
     private final Long2ByteOpenHashMap visited = new Long2ByteOpenHashMap();
     
     private final Random random = new Random();
     
-    private static final byte POS_TYPE_IGNORE = 0;
+    private static final byte POS_TYPE_LOG_FROM_ABOVE = 0;
     private static final byte POS_TYPE_LOG = 1;
-    private static final byte POS_TYPE_LOG_FROM_ABOVE = 2;
+    private static final byte POS_TYPE_LOG_FROM_DIAGONAL = 2;
     private static final byte POS_TYPE_LEAF = 3;
+    private static final byte POS_TYPE_IGNORE = 4;
     
     //wtf java? why?
     private static final byte ZERO_BYTE = 0;
@@ -89,22 +100,27 @@ public class LavaTreeCutter implements ISimulationTickable
     @Override
     public void doOnTick()
     {
-        // TODO: make number of operations per tick configurable
-        for(int i = 0; i < 10; i++)
+     // TODO: make number of operations per tick configurable
+        int used = 0;
+        while(used < 100)
         {
             switch(this.operation)
             {
             case IDLE:
                 this.operation = startSearch();
                 if(this.operation == Operation.IDLE) return;
+                used += 5;
                 break;
                 
             case SEARCHING:
                 this.operation = doSearch();
+                // finishing search is expensive
+                used += (this.operation == Operation.CLEARING ? 50 : 1);
                 break;
                 
             case CLEARING:
                 this.operation = doClearing();
+                used += 10;
                 break;
             }
         }
@@ -131,6 +147,21 @@ public class LavaTreeCutter implements ISimulationTickable
             enqueIfViable(pos.north(), POS_TYPE_LOG, ZERO_BYTE);
             enqueIfViable(pos.south(), POS_TYPE_LOG, ZERO_BYTE);
             enqueIfViable(pos.up(), POS_TYPE_LOG, ZERO_BYTE);
+            
+            enqueIfViable(pos.add(-1, 0, -1), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
+            enqueIfViable(pos.add(-1, 0, 1), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
+            enqueIfViable(pos.add(1, 0, -1), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
+            enqueIfViable(pos.add(1, 0, 1), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
+            
+            enqueIfViable(pos.add(-1, 1, 0), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
+            enqueIfViable(pos.add(-1, 1, 0), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
+            enqueIfViable(pos.add(0, 1, -1), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
+            enqueIfViable(pos.add(0, 1, 1), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
+            
+            enqueIfViable(pos.add(-1, 1, -1), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
+            enqueIfViable(pos.add(-1, 1, 1), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
+            enqueIfViable(pos.add(1, 1, -1), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
+            enqueIfViable(pos.add(1, 1, 1), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
             return Operation.SEARCHING;
             
         }
@@ -146,7 +177,7 @@ public class LavaTreeCutter implements ISimulationTickable
         
         final byte fromType = toVisit.type;
         
-        final byte newDepth = (byte) (toVisit.depth + 1);
+        byte newDepth = (byte) (toVisit.depth + 1);
         
         final long longPos = pos.toLong();
         
@@ -161,12 +192,40 @@ public class LavaTreeCutter implements ISimulationTickable
                 // leaves are always valid to visit, even from other leaves
                 this.visited.put(longPos, POS_TYPE_LEAF);
                 
+                // restart depth of search when transition from log to leaf
+                if(fromType != POS_TYPE_LEAF) newDepth = 0;
+                
                 enqueIfViable(pos.up(), POS_TYPE_LEAF, newDepth);
                 enqueIfViable(pos.east(), POS_TYPE_LEAF, newDepth);
                 enqueIfViable(pos.west(), POS_TYPE_LEAF, newDepth);
                 enqueIfViable(pos.north(), POS_TYPE_LEAF, newDepth);
                 enqueIfViable(pos.south(), POS_TYPE_LEAF, newDepth);
                 enqueIfViable(pos.down(), POS_TYPE_LEAF, newDepth);
+                
+                enqueIfViable(pos.add(-1, 0, -1), POS_TYPE_LEAF, newDepth);
+                enqueIfViable(pos.add(-1, 0, 1), POS_TYPE_LEAF, newDepth);
+                enqueIfViable(pos.add(1, 0, -1), POS_TYPE_LEAF, newDepth);
+                enqueIfViable(pos.add(1, 0, 1), POS_TYPE_LEAF, newDepth);
+                
+                enqueIfViable(pos.add(-1, 1, 0), POS_TYPE_LEAF, newDepth);
+                enqueIfViable(pos.add(-1, 1, 0), POS_TYPE_LEAF, newDepth);
+                enqueIfViable(pos.add(0, 1, -1), POS_TYPE_LEAF, newDepth);
+                enqueIfViable(pos.add(0, 1, 1), POS_TYPE_LEAF, newDepth);
+                
+                enqueIfViable(pos.add(-1, 1, -1), POS_TYPE_LEAF, newDepth);
+                enqueIfViable(pos.add(-1, 1, 1), POS_TYPE_LEAF, newDepth);
+                enqueIfViable(pos.add(1, 1, -1), POS_TYPE_LEAF, newDepth);
+                enqueIfViable(pos.add(1, 1, 1), POS_TYPE_LEAF, newDepth);
+                
+                enqueIfViable(pos.add(-1, -1, 0), POS_TYPE_LEAF, newDepth);
+                enqueIfViable(pos.add(-1, -1, 0), POS_TYPE_LEAF, newDepth);
+                enqueIfViable(pos.add(0, -1, -1), POS_TYPE_LEAF, newDepth);
+                enqueIfViable(pos.add(0, -1, 1), POS_TYPE_LEAF, newDepth);
+                
+                enqueIfViable(pos.add(-1, -1, -1), POS_TYPE_LEAF, newDepth);
+                enqueIfViable(pos.add(-1, -1, 1), POS_TYPE_LEAF, newDepth);
+                enqueIfViable(pos.add(1, -1, -1), POS_TYPE_LEAF, newDepth);
+                enqueIfViable(pos.add(1, -1, 1), POS_TYPE_LEAF, newDepth);
             }
             else if(fromType != POS_TYPE_LEAF)
             {
@@ -181,6 +240,21 @@ public class LavaTreeCutter implements ISimulationTickable
                     enqueIfViable(pos.north(), POS_TYPE_LOG, newDepth);
                     enqueIfViable(pos.south(), POS_TYPE_LOG, newDepth);
                     enqueIfViable(pos.up(), POS_TYPE_LOG, newDepth);
+                    
+                    enqueIfViable(pos.add(-1, 0, -1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
+                    enqueIfViable(pos.add(-1, 0, 1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
+                    enqueIfViable(pos.add(1, 0, -1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
+                    enqueIfViable(pos.add(1, 0, 1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
+                    
+                    enqueIfViable(pos.add(-1, 1, 0), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
+                    enqueIfViable(pos.add(-1, 1, 0), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
+                    enqueIfViable(pos.add(0, 1, -1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
+                    enqueIfViable(pos.add(0, 1, 1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
+                    
+                    enqueIfViable(pos.add(-1, 1, -1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
+                    enqueIfViable(pos.add(-1, 1, 1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
+                    enqueIfViable(pos.add(1, 1, -1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
+                    enqueIfViable(pos.add(1, 1, 1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
                 }
                 else
                 {
@@ -257,11 +331,12 @@ public class LavaTreeCutter implements ISimulationTickable
         }
         else if(block.isLeaves(state, worldBuffer, visit.pos))
         {
-            block.updateTick(worldBuffer.realWorld, visit.pos, state, this.random);
-//            if (!(this.worldBuffer.realWorld.isBlockTickPending(pos, state.getBlock()) || this.worldBuffer.realWorld.isUpdateScheduled(pos, state.getBlock())))
-//            {
-//                this.worldBuffer.realWorld.scheduleUpdate(pos, state.getBlock(), 0);
-//            }
+            block.beginLeavesDecay(state, worldBuffer.realWorld, visit.pos);
+            
+            if (!(this.worldBuffer.realWorld.isBlockTickPending(visit.pos, state.getBlock()) || this.worldBuffer.realWorld.isUpdateScheduled(visit.pos, state.getBlock())))
+            {
+                block.updateTick(worldBuffer.realWorld, visit.pos, state, this.random);
+            }
         }
         
         if(this.toVisit.isEmpty())
