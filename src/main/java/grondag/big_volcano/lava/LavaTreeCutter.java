@@ -23,7 +23,10 @@ import net.minecraft.util.math.BlockPos;
 /**
  * Call when lava is placed beneath a log.  Will check for a tree-like structure
  * starting at the point and if it is not resting on other non-volcanic blocks
- * will destroy the tree. 
+ * will destroy the tree. <p>
+ * 
+ * Current implementation is a bit sloppy and seems to miss some leaves/logs
+ * and leaf decay isn't immediate as desired / expected.  
  *
  */
 public class LavaTreeCutter implements ISimulationTickable, IReadWriteNBT
@@ -347,10 +350,10 @@ public class LavaTreeCutter implements ISimulationTickable, IReadWriteNBT
         {
             block.beginLeavesDecay(state, worldBuffer.realWorld, pos);
             
-            if (!(this.worldBuffer.realWorld.isBlockTickPending(pos, state.getBlock()) || this.worldBuffer.realWorld.isUpdateScheduled(pos, state.getBlock())))
-            {
+//            if (!(this.worldBuffer.realWorld.isBlockTickPending(pos, state.getBlock()) || this.worldBuffer.realWorld.isUpdateScheduled(pos, state.getBlock())))
+//            {
                 block.updateTick(worldBuffer.realWorld, pos, state, this.random);
-            }
+//            }
         }
         
         if(this.toClear.isEmpty())
