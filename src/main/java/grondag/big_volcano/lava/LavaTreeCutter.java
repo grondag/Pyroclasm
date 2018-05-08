@@ -9,13 +9,15 @@ import javax.annotation.Nullable;
 
 import grondag.big_volcano.init.ModBlocks;
 import grondag.big_volcano.simulator.WorldStateBuffer;
+import grondag.exotic_matter.serialization.IReadWriteNBT;
+import grondag.exotic_matter.serialization.NBTDictionary;
 import grondag.exotic_matter.simulator.ISimulationTickable;
 import it.unimi.dsi.fastutil.longs.Long2ByteMap;
 import it.unimi.dsi.fastutil.longs.Long2ByteMap.Entry;
 import it.unimi.dsi.fastutil.longs.Long2ByteOpenHashMap;
-import it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.math.BlockPos;
 
 /**
@@ -24,7 +26,7 @@ import net.minecraft.util.math.BlockPos;
  * will destroy the tree. 
  *
  */
-public class LavaTreeCutter implements ISimulationTickable
+public class LavaTreeCutter implements ISimulationTickable, IReadWriteNBT
 {
     private enum Operation
     {
@@ -33,14 +35,21 @@ public class LavaTreeCutter implements ISimulationTickable
         CLEARING
     }
     
+    private static final String NBT_LAVA_TREE_CUTTER_QUEUE = NBTDictionary.claim("lctQueue");
+    private static final String NBT_LAVA_TREE_CUTTER_CUTS = NBTDictionary.claim("lctCuts");
     
     private final WorldStateBuffer worldBuffer;
     
-    private final LongArrayFIFOQueue queue = new LongArrayFIFOQueue();
+    private final ArrayDeque<BlockPos> queue = new ArrayDeque<>();
 
     private Operation operation = Operation.IDLE;
     
+    /** if search in progress, starting state of search */
     @Nullable private IBlockState startState; 
+    
+    /** If search in progress, starting point of search 
+     *  Not used during search, but is serialized if saved while search in progress. */
+    @Nullable private BlockPos startPos;
     
     private final PriorityQueue<Visit> toVisit = new PriorityQueue<>(
         new Comparator<Visit>() 
@@ -54,6 +63,8 @@ public class LavaTreeCutter implements ISimulationTickable
         });
     
     private final Long2ByteOpenHashMap visited = new Long2ByteOpenHashMap();
+    
+    private final ArrayDeque<BlockPos> toClear = new ArrayDeque<>();
     
     private final Random random = new Random();
     
@@ -87,14 +98,16 @@ public class LavaTreeCutter implements ISimulationTickable
     
     public void queueTreeCheck(BlockPos pos)
     {
-        queue.enqueue(pos.toLong());
+        queue.offer(pos);
     }
 
     private void reset()
     {
         this.visited.clear();
         this.toVisit.clear();
+        this.toClear.clear();
         this.startState = null;
+        this.startPos = null;
     }
     
     @Override
@@ -131,7 +144,7 @@ public class LavaTreeCutter implements ISimulationTickable
     {
         if(this.queue.isEmpty()) return Operation.IDLE;
         
-        BlockPos pos = BlockPos.fromLong(this.queue.dequeueLong());
+        BlockPos pos = this.queue.poll();
         IBlockState state = this.worldBuffer.getBlockState(pos);
         
         if(state.getBlock().isWood(this.worldBuffer, pos))
@@ -141,6 +154,7 @@ public class LavaTreeCutter implements ISimulationTickable
             // reason we are doing this is the block below is (or was) hot lava
             this.visited.put(pos.down().toLong(), POS_TYPE_IGNORE);
             this.startState = state;
+            this.startPos = pos;
             
             enqueIfViable(pos.east(), POS_TYPE_LOG, ZERO_BYTE);
             enqueIfViable(pos.west(), POS_TYPE_LOG, ZERO_BYTE);
@@ -290,9 +304,9 @@ public class LavaTreeCutter implements ISimulationTickable
                     }
 
                    })
-                .forEach(e -> this.toVisit.offer(new Visit(BlockPos.fromLong(e.getLongKey()), ZERO_BYTE, ZERO_BYTE)));
+                .forEach(e -> this.toClear.offer(BlockPos.fromLong(e.getLongKey())));
             
-            if(this.toVisit.isEmpty())
+            if(this.toClear.isEmpty())
             {
                 this.reset();
                 return Operation.IDLE;
@@ -320,30 +334,98 @@ public class LavaTreeCutter implements ISimulationTickable
     private Operation doClearing()
     {
         
-        Visit visit = this.toVisit.poll();
-        IBlockState state = this.worldBuffer.getBlockState(visit.pos);
+        BlockPos pos = this.toClear.poll();
+        IBlockState state = this.worldBuffer.getBlockState(pos);
         Block block = state.getBlock();
         
-        if(block.isWood(worldBuffer, visit.pos))
+        if(block.isWood(worldBuffer, pos))
         {
-            this.worldBuffer.realWorld.destroyBlock(visit.pos, true);
-            this.worldBuffer.clearBlockState(visit.pos);
+            this.worldBuffer.realWorld.destroyBlock(pos, true);
+            this.worldBuffer.clearBlockState(pos);
         }
-        else if(block.isLeaves(state, worldBuffer, visit.pos))
+        else if(block.isLeaves(state, worldBuffer, pos))
         {
-            block.beginLeavesDecay(state, worldBuffer.realWorld, visit.pos);
+            block.beginLeavesDecay(state, worldBuffer.realWorld, pos);
             
-            if (!(this.worldBuffer.realWorld.isBlockTickPending(visit.pos, state.getBlock()) || this.worldBuffer.realWorld.isUpdateScheduled(visit.pos, state.getBlock())))
+            if (!(this.worldBuffer.realWorld.isBlockTickPending(pos, state.getBlock()) || this.worldBuffer.realWorld.isUpdateScheduled(pos, state.getBlock())))
             {
-                block.updateTick(worldBuffer.realWorld, visit.pos, state, this.random);
+                block.updateTick(worldBuffer.realWorld, pos, state, this.random);
             }
         }
         
-        if(this.toVisit.isEmpty())
+        if(this.toClear.isEmpty())
         {
             this.reset();
             return Operation.IDLE;
         } else return Operation.CLEARING;
+    }
+
+    @Override
+    public void deserializeNBT(NBTTagCompound tag)
+    {
+        this.reset();
+        
+        if(tag.hasKey(NBT_LAVA_TREE_CUTTER_QUEUE))
+        {
+            int i = 0;
+            int[] saveData = tag.getIntArray(NBT_LAVA_TREE_CUTTER_QUEUE);
+            while(i < saveData.length)
+            {
+                this.queue.offer(new BlockPos(saveData[i++], saveData[i++], saveData[i++]));
+            }
+        }
+     
+        if(tag.hasKey(NBT_LAVA_TREE_CUTTER_CUTS))
+        {
+            int i = 0;
+            int[] saveData = tag.getIntArray(NBT_LAVA_TREE_CUTTER_CUTS);
+            while(i < saveData.length)
+            {
+                this.toClear.offer(new BlockPos(saveData[i++], saveData[i++], saveData[i++]));
+            }
+            
+            if(i > 0) this.operation = Operation.CLEARING;
+        }
+    }
+
+    @Override
+    public void serializeNBT(NBTTagCompound tag)
+    {
+        final int queueDepth = this.queue.size() + (this.startPos == null ? 0 : 1);
+        
+        if(queueDepth > 0)
+        {
+            int[] saveData = new int[queueDepth * 3];
+            int i = 0;
+            
+            if(this.startPos != null)
+            {
+                saveData[i++] = startPos.getX();
+                saveData[i++] = startPos.getY();
+                saveData[i++] = startPos.getZ();
+            }
+            for(BlockPos pos: this.queue)
+            {
+                saveData[i++] = pos.getX();
+                saveData[i++] = pos.getY();
+                saveData[i++] = pos.getZ();
+            }       
+            tag.setIntArray(NBT_LAVA_TREE_CUTTER_QUEUE, saveData);
+        }
+        
+        if(this.operation == Operation.CLEARING && !this.toClear.isEmpty())
+        {
+            int[] saveData = new int[this.toClear.size() * 3];
+            int i = 0;
+            
+            for(BlockPos pos: this.toClear)
+            {
+                saveData[i++] = pos.getX();
+                saveData[i++] = pos.getY();
+                saveData[i++] = pos.getZ();
+            }       
+            tag.setIntArray(NBT_LAVA_TREE_CUTTER_CUTS, saveData);
+        }
     }
     
 }

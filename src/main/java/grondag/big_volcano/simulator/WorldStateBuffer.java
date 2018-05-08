@@ -338,11 +338,15 @@ public class WorldStateBuffer implements IBlockAccess
         }
 //        this.isLoading = false;
 
+        this.lavaTreeCutter.deserializeNBT(nbt);
+        
         BigActiveVolcano.INSTANCE.info("Loaded " + i / NBT_SAVE_DATA_WIDTH + " world updates.");
     }
 
     public void writeToNBT(NBTTagCompound nbt)
     {
+        this.lavaTreeCutter.serializeNBT(nbt);
+        
         int recordCount = 0;
         for(ChunkBuffer chunk : this.chunks.values())
         {
