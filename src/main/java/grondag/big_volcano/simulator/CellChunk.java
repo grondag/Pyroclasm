@@ -179,10 +179,10 @@ public class CellChunk
         
         Chunk chunk = this.cells.sim.world.getChunkFromChunkCoords(PackedChunkPos.getChunkXPos(this.packedChunkPos), PackedChunkPos.getChunkZPos(this.packedChunkPos));
         
+        CellStackBuilder builder = new CellStackBuilder();
+
         synchronized(this)
         {
-            CellStackBuilder builder = new CellStackBuilder();
-
             
             for(int x = 0; x < 16; x++)
             {
@@ -192,7 +192,6 @@ public class CellChunk
 
                     if(entryCell != null && entryCell.isValidationNeeded())
                     {
-                        //TODO: do we need to add xStart / zStart here to address chunk?
                         entryCell = builder.updateCellStack(cells, chunk, entryCell, this.xStart + x, this.zStart + z);
                         entryCell.setValidationNeeded(false);
                         this.setEntryCell(x, z, entryCell);
