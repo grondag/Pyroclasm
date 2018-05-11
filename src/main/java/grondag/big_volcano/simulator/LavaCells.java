@@ -257,7 +257,11 @@ public class LavaCells implements Iterable<LavaCell>
                 {
                     chunk = new CellChunk(key, this);
                     this.cellChunks.put(key, chunk);
-                    this.chunkTracker.trackChunk(key);
+                    
+                    //FIXME: remove
+                    BigActiveVolcano.INSTANCE.info("Creating new cell chunk @ %d, %d", xBlock, zBlock);
+                    
+                    this.chunkTracker.trackChunk(this.sim.world, key);
                 }
             }
         }
@@ -317,7 +321,7 @@ public class LavaCells implements Iterable<LavaCell>
                 if(entry.getValue().canUnload())
                 {
                     entry.getValue().unload();
-                    this.chunkTracker.untrackChunk(entry.getLongKey());
+                    this.chunkTracker.untrackChunk(this.sim.world, entry.getLongKey());
                     chunks.remove();
                 }
             }

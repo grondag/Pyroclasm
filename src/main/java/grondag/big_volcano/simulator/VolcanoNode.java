@@ -4,17 +4,21 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import javax.annotation.Nullable;
 
+import grondag.big_volcano.BigActiveVolcano;
 import grondag.big_volcano.Configurator;
 import grondag.big_volcano.core.VolcanoStage;
 import grondag.exotic_matter.serialization.IReadWriteNBT;
 import grondag.exotic_matter.serialization.NBTDictionary;
+import grondag.exotic_matter.simulator.ChunkLoader;
 import grondag.exotic_matter.simulator.ISimulationTickable;
 import grondag.exotic_matter.simulator.Simulator;
 import grondag.exotic_matter.simulator.persistence.IDirtListener;
 import grondag.exotic_matter.varia.PackedChunkPos;
+import grondag.exotic_matter.varia.Useful;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
+import net.minecraft.util.math.Vec3i;
 
 public class VolcanoNode implements IReadWriteNBT, IDirtListener, ISimulationTickable
     {
@@ -86,6 +90,7 @@ public class VolcanoNode implements IReadWriteNBT, IDirtListener, ISimulationTic
             this.stage = VolcanoStage.values()[nbt.getInteger(NBT_VOLCANO_NODE_TAG_STAGE)];
             this.position = PackedChunkPos.unpackChunkPos(nbt.getLong(NBT_VOLCANO_NODE_TAG_POSITION));
             this.lastActivationTick = nbt.getInteger(NBT_VOLCANO_NODE_TAG_LAST_ACTIVATION_TICK);
+            if(this.stage.isActive) this.loadChunks(true);
         }
 
         @Override
@@ -130,9 +135,28 @@ public class VolcanoNode implements IReadWriteNBT, IDirtListener, ISimulationTic
                     this.stage = VolcanoStage.FLOWING;
                     this.lastActivationTick = Simulator.instance().getTick();
                     this.volcanoManager.activeNodes.put(this.packedChunkPos(), this);
-                    this.volcanoManager.isChunkloadingDirty = true;
+                    this.loadChunks(true);
                     this.setDirty();
                 }
+            }
+        }
+        
+        public void loadChunks(boolean shouldLoad)
+        {
+            int centerX = this.chunkPos().x;
+            int centerZ = this.chunkPos().z;
+            
+            //FIXME: remove
+            BigActiveVolcano.INSTANCE.info("loadChunks(%s) for volcano node @ %d, %d", Boolean.toString(shouldLoad), this.chunkPos().getXStart(), this.chunkPos().getZStart());
+            
+            for(Vec3i offset : Useful.DISTANCE_SORTED_CIRCULAR_OFFSETS)
+            {
+                if(offset.getY() > 7) break;
+                
+                if(shouldLoad) 
+                    ChunkLoader.retainChunk(this.volcanoManager.world, centerX + offset.getX(), centerZ + offset.getZ());
+                else 
+                    ChunkLoader.releaseChunk(this.volcanoManager.world, centerX + offset.getX(), centerZ + offset.getZ());
             }
         }
 
@@ -144,7 +168,7 @@ public class VolcanoNode implements IReadWriteNBT, IDirtListener, ISimulationTic
                 {
                     this.stage = VolcanoStage.DORMANT;
                     this.volcanoManager.activeNodes.remove(this.packedChunkPos());
-                    this.volcanoManager.isChunkloadingDirty = true;
+                    this.loadChunks(false);
                     this.setDirty();
                 }
             }
@@ -158,7 +182,7 @@ public class VolcanoNode implements IReadWriteNBT, IDirtListener, ISimulationTic
                 {
                     this.stage = VolcanoStage.DEAD;
                     this.volcanoManager.activeNodes.remove(this.packedChunkPos());
-                    this.volcanoManager.isChunkloadingDirty = true;
+                    this.loadChunks(false);
                     this.setDirty();
                 }
             }

@@ -100,7 +100,7 @@ public class BasaltTracker
                 if(targets.isEmpty())
                 {
                     this.basaltBlocks.remove(packedChunkPos);
-                    this.chunkTracker.untrackChunk(packedChunkPos);
+                    this.chunkTracker.untrackChunk(this.world, packedChunkPos);
                 }
             }
         }
@@ -135,7 +135,11 @@ public class BasaltTracker
         {
             blocks = new Long2IntOpenHashMap();
             this.basaltBlocks.put(chunkPos, blocks);
-            this.chunkTracker.trackChunk(chunkPos);
+            
+            //FIXME: remove
+            BigActiveVolcano.INSTANCE.info("Tracking new basalt cooling chunk @ %d, %d", PackedChunkPos.getChunkXStart(chunkPos), PackedChunkPos.getChunkXStart(chunkPos));
+            
+            this.chunkTracker.trackChunk(this.world, chunkPos);
         }
         if(blocks.put(packedBlockPos, tick) == blocks.defaultReturnValue()) this.size++;
     }

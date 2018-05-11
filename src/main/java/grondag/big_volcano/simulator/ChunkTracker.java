@@ -1,7 +1,9 @@
 package grondag.big_volcano.simulator;
 
+import grondag.exotic_matter.simulator.ChunkLoader;
 import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
+import net.minecraft.world.World;
 
 public class ChunkTracker
 {
@@ -16,19 +18,21 @@ public class ChunkTracker
         this.list.clear();
         this.map.clear();
     }
-    public void trackChunk(long packedChunkPos)
+    public void trackChunk(World world, long packedChunkPos)
     {
         if(map.addTo(packedChunkPos, 1) == 0)
         {
             list.add(packedChunkPos);
+            ChunkLoader.retainChunk(world, packedChunkPos);
         }
     }
     
-    public void untrackChunk(long packedChunkPos)
+    public void untrackChunk(World world, long packedChunkPos)
     {
         if(map.addTo(packedChunkPos, -1) == 1)
         {
             list.rem(packedChunkPos);
+            ChunkLoader.releaseChunk(world, packedChunkPos);
         }
     }
     

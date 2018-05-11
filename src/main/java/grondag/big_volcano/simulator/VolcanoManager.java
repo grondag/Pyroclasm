@@ -55,9 +55,6 @@ public class VolcanoManager implements ISimulationTickable, ISimulationTopNode
     
     private boolean isDirty = true;
     
-    private LinkedList<Ticket> tickets = new LinkedList<Ticket>();
-    boolean isChunkloadingDirty = true;
-    
     private BlueNoise noise;
     
     @Override
@@ -206,56 +203,9 @@ public class VolcanoManager implements ISimulationTickable, ISimulationTopNode
         return new BlockPos((chunkX << 4) + 7, 0, (chunkZ << 4) + 7);
     }
     
-    /** not thread-safe - to be called on world sever thread */
     @Override
     public void doOnTick()
     {
-
-        //TODO: this should be handled in world buffer - no need now with tile entity gone
-        //only reason to keep chunks loaded is if going to do block updates
-        if(this.isChunkloadingDirty)
-        {
-            this.isChunkloadingDirty = false;
-            
-            for(Ticket oldTicket : this.tickets)
-            {
-                ForgeChunkManager.releaseTicket(oldTicket);
-            } 
-            tickets.clear();
-            
-            for(VolcanoNode node : this.activeNodes.values())
-            {
-           
-                int centerX = node.chunkPos().x;
-                int centerZ = node.chunkPos().z;
-                
-                Ticket chunkTicket = null;
-                int chunksUsedThisTicket = 0;
-                
-                for(int x = -7; x <= 7; x++)
-                {
-                    for(int z = -7; z <= 7; z++)
-                    {
-                        if(chunkTicket == null || (chunksUsedThisTicket == chunkTicket.getChunkListDepth()))
-                        {
-                            // Note use of library mod instance instead of volcano mod instance
-                            // the simulator is the reload listener and is registered under the library mod
-                            chunkTicket = ForgeChunkManager.requestTicket(ExoticMatter.INSTANCE, this.world, ForgeChunkManager.Type.NORMAL);
-    //                        chunkTicket.getModData().setInteger("TYPE", this.getID());
-                            tickets.add(chunkTicket);
-                            chunksUsedThisTicket = 0;
-                        }
-                        // 7 chunk radius
-                        if(x*x + z*z <= 49)
-                        {
-                            ForgeChunkManager.forceChunk(chunkTicket, new ChunkPos(centerX + x, centerZ + z));
-                            chunksUsedThisTicket++;
-                        }
-                    }
-                }
-            }
-        }
-        
         if(!this.activeNodes.isEmpty())
         {
             for(VolcanoNode node : this.activeNodes.values())
