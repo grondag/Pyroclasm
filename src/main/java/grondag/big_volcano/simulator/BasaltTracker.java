@@ -136,9 +136,6 @@ public class BasaltTracker
             blocks = new Long2IntOpenHashMap();
             this.basaltBlocks.put(chunkPos, blocks);
             
-            //FIXME: remove
-            BigActiveVolcano.INSTANCE.info("Tracking new basalt cooling chunk @ %d, %d", PackedChunkPos.getChunkXStart(chunkPos), PackedChunkPos.getChunkXStart(chunkPos));
-            
             this.chunkTracker.trackChunk(this.world, chunkPos);
         }
         if(blocks.put(packedBlockPos, tick) == blocks.defaultReturnValue()) this.size++;

@@ -4,7 +4,6 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import javax.annotation.Nullable;
 
-import grondag.big_volcano.BigActiveVolcano;
 import grondag.big_volcano.Configurator;
 import grondag.big_volcano.core.VolcanoStage;
 import grondag.exotic_matter.serialization.IReadWriteNBT;
@@ -145,9 +144,6 @@ public class VolcanoNode implements IReadWriteNBT, IDirtListener, ISimulationTic
         {
             int centerX = this.chunkPos().x;
             int centerZ = this.chunkPos().z;
-            
-            //FIXME: remove
-            BigActiveVolcano.INSTANCE.info("loadChunks(%s) for volcano node @ %d, %d", Boolean.toString(shouldLoad), this.chunkPos().getXStart(), this.chunkPos().getZStart());
             
             for(Vec3i offset : Useful.DISTANCE_SORTED_CIRCULAR_OFFSETS)
             {
