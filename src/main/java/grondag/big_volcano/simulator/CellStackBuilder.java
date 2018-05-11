@@ -1,5 +1,6 @@
 package grondag.big_volcano.simulator;
 
+import net.minecraft.world.chunk.Chunk;
 
 /** Builds a new cell stack from a CellColumn */
 public class CellStackBuilder
@@ -21,7 +22,10 @@ public class CellStackBuilder
         this.isFlowFloor = isFlowFloor;
     }
     
-    private void completeCell(LavaCells cells, CellColumn column, int x, int z, int ceiling)
+    
+    // TODO:  consider having newly built cells retain lava found in world - just in case
+    // need to recover from loss of cell state
+    private void completeCell(LavaCells cells, int x, int z, int ceiling)
     {
         
         if(this.entryCell == null)
@@ -34,9 +38,6 @@ public class CellStackBuilder
             this.entryCell = this.entryCell.aboveCell();
         }
         
-        // necessary to prevent cell from getting confused over world state
-//        this.entryCell.clearBlockUpdate();
-        
         this.isCellStarted = false;
         
     }
@@ -46,7 +47,7 @@ public class CellStackBuilder
      * Expands, splits, adds, deletes or merges cells as needed to match world data on CellColumn.
      * If entry cell is null, functions identically to buildNewCellStack().
      */
-    public LavaCell updateCellStack(LavaCells cells, CellColumn worldColumn, LavaCell simEntryCell, int x, int z)
+    public LavaCell updateCellStack(LavaCells cells, Chunk chunk, LavaCell simEntryCell, int x, int z)
     {
         int y = 0;
         
@@ -58,9 +59,9 @@ public class CellStackBuilder
             // if at any point we remove or merge cells and there are no more cells left,
             // need to divert to buildNewCellStack to prevent NPE (plus is simpler logic that way)
             // Highly unlikely though that this will ever happen: implies solid blocks from 0 to world height...
-            if(simEntryCell == null) return this.buildNewCellStack(cells, worldColumn, x, z);
+            if(simEntryCell == null) return this.buildNewCellStack(cells,  chunk, x, z);
             
-            BlockType blockType = worldColumn.getBlockType(y);
+            BlockType blockType = BlockType.getBlockTypeFromBlockState(chunk.getBlockState(x, y, z));
             
             if(blockType.isBarrier)
             {
@@ -155,14 +156,14 @@ public class CellStackBuilder
      * Returns the starting cell for a new list of cells at the given location from the provided column data.
      * Retuns null if there are no spaces for cells in the column data provided.
      */
-    public LavaCell buildNewCellStack(LavaCells cells, CellColumn column, int x, int z)
+    public LavaCell buildNewCellStack(LavaCells cells, Chunk chunk, int x, int z)
     {
         BlockType lastType = BlockType.BARRIER;
         this.entryCell = null;
         
         for(int y = 0; y < 256; y++)
         {
-            BlockType currentType = column.getBlockType(y);
+            BlockType currentType = BlockType.getBlockTypeFromBlockState(chunk.getBlockState(x, y, z));
             
             switch(currentType)
             {
@@ -170,7 +171,7 @@ public class CellStackBuilder
                 {
                     // Close cell if one is open
                     // Otherwise no action.
-                    if(this.isCellStarted) this.completeCell(cells, column, x, z, y * LavaSimulator.LEVELS_PER_BLOCK);
+                    if(this.isCellStarted) this.completeCell(cells, x, z, y * LavaSimulator.LEVELS_PER_BLOCK);
                     break;
                 }
                     
@@ -188,7 +189,7 @@ public class CellStackBuilder
                 case SOLID_FLOW_12:
                 {
                     // Close cell if one is open
-                    if(this.isCellStarted) this.completeCell(cells, column, x, z, y * LavaSimulator.LEVELS_PER_BLOCK);
+                    if(this.isCellStarted) this.completeCell(cells, x, z, y * LavaSimulator.LEVELS_PER_BLOCK);
                     
                     // start new cell if not full height
                     if(currentType.flowHeight < LavaSimulator.LEVELS_PER_BLOCK) 
@@ -226,7 +227,7 @@ public class CellStackBuilder
         }
         
         // if got all the way to the top of the world with an open cell, close it
-        if(this.isCellStarted) this.completeCell(cells, column, x, z, 256 * LavaSimulator.LEVELS_PER_BLOCK);
+        if(this.isCellStarted) this.completeCell(cells, x, z, 256 * LavaSimulator.LEVELS_PER_BLOCK);
         
         
         return this.entryCell == null ? null : this.entryCell.selectStartingCell();

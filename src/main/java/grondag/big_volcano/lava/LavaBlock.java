@@ -71,8 +71,6 @@ public class LavaBlock extends TerrainDynamicBlock
     {
         super.neighborChanged(state, worldIn, pos, blockIn, fromPos);
         handleFallingBlocks(worldIn, pos, state);
-        LavaSimulator sim = Simulator.instance().getNode(LavaSimulator.class);
-        if(sim != null) sim.notifyBlockChange(worldIn, fromPos);
     }
 
     @Override

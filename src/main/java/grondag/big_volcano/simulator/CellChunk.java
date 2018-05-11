@@ -2,10 +2,13 @@ package grondag.big_volcano.simulator;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+import javax.annotation.Nullable;
+
 import grondag.big_volcano.BigActiveVolcano;
 import grondag.big_volcano.Configurator;
 import grondag.exotic_matter.simulator.Simulator;
 import grondag.exotic_matter.varia.PackedChunkPos;
+import net.minecraft.world.chunk.Chunk;
 /**
  * Container for all cells in a world chunk.
  * When a chunk is loaded (or updated) all cells that can exist in the chunk are created.
@@ -41,7 +44,7 @@ public class CellChunk
     private final int zEnd;
     
     /**  unload chunks when they have been unloadable this many ticks */
-    private final static int TICK_UNLOAD_THRESHOLD = 20;
+    private final static int TICK_UNLOAD_THRESHOLD = 200;
     
     /** number of ticks this chunk has been unloadable - unload when reaches threshold */
     private int unloadTickCount = 0;
@@ -146,7 +149,7 @@ public class CellChunk
     
     public boolean isNew()
     {
-        return this.getEntryCount() == 0;
+        return this.lastValidationTick == 0;
     }
     
     /**
@@ -171,10 +174,14 @@ public class CellChunk
         
         if(this.isUnloaded || this.needsFullLoadOrValidation() || this.validationCount.get() == 0) return false;
 
+        if(Configurator.VOLCANO.enableLavaChunkBufferTrace)
+            BigActiveVolcano.INSTANCE.info("Validating marked cells in chunk with corner x=%d, z=%d", this.xStart, this.zStart);
+        
+        Chunk chunk = this.cells.sim.world.getChunkFromChunkCoords(PackedChunkPos.getChunkXPos(this.packedChunkPos), PackedChunkPos.getChunkZPos(this.packedChunkPos));
+        
         synchronized(this)
         {
             CellStackBuilder builder = new CellStackBuilder();
-            CellColumn columnBuffer = new CellColumn();
 
             
             for(int x = 0; x < 16; x++)
@@ -185,8 +192,8 @@ public class CellChunk
 
                     if(entryCell != null && entryCell.isValidationNeeded())
                     {
-                        columnBuffer.loadFromWorldStateBuffer(this.cells.sim.worldBuffer(), this.xStart + x, this.zStart + z);
-                        entryCell = builder.updateCellStack(cells, columnBuffer, entryCell, this.xStart + x, this.zStart + z);
+                        //TODO: do we need to add xStart / zStart here to address chunk?
+                        entryCell = builder.updateCellStack(cells, chunk, entryCell, this.xStart + x, this.zStart + z);
                         entryCell.setValidationNeeded(false);
                         this.setEntryCell(x, z, entryCell);
                     }
@@ -203,7 +210,7 @@ public class CellChunk
      * Creates cells for the given chunk if it is not already loaded.
      * If chunk is already loaded, validates against the chunk data provided.
      */
-    public void loadOrValidateChunk(ColumnChunkBuffer chunkBuffer)
+    public void loadOrValidateChunk()
     {
         synchronized(this)
         {
@@ -213,22 +220,22 @@ public class CellChunk
                 BigActiveVolcano.INSTANCE.info("Loading (or reloading) chunk buffer with corner x=%d, z=%d", this.xStart, this.zStart);
             
             CellStackBuilder builder = new CellStackBuilder();
-            CellColumn columnBuffer = new CellColumn();
             
+            Chunk chunk = this.cells.sim.world.getChunkFromChunkCoords(PackedChunkPos.getChunkXPos(this.packedChunkPos), PackedChunkPos.getChunkZPos(this.packedChunkPos));
+
             for(int x = 0; x < 16; x++)
             {
                 for(int z = 0; z < 16; z++)
                 {
-                    columnBuffer.loadFromChunkBuffer(chunkBuffer, x, z);
                     LavaCell entryCell = this.getEntryCell(x, z);
 
                     if(entryCell == null)
                     {
-                        this.setEntryCell(x, z, builder.buildNewCellStack(this.cells, columnBuffer, this.xStart + x, this.zStart + z));
+                        this.setEntryCell(x, z, builder.buildNewCellStack(this.cells, chunk, this.xStart + x, this.zStart + z));
                     }
                     else
                     {
-                        this.setEntryCell(x, z, builder.updateCellStack(this.cells, columnBuffer, entryCell, this.xStart + x, this.zStart + z));
+                        this.setEntryCell(x, z, builder.updateCellStack(this.cells, chunk, entryCell, this.xStart + x, this.zStart + z));
                     }
                 }
             }
@@ -365,7 +372,7 @@ public class CellChunk
 //        HardScience.log.info("chunk " + this.xStart + ", " + this.zStart + " activeCount=" + this.activeCount.get() 
 //        + "  retainCount=" + this.retainCount.get() + " unloadTickCount=" + this.unloadTickCount);
         
-        if(this.isUnloaded) return false;
+        if(this.isUnloaded || this.isNew()) return false;
         
         //  complete validation before unloading because may be new info that could cause chunk to remain loaded
         if(this.activeCount.get() == 0 && this.retainCount.get() == 0 && this.validationCount.get() == 0)
@@ -435,7 +442,7 @@ public class CellChunk
      * Returns null if no cells exist at that location.
      * Thread safe.
      */
-    LavaCell getEntryCell(int x, int z)
+    @Nullable LavaCell getEntryCell(int x, int z)
     {
         assert !this.isUnloaded : "derp in CellChunk unloading - returning cell from unloaded chunk in getEntryCell";
         
@@ -481,6 +488,33 @@ public class CellChunk
     public boolean isDeleted()
     {
         return this.isUnloaded;
+    }
+
+    public void provideBlockUpdatesAndDoCooling()
+    {
+        final LavaSimulator sim = this.cells.sim;
+        
+        final int tick = Simulator.instance().getTick();
+        
+        for(LavaCell entryCell : this.entryCells)
+        {
+            LavaCell cell = entryCell.firstCell();
+            
+            while(cell != null)
+            {
+                cell.provideBlockUpdateIfNeeded(sim);
+                
+                // necessary because cell may be deleted by cooling
+                // and would no longer have a reference to the next cell
+                LavaCell nextCell = cell.aboveCell();
+                
+                if(cell.canCool(tick))
+                {
+                    sim.coolCell(cell);
+                }
+                cell = nextCell;
+            }
+        }
     }
 
 }

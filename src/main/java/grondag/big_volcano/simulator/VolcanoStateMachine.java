@@ -84,9 +84,16 @@ public class VolcanoStateMachine implements ISimulationTickable
         
         /**
          * Ensures bottom of bore is lava.
-         * Transitions to {@link #SETUP_FIND_CELLS}.
+         * Transitions to {@link #SETUP_WAIT_FOR_CELLS_0}.
          */
         SETUP_CLEAR_AND_FILL,
+        
+        
+        /**
+         * After initial lava placement, wait a couple ticks for simulator to catch up and generate cells
+         */
+        SETUP_WAIT_FOR_CELLS_0,
+        SETUP_WAIT_FOR_CELLS_1,
         
         /**
          * Populates the list of bore cells and ensures they are all
@@ -165,7 +172,7 @@ public class VolcanoStateMachine implements ISimulationTickable
      * List of bore cells at volcano floor, from center out. Will be
      * empty until {@link #setupFind()} has fully finished.
      */
-    private List<LavaCell> boreCells = ImmutableList.of();
+    private LavaCell[] boreCells = new LavaCell[MAX_BORE_OFFSET];
     
     /** 
      * Position within {@link Useful#DISTANCE_SORTED_CIRCULAR_OFFSETS} list for operations
@@ -224,8 +231,6 @@ public class VolcanoStateMachine implements ISimulationTickable
     @Override
     public void doOnTick()
     {
-        this.lavaSim.worldBuffer().isMCWorldAccessAppropriate = true;
-        
         this.lavaRemainingThisPass = Configurator.VOLCANO.lavaBlocksPerSecond * LavaSimulator.FLUID_UNITS_PER_BLOCK / 20;
         
         for(int i = 0; i < OPERATIONS_PER_TICK; i++)
@@ -238,7 +243,16 @@ public class VolcanoStateMachine implements ISimulationTickable
                     
                 case SETUP_CLEAR_AND_FILL:
                     this.operation = setupClear();
+                    if(this.operation == Operation.SETUP_WAIT_FOR_CELLS_0) return;
                     break;
+                    
+                case SETUP_WAIT_FOR_CELLS_0:
+                    this.operation = Operation.SETUP_WAIT_FOR_CELLS_1;
+                    return;
+                    
+                case SETUP_WAIT_FOR_CELLS_1:
+                    this.operation = Operation.SETUP_FIND_CELLS;
+                    return;
                     
                 case SETUP_FIND_CELLS:
                     this.operation = setupFind();
@@ -273,7 +287,6 @@ public class VolcanoStateMachine implements ISimulationTickable
                     break;
             }
         }
-        this.lavaSim.worldBuffer().isMCWorldAccessAppropriate = false;
     }
 
     private BlockPos borePosForLevel(int index, int yLevel)
@@ -301,7 +314,15 @@ public class VolcanoStateMachine implements ISimulationTickable
       
         BlockPos pos = borePosForLevel(offsetIndex++, 0);
         
-        if(world.getBlockState(pos).getBlock() != ModBlocks.lava_dynamic_height)
+        if(world.getBlockState(pos).getBlock() == ModBlocks.lava_dynamic_height)
+        {
+            @Nullable LavaCell cell = lavaSim.cells.getCellIfExists(pos);
+            if(cell == null)
+            {
+                lavaSim.registerPlacedLava(world, pos, world.getBlockState(pos));
+            }
+        }
+        else
         {
             world.setBlockState(pos, TerrainBlockHelper.stateWithDiscreteFlowHeight(ModBlocks.lava_dynamic_height.getDefaultState(), TerrainState.BLOCK_LEVELS_INT));
         }
@@ -310,7 +331,7 @@ public class VolcanoStateMachine implements ISimulationTickable
         {
             // if we've gone past the last offset, can go to next stage
             offsetIndex = 0;
-            return Operation.SETUP_FIND_CELLS;
+            return Operation.SETUP_WAIT_FOR_CELLS_0;
             
         }
         else
@@ -318,6 +339,21 @@ public class VolcanoStateMachine implements ISimulationTickable
             return Operation.SETUP_CLEAR_AND_FILL;
         }
                 
+    }
+    
+    private @Nullable LavaCell getBoreCell(int index)
+    {
+        LavaCell result = this.boreCells[index];
+        
+        if(result == null || result.isDeleted())
+        {
+            BlockPos pos = borePosForLevel(index, 0);
+            result = lavaSim.cells.getCellIfExists(pos);
+            if(result != null) result.setCoolingDisabled(true);
+            this.boreCells[index] = result;
+        }
+        
+        return result;
     }
     
     private Operation setupFind()
@@ -328,15 +364,8 @@ public class VolcanoStateMachine implements ISimulationTickable
             assert false : "Improper initialization or cleanup in volcano state machine. Restarting.";
             offsetIndex = 0;
         }
-        
-        if(offsetIndex == 0)
-        {
-            this.boreCells = new ArrayList<>();
-        }
       
-        BlockPos pos = borePosForLevel(offsetIndex++, 0);
-        
-        @Nullable LavaCell cell = lavaSim.cells.getCellIfExists(pos);
+        @Nullable LavaCell cell = getBoreCell(offsetIndex++);
 
         if(cell == null)
         {
@@ -345,21 +374,12 @@ public class VolcanoStateMachine implements ISimulationTickable
             return Operation.SETUP_CLEAR_AND_FILL;
         }
         
-        cell.setCoolingDisabled(true);
-        this.boreCells.add(cell);
         
         if(this.offsetIndex >= MAX_BORE_OFFSET)
         {
             // if we've gone past the last offset, can go to next stage
             offsetIndex = 0;
 
-            // prevent unwitting shenannigans
-            this.boreCells = ImmutableList.copyOf(this.boreCells);
-            
-            //FIXME: remove
-            BigActiveVolcano.INSTANCE.info("Switching from %s to %s", this.operation.toString(), Operation.UPDATE_BORE_LIMITS.toString());
-
-            
             return Operation.UPDATE_BORE_LIMITS;
         }
         else
@@ -377,7 +397,16 @@ public class VolcanoStateMachine implements ISimulationTickable
             offsetIndex = 0;
         }
         
-        int l = this.boreCells.get(this.offsetIndex).ceilingLevel();
+        LavaCell cell = this.getBoreCell(offsetIndex);
+        
+        if(cell == null)
+        {
+            BigActiveVolcano.INSTANCE.warn("Volcano bore cell missing, Returning to setup");
+            this.offsetIndex = 0;
+            return Operation.SETUP_CLEAR_AND_FILL;
+        }
+        
+        int l = cell.ceilingLevel();
         if(offsetIndex++ == 0)
         {
             this.maxCeilingLevel = l;
@@ -417,8 +446,14 @@ public class VolcanoStateMachine implements ISimulationTickable
             this.totalBoreUnitsThisPass = 0;
         }
         
+        LavaCell cell = this.getBoreCell(offsetIndex++);
         
-        LavaCell cell = this.boreCells.get(this.offsetIndex++);
+        if(cell == null)
+        {
+            BigActiveVolcano.INSTANCE.warn("Volcano bore cell missing, Returning to setup");
+            this.offsetIndex = 0;
+            return Operation.SETUP_CLEAR_AND_FILL;
+        }
         
         this.totalBoreUnitsThisPass += cell.fluidUnits();
         
@@ -441,7 +476,7 @@ public class VolcanoStateMachine implements ISimulationTickable
             // open up the chamber
             
             // confirm barrier actually exists and mark cell for revalidation if not
-            IBlockState blockState = lavaSim.worldBuffer().getBlockState(new BlockPos(cell.x(), cell.ceilingY() + 1, cell.z()));
+            IBlockState blockState = lavaSim.world.getBlockState(new BlockPos(cell.x(), cell.ceilingY() + 1, cell.z()));
             if(LavaTerrainHelper.canLavaDisplace(blockState))
             {
                 cell.setValidationNeeded(true);
@@ -486,14 +521,29 @@ public class VolcanoStateMachine implements ISimulationTickable
             offsetIndex = 0;
         }
 
-        LavaCell cell = this.boreCells.get(this.offsetIndex++);
+        LavaCell cell = this.getBoreCell(offsetIndex++);
+        
+        if(cell == null)
+        {
+            BigActiveVolcano.INSTANCE.warn("Volcano bore cell missing, Returning to setup");
+            this.offsetIndex = 0;
+            return Operation.SETUP_CLEAR_AND_FILL;
+        }
         
         if(cell.ceilingLevel() < this.maxCeilingLevel && cell.worldSurfaceLevel() == cell.ceilingLevel())
         {
-            IBlockState priorState = this.lavaSim.worldBuffer().getBlockState(cell.x(), cell.ceilingY() + 1, cell.z());
+            BlockPos pos = new BlockPos(cell.x(), cell.ceilingY() + 1, cell.z());
+            IBlockState priorState = this.lavaSim.world.getBlockState(pos);
             if(!LavaTerrainHelper.canLavaDisplace(priorState))
             {
-                this.lavaSim.worldBuffer().setBlockState(cell.x(), cell.ceilingY() + 1, cell.z(), Blocks.AIR.getDefaultState(), priorState);
+                if(this.maxCeilingLevel < LavaSimulator.LEVELS_PER_BLOCK * 255)
+                {
+                    this.pushBlock(pos);
+                }
+                else
+                {
+                    this.lavaSim.world.setBlockState(pos, Blocks.AIR.getDefaultState());
+                }
             }
             cell.setValidationNeeded(true);
         }
@@ -535,7 +585,14 @@ public class VolcanoStateMachine implements ISimulationTickable
             offsetIndex = 0;
         }
 
-        LavaCell cell = this.boreCells.get(this.offsetIndex++);
+        LavaCell cell = this.getBoreCell(offsetIndex++);
+        
+        if(cell == null)
+        {
+            BigActiveVolcano.INSTANCE.warn("Volcano bore cell missing, Returning to setup");
+            this.offsetIndex = 0;
+            return Operation.SETUP_CLEAR_AND_FILL;
+        }
         
         if(this.pushBlock(new BlockPos(cell.x(), cell.ceilingY() + 1, cell.z())))
             cell.setValidationNeeded(true);
@@ -544,7 +601,6 @@ public class VolcanoStateMachine implements ISimulationTickable
         {
             offsetIndex = 0;
             
-            //FIXME: remove
             BigActiveVolcano.INSTANCE.info("Switching from %s to %s", this.operation.toString(), Operation.UPDATE_BORE_LIMITS.toString());
             
             return Operation.UPDATE_BORE_LIMITS;
@@ -590,13 +646,12 @@ public class VolcanoStateMachine implements ISimulationTickable
             toState = fromState;
         }
         
-        this.lavaSim.worldBuffer().setBlockState(fromPos, Blocks.AIR.getDefaultState(), fromState);
+        this.lavaSim.world.setBlockState(fromPos, Blocks.AIR.getDefaultState());
         
         if(toState != null)
         {
             BlockPos destination  = findMoundSpot();
-            this.lavaSim.worldBuffer().setBlockState(destination, toState, null);
-            this.lavaSim.notifyBlockChange(world, destination);
+            this.lavaSim.world.setBlockState(destination, toState);
         }
         
         return true;
@@ -625,12 +680,8 @@ public class VolcanoStateMachine implements ISimulationTickable
             int z = (int) Math.round(this.center.getZ() + distance * Math.sin(angle));
             int y = this.world.getHeight(x, z);
             
-            //FIXME: remove
-//            if(x == 327 && z == 103)
-//                System.out.println("boop");
-            
-       
-            while(y > 0 && LavaTerrainHelper.canLavaDisplace(this.lavaSim.worldBuffer().getBlockState(x, y - 1, z)))
+            //TODO: consider mutable block pos here?
+            while(y > 0 && LavaTerrainHelper.canLavaDisplace(this.lavaSim.world.getBlockState(new BlockPos(x, y - 1, z))))
             {
                 y--;
             }
@@ -652,7 +703,8 @@ public class VolcanoStateMachine implements ISimulationTickable
             int z = best.getZ() + Useful.getDistanceSortedCircularOffset(i).getZ();
             int y = this.world.getHeight(x, z);
             
-            while(y > 0 && LavaTerrainHelper.canLavaDisplace(this.lavaSim.worldBuffer().getBlockState(x, y - 1, z)))
+            //TODO: consider mutable block pos?
+            while(y > 0 && LavaTerrainHelper.canLavaDisplace(this.lavaSim.world.getBlockState(new BlockPos(x, y - 1, z))))
             {
                 y--;
             }

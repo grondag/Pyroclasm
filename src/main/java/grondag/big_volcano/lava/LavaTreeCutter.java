@@ -8,7 +8,6 @@ import java.util.Random;
 import javax.annotation.Nullable;
 
 import grondag.big_volcano.init.ModBlocks;
-import grondag.big_volcano.simulator.WorldStateBuffer;
 import grondag.exotic_matter.serialization.IReadWriteNBT;
 import grondag.exotic_matter.serialization.NBTDictionary;
 import grondag.exotic_matter.simulator.ISimulationTickable;
@@ -19,6 +18,7 @@ import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
 
 /**
  * Call when lava is placed beneath a log.  Will check for a tree-like structure
@@ -41,7 +41,7 @@ public class LavaTreeCutter implements ISimulationTickable, IReadWriteNBT
     private static final String NBT_LAVA_TREE_CUTTER_QUEUE = NBTDictionary.claim("lctQueue");
     private static final String NBT_LAVA_TREE_CUTTER_CUTS = NBTDictionary.claim("lctCuts");
     
-    private final WorldStateBuffer worldBuffer;
+    private final World world;
     
     private final ArrayDeque<BlockPos> queue = new ArrayDeque<>();
 
@@ -94,9 +94,9 @@ public class LavaTreeCutter implements ISimulationTickable, IReadWriteNBT
         }
     }
     
-    public LavaTreeCutter(WorldStateBuffer parent)
+    public LavaTreeCutter(World world)
     {
-        this.worldBuffer = parent;
+        this.world = world;
     }
     
     public void queueTreeCheck(BlockPos pos)
@@ -148,9 +148,9 @@ public class LavaTreeCutter implements ISimulationTickable, IReadWriteNBT
         if(this.queue.isEmpty()) return Operation.IDLE;
         
         BlockPos pos = this.queue.poll();
-        IBlockState state = this.worldBuffer.getBlockState(pos);
+        IBlockState state = this.world.getBlockState(pos);
         
-        if(state.getBlock().isWood(this.worldBuffer, pos))
+        if(state.getBlock().isWood(this.world, pos))
         {
             this.visited.put(pos.toLong(), POS_TYPE_LOG);
             // shoudln't really be necessary, but reflect the
@@ -200,11 +200,11 @@ public class LavaTreeCutter implements ISimulationTickable, IReadWriteNBT
         
         if(!this.visited.containsKey(longPos))
         {
-            IBlockState state = this.worldBuffer.getBlockState(pos);
+            IBlockState state = this.world.getBlockState(pos);
             
             Block block = state.getBlock();
             
-            if(block.isLeaves(state, this.worldBuffer, pos))
+            if(block.isLeaves(state, this.world, pos))
             {
                 // leaves are always valid to visit, even from other leaves
                 this.visited.put(longPos, POS_TYPE_LEAF);
@@ -338,21 +338,20 @@ public class LavaTreeCutter implements ISimulationTickable, IReadWriteNBT
     {
         
         BlockPos pos = this.toClear.poll();
-        IBlockState state = this.worldBuffer.getBlockState(pos);
+        IBlockState state = this.world.getBlockState(pos);
         Block block = state.getBlock();
         
-        if(block.isWood(worldBuffer, pos))
+        if(block.isWood(world, pos))
         {
-            this.worldBuffer.realWorld.destroyBlock(pos, true);
-            this.worldBuffer.clearBlockState(pos);
+            this.world.destroyBlock(pos, true);
         }
-        else if(block.isLeaves(state, worldBuffer, pos))
+        else if(block.isLeaves(state, world, pos))
         {
-            block.beginLeavesDecay(state, worldBuffer.realWorld, pos);
+            block.beginLeavesDecay(state, world, pos);
             
 //            if (!(this.worldBuffer.realWorld.isBlockTickPending(pos, state.getBlock()) || this.worldBuffer.realWorld.isUpdateScheduled(pos, state.getBlock())))
 //            {
-                block.updateTick(worldBuffer.realWorld, pos, state, this.random);
+                block.updateTick(world, pos, state, this.random);
 //            }
         }
         

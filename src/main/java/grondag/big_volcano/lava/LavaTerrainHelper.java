@@ -10,7 +10,6 @@ import javax.annotation.Nullable;
 import gnu.trove.list.TLongList;
 import grondag.big_volcano.Configurator;
 import grondag.big_volcano.init.ModBlocks;
-import grondag.big_volcano.simulator.WorldStateBuffer;
 import grondag.exotic_matter.model.TerrainBlockHelper;
 import grondag.exotic_matter.varia.PackedBlockPos;
 import grondag.exotic_matter.varia.Useful;
@@ -18,11 +17,13 @@ import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.init.Blocks;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
 
 public class LavaTerrainHelper
 {
 
-    private final WorldStateBuffer worldBuffer;
+    private final World world;
 
     private static final int RADIUS = 5;
     private static final int MASK_WIDTH = RADIUS * 2 + 1;
@@ -98,9 +99,9 @@ public class LavaTerrainHelper
         return (x + RADIUS) * MASK_WIDTH + z + RADIUS;
     }
 
-    public LavaTerrainHelper(WorldStateBuffer worldBuffer)
+    public LavaTerrainHelper(World world)
     {
-        this.worldBuffer = worldBuffer;
+        this.world = world;
     }
 
     /**
@@ -148,7 +149,7 @@ public class LavaTerrainHelper
 
         for(VisibilityNode node : VISIBILITY_NODES)
         {
-            long targetPos = PackedBlockPos.add(originPackedPos, node.packedBlockPos);
+            BlockPos targetPos = PackedBlockPos.unpack(PackedBlockPos.add(originPackedPos, node.packedBlockPos));
 
             boolean isVisible = !node.visibilityMask.intersects(blockedPositions);
 
@@ -162,7 +163,7 @@ public class LavaTerrainHelper
                 maxVisibleDistance = node.distance;
             }
 
-            boolean isOpen = isOpenTerrainSpace(worldBuffer.getBlockState(targetPos));
+            boolean isOpen = isOpenTerrainSpace(world.getBlockState(targetPos));
 
             if(!isOpen)
             {
@@ -178,7 +179,7 @@ public class LavaTerrainHelper
                 // space is open, check for nearest drop if not already checked and position is visible from origin
                 if(nearestFallDistance == NOT_FOUND
                         && isVisible 
-                        && isOpenTerrainSpace(worldBuffer.getBlockState(PackedBlockPos.down(targetPos))))
+                        && isOpenTerrainSpace(world.getBlockState(targetPos.down())))
                 {
                     nearestFallDistance = node.distance;
 

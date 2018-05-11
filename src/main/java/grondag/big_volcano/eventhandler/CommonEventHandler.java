@@ -3,13 +3,8 @@ package grondag.big_volcano.eventhandler;
 import grondag.big_volcano.BigActiveVolcano;
 import grondag.big_volcano.Configurator;
 import grondag.big_volcano.init.ModBlocks;
-import grondag.big_volcano.lava.CoolingBasaltBlock;
-import grondag.big_volcano.lava.LavaBlock;
-import grondag.big_volcano.simulator.LavaSimulator;
-import grondag.exotic_matter.simulator.Simulator;
 import grondag.exotic_matter.world.WorldInfo;
 import jline.internal.Log;
-import net.minecraft.block.Block;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Items;
 import net.minecraft.item.Item;
@@ -17,10 +12,8 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraftforge.common.config.Config.Type;
 import net.minecraftforge.common.config.ConfigManager;
-import net.minecraftforge.common.util.BlockSnapshot;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.event.ServerChatEvent;
-import net.minecraftforge.event.world.BlockEvent;
 import net.minecraftforge.fml.client.event.ConfigChangedEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
@@ -39,57 +32,6 @@ public class CommonEventHandler
         }
     }
     
-    @SubscribeEvent
-    public static void onBlockBreak(BlockEvent.BreakEvent event) 
-    {
-        // Lava blocks have their own handling
-        if(!event.getWorld().isRemote && !(event.getState().getBlock() instanceof LavaBlock))
-        {
-            LavaSimulator sim = Simulator.instance().getNode(LavaSimulator.class);
-            if(sim != null) sim.notifyBlockChange(event.getWorld(), event.getPos());
-        }
-    }
-    
-    @SubscribeEvent
-    public static void onBlockPlaced(BlockEvent.PlaceEvent event)
-    {
-        if(event.getWorld().isRemote) return;
-        
-        Block block = event.getState().getBlock();
-        
-        // Lava blocks have their own handling
-        if(block instanceof LavaBlock) return;
-            
-        LavaSimulator sim = Simulator.instance().getNode(LavaSimulator.class);
-        if(sim == null) return;
-        
-        if(block instanceof CoolingBasaltBlock)
-        {
-            sim.registerCoolingBlock(event.getWorld(), event.getPos());
-        }
-        else
-        {
-            sim.notifyBlockChange(event.getWorld(), event.getPos());
-        }
-    }
-    
-    @SubscribeEvent
-    public static void onBlockMultiPlace(BlockEvent.MultiPlaceEvent event)
-    {
-        if(event.getWorld().isRemote) return;
-        
-        LavaSimulator sim = Simulator.instance().getNode(LavaSimulator.class);
-        if(sim != null)
-        {
-            for(BlockSnapshot snap : event.getReplacedBlockSnapshots())
-            {
-                if(!(snap.getCurrentBlock() instanceof LavaBlock))
-                {
-                    sim.notifyBlockChange(event.getWorld(), snap.getPos());
-                }
-            }
-        }
-    }
 
     //TODO: make these player caps, vs static global
     private static String lastTroubleMaker = null;

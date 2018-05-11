@@ -4,7 +4,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Iterator;
-import java.util.concurrent.Executor;
 
 import javax.annotation.Nullable;
 
@@ -13,8 +12,8 @@ import com.google.common.collect.ComparisonChain;
 import grondag.big_volcano.BigActiveVolcano;
 import grondag.big_volcano.Configurator;
 import grondag.exotic_matter.concurrency.CountedJob;
-import grondag.exotic_matter.concurrency.JobTask;
 import grondag.exotic_matter.concurrency.Job;
+import grondag.exotic_matter.concurrency.JobTask;
 import grondag.exotic_matter.concurrency.PerformanceCounter;
 import grondag.exotic_matter.concurrency.SimpleConcurrentList;
 import grondag.exotic_matter.serialization.NBTDictionary;
@@ -35,22 +34,12 @@ public class LavaCells implements Iterable<LavaCell>
     
     private final Long2ObjectOpenHashMap<CellChunk> cellChunks = new Long2ObjectOpenHashMap<CellChunk>();
     
-    
+    private final ChunkTracker chunkTracker;
     /** 
      * Reference to the simulation in which this cells collection lives.
      */
     public final LavaSimulator sim;
   
-    // on-tick tasks
-    private final JobTask<LavaCell> provideBlockUpdateTask =  new JobTask<LavaCell>() 
-    {
-        @Override
-        public void doJobTask(LavaCell operand)
-        {
-            operand.provideBlockUpdateIfNeeded(sim);
-        }
-    };
-            
     private final JobTask<LavaCell> updateRetentionTask = new JobTask<LavaCell>()
     {
 
@@ -71,24 +60,6 @@ public class LavaCells implements Iterable<LavaCell>
         }
     };
     
-    private final JobTask<LavaCell> doCoolingTask = new JobTask<LavaCell>()
-    {
-        @Override
-        public void doJobTask(LavaCell operand)
-        {
-            if(operand.canCool(Simulator.instance().getTick()))
-            {
-                sim.coolCell(operand);
-                if(operand.isDeleted())
-                {
-                    int x = operand.x();
-                    int z = operand.z();
-                    
-                    getOrCreateCellChunk(x, z).setEntryCell(x, z, operand.selectStartingCell());
-                }
-            }
-        }    
-    };
             
     // off-tick tasks
     private final JobTask<LavaCell> updateStuffTask = new JobTask<LavaCell>()
@@ -110,29 +81,10 @@ public class LavaCells implements Iterable<LavaCell>
             operand.prioritizeOutboundConnections(sim.connections);
         }
     };
-    
-    private final JobTask<CellChunk> doChunkValidationTask = new JobTask<CellChunk>()
-    {
-        @Override
-        public void doJobTask(CellChunk operand)
-        {
-            if(operand.needsFullLoadOrValidation())
-            {
-                sim.cellChunkLoader.queueChunks(sim.worldBuffer(), operand.packedChunkPos);
-            }
-            else 
-            {
-                operand.validateMarkedCells();
-            }
-        }    
-    };
 
     private final static int BATCH_SIZE = 4096;
     
-    public final Job provideBlockUpdateJob;   
     public final Job updateRetentionJob;   
-    public final Job doCoolingJob;   
-    public final Job validateChunksJob;
     
     public final Job updateSmoothedRetentionJob;  
     public final Job updateStuffJob;
@@ -141,30 +93,20 @@ public class LavaCells implements Iterable<LavaCell>
     
    private static final int MAX_CHUNKS_PER_TICK = 4;
     
-   // performance counting for removal disabled because list is cleared each pass
-   private SimpleConcurrentList<CellChunk> processChunks = SimpleConcurrentList.create(false, "", null);
-   
-   PerformanceCounter perfCounterValidationPrep;
+   PerformanceCounter perfCounterValidation;
    
     public LavaCells(LavaSimulator sim)
     {
         this.sim = sim;
+        this.chunkTracker = sim.chunkTracker;
         cellList = SimpleConcurrentList.create(Configurator.VOLCANO.enablePerformanceLogging, "Lava Cells", sim.perfCollectorOffTick);
 
-        perfCounterValidationPrep = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Chunk validation prep", sim.perfCollectorOnTick);
+        perfCounterValidation = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Chunk validation", sim.perfCollectorOnTick);
         
         // on-tick jobs
-        provideBlockUpdateJob = new CountedJob<LavaCell>(this.cellList, provideBlockUpdateTask, BATCH_SIZE, 
-                Configurator.VOLCANO.enablePerformanceLogging, "Block Update Provision", sim.perfCollectorOnTick);    
         
         updateRetentionJob = new CountedJob<LavaCell>(this.cellList, updateRetentionTask, BATCH_SIZE, 
                 Configurator.VOLCANO.enablePerformanceLogging, "Raw Retention Update", sim.perfCollectorOnTick);   
-        
-        doCoolingJob = new CountedJob<LavaCell>(this.cellList, doCoolingTask, BATCH_SIZE, 
-                Configurator.VOLCANO.enablePerformanceLogging, "Lava Cell Cooling", sim.perfCollectorOnTick);  
-        
-       validateChunksJob = new CountedJob<CellChunk>(processChunks, doChunkValidationTask, 1, 
-               Configurator.VOLCANO.enablePerformanceLogging, "Chunk Validation", sim.perfCollectorOnTick); 
         
         // off-tick jobs
         updateSmoothedRetentionJob = new CountedJob<LavaCell>(this.cellList, updateSmoothedRetentionTask, BATCH_SIZE, 
@@ -177,15 +119,13 @@ public class LavaCells implements Iterable<LavaCell>
                 Configurator.VOLCANO.enablePerformanceLogging, "Connection Prioritization", sim.perfCollectorOffTick);
    }
 
-   public void validateOrBufferChunks(Executor executor)
+   public void validateChunks()
    {
-        this.perfCounterValidationPrep.startRun();
+        this.perfCounterValidation.startRun();
         
         int size = this.cellChunks.size();
         
         if(size== 0) return;
-        
-        this.processChunks.clear();
         
         final Object[] candidates = this.cellChunks.values()
                 .stream()
@@ -210,80 +150,32 @@ public class LavaCells implements Iterable<LavaCell>
                     })
                 .toArray();
         
+
+        int chunkCount = 0;
         for(Object chunk : candidates)
         {
             CellChunk c = (CellChunk)chunk;
-            if(c.isNew() || (this.processChunks.size() < MAX_CHUNKS_PER_TICK))
+            if(c.isNew() || chunkCount < MAX_CHUNKS_PER_TICK)
             {
-                this.processChunks.add(c);
+                chunkCount++;
+                
+                if(c.needsFullLoadOrValidation())
+                {
+                    c.loadOrValidateChunk();
+                }
+                else 
+                {
+                    c.validateMarkedCells();
+                }
             }
             else
             {
                 break;
             }
         }
-       
-       this.perfCounterValidationPrep.endRun();
-       
-       if(this.processChunks.size() > 0)
-       {
-            validateChunksJob.runOn(executor);
-       }
-    }
-    
- 
-    
-    /**
-     * Marks cells in x, z column to be validated vs. world state.
-     * If chunk containing x, z is not loaded, causes chunk to be loaded.
-     * Has no effect if chunk is already marked for full validation.
-     * 
-     * @param x
-     * @param z
-     */
-    public void markCellsForValidation(int x, int z)
-    {
-        CellChunk chunk = this.getOrCreateCellChunk(x, z);
-        if(!chunk.needsFullLoadOrValidation())
-        {
-            LavaCell cell = chunk.getEntryCell(x, z);
-            if(cell == null)
-            {
-                // really strange to have world column completely full
-                // so re-validate entire chunk
-                chunk.requestFullValidation();
-            }
-            else
-            {
-                cell.setValidationNeeded(true);
-            }
-        }
-    }
-    
-    /**
-     * Creates cells for the given chunk if it is not already loaded.
-     * If chunk is already loaded, validates against the chunk data provided.
-     */
-    public void loadOrValidateChunk(ColumnChunkBuffer chunkBuffer)
-    {
-        CellChunk cellChunk;
         
-        synchronized(this)
-        {
-            // create new cell chunk if not already loaded
-            cellChunk = this.cellChunks.get(chunkBuffer.getPackedChunkPos());
-            if(cellChunk == null)
-            {
-                cellChunk = new CellChunk(chunkBuffer.getPackedChunkPos(), this);
-                this.cellChunks.put(cellChunk.packedChunkPos, cellChunk);
-            }
-        }
-    
-        // remaining updates within the chunk do not need to be synchronized
-        cellChunk.loadOrValidateChunk(chunkBuffer);
- 
+        this.perfCounterValidation.endRun();
     }
-    
     
 //    /** checks for chunk being loaded using packed block coordinates */
 //    public boolean isChunkLoaded(long packedBlockPos)
@@ -353,17 +245,19 @@ public class LavaCells implements Iterable<LavaCell>
      */
     public CellChunk getOrCreateCellChunk(int xBlock, int zBlock)
     {
-        CellChunk chunk = cellChunks.get(PackedChunkPos.getPackedChunkPosFromBlockXZ(xBlock, zBlock));
+        final  long key = PackedChunkPos.getPackedChunkPosFromBlockXZ(xBlock, zBlock);
+        CellChunk chunk = cellChunks.get(key);
         if(chunk == null)
         {
             synchronized(this)
             {
                 //confirm not added by another thread
-                chunk = cellChunks.get(PackedChunkPos.getPackedChunkPosFromBlockXZ(xBlock, zBlock));
+                chunk = cellChunks.get(key);
                 if(chunk == null)
                 {
-                    chunk = new CellChunk(PackedChunkPos.getPackedChunkPosFromBlockXZ(xBlock, zBlock), this);
-                    this.cellChunks.put(chunk.packedChunkPos, chunk);
+                    chunk = new CellChunk(key, this);
+                    this.cellChunks.put(key, chunk);
+                    this.chunkTracker.trackChunk(key);
                 }
             }
         }
@@ -423,6 +317,7 @@ public class LavaCells implements Iterable<LavaCell>
                 if(entry.getValue().canUnload())
                 {
                     entry.getValue().unload();
+                    this.chunkTracker.untrackChunk(entry.getLongKey());
                     chunks.remove();
                 }
             }
@@ -507,9 +402,9 @@ public class LavaCells implements Iterable<LavaCell>
             
             // Raw retention should be mostly current, but compute for any cells
             // that were awaiting computation at last world save.
-            this.sim.worldBuffer().isMCWorldAccessAppropriate = true;
+            
+            //TODO: need to synchronize world access or make sure chunks are loaded?
             this.updateRetentionJob.runOn(Simulator.SIMULATION_POOL);
-            this.sim.worldBuffer().isMCWorldAccessAppropriate = false;
             
             // Smoothed retention will need to be computed for all cells, but can be parallel.
             this.updateSmoothedRetentionJob.runOn(Simulator.SIMULATION_POOL);
@@ -537,5 +432,14 @@ public class LavaCells implements Iterable<LavaCell>
     public Iterator<LavaCell> iterator()
     {
         return this.cellList.iterator();
+    }
+    
+    public void provideBlockUpdatesAndDoCooling(long packedChunkPos)
+    {
+        CellChunk chunk = this.cellChunks.get(packedChunkPos);
+        
+        if(chunk == null || chunk.canUnload() || chunk.isNew()) return;
+        
+        chunk.provideBlockUpdatesAndDoCooling();
     }
 }

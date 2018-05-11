@@ -78,7 +78,6 @@ public enum BlockType
         
         if(state.getMaterial().isReplaceable()) return BlockType.SPACE;
         
-        
         int height = TerrainBlockHelper.getFlowHeightFromState(state);
         if(height == 0)
         {

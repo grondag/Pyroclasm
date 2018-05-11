@@ -8,7 +8,6 @@ import javax.annotation.Nullable;
 
 import grondag.big_volcano.init.ModBlocks;
 import grondag.big_volcano.simulator.LavaSimulator;
-import grondag.big_volcano.simulator.WorldStateBuffer;
 import grondag.exotic_matter.model.BlockSubstance;
 import grondag.exotic_matter.model.ISuperBlock;
 import grondag.exotic_matter.model.ISuperModelState;
@@ -48,7 +47,7 @@ public class CoolingBasaltBlock extends TerrainDynamicBlock
     /**
      * Cools this block if ready and returns true if successful.
      */
-    public CoolingResult tryCooling(WorldStateBuffer worldIn, BlockPos pos, final IBlockState state)
+    public CoolingResult tryCooling(World worldIn, BlockPos pos, final IBlockState state)
     {
         TerrainDynamicBlock nextBlock = this.nextCoolingBlock;
         if(nextBlock == null) return CoolingResult.INVALID;
@@ -61,17 +60,17 @@ public class CoolingBasaltBlock extends TerrainDynamicBlock
                 {
                     if( TerrainBlockHelper.shouldBeFullCube(state, worldIn, pos))
                     {
-                        worldIn.setBlockState(pos.getX(), pos.getY(), pos.getZ(), ModBlocks.basalt_cut.getDefaultState().withProperty(ISuperBlock.META, state.getValue(ISuperBlock.META)), state);
+                        worldIn.setBlockState(pos, ModBlocks.basalt_cut.getDefaultState().withProperty(ISuperBlock.META, state.getValue(ISuperBlock.META)));
                     }
                     else
                     {
-                        worldIn.setBlockState(pos.getX(), pos.getY(), pos.getZ(), nextBlock.getDefaultState().withProperty(ISuperBlock.META, state.getValue(ISuperBlock.META)), state);
+                        worldIn.setBlockState(pos, nextBlock.getDefaultState().withProperty(ISuperBlock.META, state.getValue(ISuperBlock.META)));
                     }
                     return CoolingResult.COMPLETE;
                 }
                 else
                 {
-                    worldIn.setBlockState(pos.getX(), pos.getY(), pos.getZ(), nextBlock.getDefaultState().withProperty(ISuperBlock.META, state.getValue(ISuperBlock.META)), state);
+                    worldIn.setBlockState(pos, nextBlock.getDefaultState().withProperty(ISuperBlock.META, state.getValue(ISuperBlock.META)));
                     return CoolingResult.PARTIAL;
                 }
             }
@@ -90,7 +89,7 @@ public class CoolingBasaltBlock extends TerrainDynamicBlock
     
     /** True if no adjacent blocks are hotter than me and at least four adjacent blocks are cooler.
      * Occasionally can cool if only three are cooler. */
-    public boolean canCool(WorldStateBuffer worldIn, BlockPos pos, IBlockState state)
+    public boolean canCool(World worldIn, BlockPos pos, IBlockState state)
     {
         if(TerrainBlockHelper.shouldBeFullCube(state, worldIn, pos)) return true;
         

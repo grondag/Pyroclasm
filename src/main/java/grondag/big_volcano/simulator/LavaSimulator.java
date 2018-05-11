@@ -7,10 +7,12 @@ import javax.annotation.Nullable;
 import grondag.big_volcano.BigActiveVolcano;
 import grondag.big_volcano.Configurator;
 import grondag.big_volcano.init.ModBlocks;
+import grondag.big_volcano.lava.CoolingBasaltBlock;
 import grondag.big_volcano.lava.EntityLavaBlob;
 import grondag.big_volcano.lava.LavaBlobManager;
 import grondag.big_volcano.lava.LavaBlobManager.ParticleInfo;
 import grondag.big_volcano.lava.LavaTerrainHelper;
+import grondag.big_volcano.lava.LavaTreeCutter;
 import grondag.big_volcano.simulator.BlockEventList.BlockEvent;
 import grondag.big_volcano.simulator.BlockEventList.BlockEventHandler;
 import grondag.big_volcano.simulator.LavaConnections.SortBucket;
@@ -28,16 +30,21 @@ import grondag.exotic_matter.varia.PackedBlockPos;
 import grondag.exotic_matter.world.WorldInfo;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumFacing;
+import net.minecraft.util.SoundCategory;
+import net.minecraft.util.SoundEvent;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.Vec3i;
+import net.minecraft.world.IWorldEventListener;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.common.FMLCommonHandler;
 
-public class LavaSimulator implements ISimulationTopNode, ISimulationTickable
+public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, IWorldEventListener
 {
     private static final String NBT_LAVA_ADD_EVENTS = NBTDictionary.claim("lavaAddEvents");
     private static final String NBT_LAVA_PLACEMENT_EVENTS = NBTDictionary.claim("lavaPlaceEvents");
@@ -68,25 +75,23 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable
     private PerformanceCounter perfOnTick = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "On-Tick", perfCollectorAllTick);
     private PerformanceCounter perfOffTick = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Off-Tick", perfCollectorAllTick);
     private PerformanceCounter perfParticles = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Particle Spawning", perfCollectorOnTick);
+    private PerformanceCounter perfBlockUpdate = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Block update", perfCollectorOnTick);
 
-    private final WorldStateBuffer worldBuffer;
+    @Deprecated
     private final LavaTerrainHelper terrainHelper;
     public final LavaBlobManager particleManager;
     private final BasaltTracker basaltTracker;
     
+    public final ChunkTracker chunkTracker = new ChunkTracker();
+    public final World world;
     
 
     public final LavaCells cells = new LavaCells(this);
     public final LavaConnections connections = new LavaConnections(this);
-    public final CellChunkLoader cellChunkLoader = new CellChunkLoader();
-   
+    public final LavaTreeCutter lavaTreeCutter;
+
     private boolean isDirty;
     
-    /** used to schedule intermittent cooling jobs */
-    private int nextCoolTick = 0;
-    /** use to control which period cooling job runs next */
-    private boolean nextCoolTickIsLava = true;
-
     long nextStatTime = 0;
             
     /** Set true when doing block placements so we known not to register them as newly placed lava. */
@@ -137,7 +142,10 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable
                     }
                     // event not complete until we can tell cell to add lava
                     // retry - maybe validation needs to catch up
-                    assert event.retryCount() < 8 : "Delay in validation event processing";
+                    //FIXME: remove message
+                    if(event.retryCount() > 2) 
+                        BigActiveVolcano.INSTANCE.info("Delay in validation event processing");
+                    
                     return false;
                 }
                 else
@@ -185,13 +193,12 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable
     
     public LavaSimulator()
     {
-        this.worldBuffer = new WorldStateBuffer(
-                FMLCommonHandler.instance().getMinecraftServerInstance().worlds[0], 
-                Configurator.VOLCANO.enablePerformanceLogging, 
-                perfCollectorOnTick);
-        this.terrainHelper = new LavaTerrainHelper(worldBuffer());        
+        this.world = FMLCommonHandler.instance().getMinecraftServerInstance().worlds[0];
+        this.world.addEventListener(this);
+        this.lavaTreeCutter = new LavaTreeCutter(this.world);
+        this.terrainHelper = new LavaTerrainHelper(this.world);        
         this.particleManager = new LavaBlobManager();
-        this.basaltTracker = new BasaltTracker(perfCollectorOnTick, worldBuffer);
+        this.basaltTracker = new BasaltTracker(perfCollectorOnTick, this.world, this.chunkTracker);
         
     }
     
@@ -223,30 +230,6 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable
     }
     
     /**
-     * Update simulation from world when a block next to a lava block is changed.
-     * Does this by creating or validating (if already existing) cells for 
-     * the notified block and all adjacent blocks.
-     * Unfortunately, this will ALSO be called by our own block updates, 
-     * so ignores call if visible level already matches.
- 
-     * Tags column of caller for validation.
-     * Also tags four adjacent columns.
-     */
-    public void notifyLavaNeighborChange(World worldIn, BlockPos pos, IBlockState state)
-    {
-        if(itMe) return;
-        
-        int x = pos.getX();
-        int z = pos.getZ();
-        
-        this.cells.markCellsForValidation(x, z);
-        this.cells.markCellsForValidation(x + 1, z);
-        this.cells.markCellsForValidation(x - 1, z);
-        this.cells.markCellsForValidation(x, z + 1);
-        this.cells.markCellsForValidation(x, z - 1);
-    }
-    
-    /**
      * Update simulation from world when blocks are removed via creative mode or other methods.
      * Unfortunately, this will ALSO be called by our own block updates, 
      * so ignores call if visible level already matches.
@@ -255,9 +238,6 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable
     {
         if(itMe) return;
 
-        // synchronize world buffer with world
-        this.worldBuffer().clearBlockState(pos);
-        
         // ignore fillers
         if(state.getBlock() == ModBlocks.lava_dynamic_height)
         {
@@ -279,15 +259,30 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable
         // ignore fillers - they have no effect on simulation
         if(state.getBlock() == ModBlocks.lava_dynamic_height)
         {
+            
             this.lavaBlockPlacementEvents.addEvent(pos, TerrainBlockHelper.getFlowHeightFromState(state));
             
             // remove blocks placed by player so that simulation can place lava in the appropriate place
             this.itMe = true;
-            this.worldBuffer().realWorld.setBlockState(pos, Blocks.AIR.getDefaultState());
+            this.world.setBlockState(pos, Blocks.AIR.getDefaultState());
             this.itMe = false;
             
-            // synchronize world buffer with world
-            this.worldBuffer().clearBlockState(pos);
+            // force cell chunk loading / validation if not already there
+            
+            LavaCell target = cells.getEntryCell(pos.getX(), pos.getZ());
+                
+            if(target == null)
+            {
+                // mark entire chunk for validation
+                // Will already be so if we just created it, but handle strange
+                // case where chunk is already loaded but somehow no cells exist at x, z.
+                cells.getOrCreateCellChunk(pos.getX(), pos.getZ()).requestFullValidation();
+            }
+            else
+            {
+                // if chunk has an entry cell for that column but not for the given space, mark it for validation
+                target.setValidationNeeded(true);
+            }
             
             this.setDirty();
         }
@@ -318,7 +313,7 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable
     {
         BlockPos pos = PackedBlockPos.unpack(packedBlockPos);
         
-        Block block = worldBuffer().getBlockState(pos).getBlock();
+        Block block = this.world.getBlockState(pos).getBlock();
         
         if(block == ModBlocks.lava_dynamic_height || block == ModBlocks.lava_dynamic_filler)
         {
@@ -330,7 +325,7 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable
                 Vec3i vec = face.getDirectionVec();
                 nPos.setPos(pos.getX() + vec.getX(), pos.getY() + vec.getY(), pos.getZ() + vec.getZ());
                 
-                block = worldBuffer().getBlockState(nPos).getBlock();
+                block = this.world.getBlockState(nPos).getBlock();
                 if(block == ModBlocks.lava_dynamic_height || block == ModBlocks.lava_dynamic_filler)
                 {
                     // don't allow top to cool until bottom does
@@ -349,9 +344,9 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable
         }
     }
     
-    protected void coolLava(long packedBlockPos)
+    protected void coolLava(BlockPos pos)
     {
-        final IBlockState priorState = this.worldBuffer().getBlockState(packedBlockPos);
+        final IBlockState priorState = this.world.getBlockState(pos);
         Block currentBlock = priorState.getBlock();
         SuperBlock newBlock = null;
         if(currentBlock == ModBlocks.lava_dynamic_filler)
@@ -368,9 +363,9 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable
 //            HardScience.log.info("Cooling lava @" + pos.toString());
             //should not need these any more due to world buffer
 //            this.itMe = true;
-            this.worldBuffer().setBlockState(packedBlockPos, newBlock.getDefaultState().withProperty(ISuperBlock.META, priorState.getValue(ISuperBlock.META)), priorState);
+            this.world.setBlockState(pos, newBlock.getDefaultState().withProperty(ISuperBlock.META, priorState.getValue(ISuperBlock.META)));
 //            this.itMe = false;
-            this.basaltTracker.trackCoolingBlock(packedBlockPos);
+            this.basaltTracker.trackCoolingBlock(PackedBlockPos.pack(pos));
         }
     }
     
@@ -378,19 +373,19 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable
     public void serializeNBT(NBTTagCompound nbt)
     {
         this.saveLavaNBT(nbt);
-        this.worldBuffer().writeToNBT(nbt);
         this.particleManager.writeToNBT(nbt);
         this.basaltTracker.serializeNBT(nbt);
+        this.lavaTreeCutter.serializeNBT(nbt);
     }
     
     @Override
     public void deserializeNBT(@Nullable NBTTagCompound nbt)
     {
 
-        this.worldBuffer().readFromNBT(nbt);
         this.particleManager.readFromNBT(nbt);
         this.readLavaNBT(nbt);
         this.basaltTracker.deserializeNBT(nbt);
+        this.lavaTreeCutter.deserializeNBT(nbt);
     }
     
     public int getStepIndex()
@@ -422,22 +417,6 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable
         this.lavaAddEvents.readNBT(nbt);
     }
   
-    public void notifyBlockChange(World worldIn, BlockPos pos)
-    {
-        if(itMe) return;
-        LavaCell entry = this.cells.getEntryCell(pos.getX(), pos.getZ());
-        if(entry == null) 
-        {
-            // TODO: see if chunk needs validation?
-            // for example, if a block is broken in a chunk that has lava cells
-            // but the block is in a column that doesn't have any air space?
-        }
-        else
-        {
-            entry.setValidationNeeded(true);      
-        }
-    }
-    
     /**
      * Updates fluid simulation for one game tick.
      * Tick index is used internally to track which cells have changed and to control frequency of upkeep tasks.
@@ -454,49 +433,29 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable
         this.doStats();
         perfOnTick.startRun();
         
-        // Enable detection of improper world access 
-        this.worldBuffer().isMCWorldAccessAppropriate = true;
-        
         // Particle processing
         this.doParticles();
         
-        // This job can access world objects concurrently, however all access is 
-        // read only and is synchronized by the worldBuffer.
-        this.cells.provideBlockUpdateJob.runOn(Simulator.SIMULATION_POOL);
-        
-        this.itMe = true;
-        this.worldBuffer().applyBlockUpdates(this);
-        this.itMe = false;
-        
-        this.worldBuffer().lavaTreeCutter.doOnTick();
-        
-        // For chunks that require a minority of cells to be validated, 
-        // validate individual cells right now. 
-        // For chunks that require full validation, buffer entire chunk state.
-        // Actual load/validation for full chunks can be performed post=tick.
-        this.cells.validateOrBufferChunks(Simulator.SIMULATION_POOL);
-        
-        // do these on alternate ticks to help avoid ticks that are too long
-        if(Simulator.instance().getTick() >= this.nextCoolTick)
+
+        long packedChunkPos = this.chunkTracker.nextPackedChunkPosForUpdate();
+        if(packedChunkPos != 0)
         {
-            this.nextCoolTick = Simulator.instance().getTick() + 10;
-            if(this.nextCoolTickIsLava)
-            {
-                this.nextCoolTickIsLava = false;
-                this.cells.doCoolingJob.runOn(Simulator.SIMULATION_POOL);
-            }
-            else
-            {
-                this.nextCoolTickIsLava = true;
-                this.basaltTracker.doBasaltCooling();
-            }
+            this.itMe = true;
+            perfBlockUpdate.startRun();
+            this.cells.provideBlockUpdatesAndDoCooling(packedChunkPos);
+            perfBlockUpdate.endRun();
+            this.basaltTracker.doBasaltCooling(packedChunkPos);
+            this.itMe = false;
         }
+        this.lavaTreeCutter.doOnTick();
+        
+        this.cells.validateChunks();
+        
         
         // needs to happen after lava cooling because cooled cell have new floors
-        this.cells.updateRetentionJob.runOn(Simulator.SIMULATION_POOL);
         
-        // After this could be post-tick
-        this.worldBuffer().isMCWorldAccessAppropriate = false;
+        //TODO: move to single thread and limit to chunks that just cooled or revalidated
+        this.cells.updateRetentionJob.runOn(Simulator.SIMULATION_POOL);
         
         this.setDirty();
 
@@ -539,18 +498,6 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable
 //        this.doStep();
         this.doLastStep();
         
-        // Add or update cells from world as needed
-        // could be concurrent, but not yet implemented as such
-        // This is done after connection processing because new cells just created 
-        // will not have a retention level until the next tick
-        ColumnChunkBuffer buffer = this.cellChunkLoader.poll();
-        while(buffer != null)
-        {
-            this.cells.loadOrValidateChunk(buffer);
-            this.cellChunkLoader.returnUsedBuffer(buffer);
-            buffer = this.cellChunkLoader.poll();
-        }
-     
 
         // Apply world events that may depend on new chunks that were just loaded
         this.lavaAddEvents.processAllEventsOn(Simulator.SIMULATION_POOL);
@@ -591,7 +538,7 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable
     {
         perfParticles.startRun();
         
-        int capacity =  Configurator.VOLCANO.maxLavaEntities - EntityLavaBlob.getLiveParticleCount(this.worldBuffer().realWorld.getMinecraftServer());
+        int capacity =  Configurator.VOLCANO.maxLavaEntities - EntityLavaBlob.getLiveParticleCount(this.world.getMinecraftServer());
         
         if(capacity <= 0) return;
         
@@ -611,7 +558,7 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable
                     // Spawn in world, discarding particles that have aged out and aren't big enough to form a visible lava block
                     if(p.getFluidUnits() >= FLUID_UNITS_PER_LEVEL)
                     {
-                        EntityLavaBlob elp = new EntityLavaBlob(this.worldBuffer().realWorld, p.getFluidUnits(), 
+                        EntityLavaBlob elp = new EntityLavaBlob(this.world, p.getFluidUnits(), 
                               new Vec3d(
                                       PackedBlockPos.getX(p.packedBlockPos) + 0.5, 
                                       PackedBlockPos.getY(p.packedBlockPos) + 0.4, 
@@ -619,7 +566,7 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable
                                   ),
                               Vec3d.ZERO);
                         
-                        worldBuffer().realWorld.spawnEntity(elp);
+                        this.world.spawnEntity(elp);
                     }
                 }
                 else 
@@ -677,8 +624,6 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable
                 BigActiveVolcano.INSTANCE.info(String.format("Time elapsed = %1$.3fs", ((float)Configurator.VOLCANO.performanceSampleInterval 
                         + (now - nextStatTime) / Configurator.Volcano.performanceSampleIntervalMillis)));
 
-                BigActiveVolcano.INSTANCE.info("WorldBuffer state sets this sample = " + this.worldBuffer().stateSetCount());
-                this.worldBuffer().clearStatistics();
             }
                
             if(Configurator.VOLCANO.outputLavaCellDebugSummaries) this.cells.logDebugInfo();
@@ -750,14 +695,15 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable
         // check two above cell top to catch filler blocks
         for(int y = cell.floorY(); y <= cell.worldSurfaceY() + 2; y++)
         {
-            this.coolLava(PackedBlockPos.pack(x, y, z));
+            this.coolLava(new BlockPos(x, y, z));
         }
         cell.coolAndShrink();
         
+        BlockPos pos = new BlockPos(x, lavaCheckY, z);
         // turn vanilla lava underneath into basalt
-        while(lavaCheckY > 0 && this.worldBuffer.getBlockState(x, lavaCheckY, z).getBlock() == Blocks.LAVA)
+        while(lavaCheckY > 0 && this.world.getBlockState(pos).getBlock() == Blocks.LAVA)
         {
-            this.worldBuffer.setBlockState(x, lavaCheckY--, z, ModBlocks.basalt_cut.getDefaultState(), Blocks.LAVA.getDefaultState());
+            this.world.setBlockState(pos, ModBlocks.basalt_cut.getDefaultState());
         }
     }
 
@@ -787,11 +733,6 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable
     {
     }
 
-    public WorldStateBuffer worldBuffer()
-    {
-        return worldBuffer;
-    }
-
     @Override
     public void afterDeserialization()
     {
@@ -802,4 +743,77 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable
     {
         return terrainHelper;
     }
+
+    @Override
+    public void notifyBlockUpdate(World worldIn, BlockPos pos, IBlockState oldState, IBlockState newState, int flags)
+    {
+        if(itMe) return;
+        
+        Block newBlock = newState.getBlock();
+        
+        //FIXME: these have their own handling - does that still make sense?
+        if(newBlock == ModBlocks.lava_dynamic_height) return;
+            
+            
+        if(newBlock instanceof CoolingBasaltBlock)
+        {
+            this.registerCoolingBlock(this.world, pos);
+            return;
+        }
+
+        BlockType oldType = BlockType.getBlockTypeFromBlockState(oldState);
+        BlockType newType = BlockType.getBlockTypeFromBlockState(newState);
+        
+        if(oldType == newType) return;
+        
+        LavaCell entry = this.cells.getEntryCell(pos.getX(), pos.getZ());
+        if(entry == null) 
+        {
+            // TODO: see if chunk needs validation?
+            // for example, if a block is broken in a chunk that has lava cells
+            // but the block is in a column that doesn't have any air space?
+            // could handle by creating "void" cells as entry cells in columns with no space
+            // rare in practice that all 256 blocks in a column will be occupied but it will happen...
+        }
+        else
+        {
+            entry.setValidationNeeded(true);      
+        }
+        
+    }
+
+    // rest of these aren't handled / needed
+    
+    @Override
+    public void notifyLightSet(BlockPos pos) { }
+
+    @Override
+    public void markBlockRangeForRenderUpdate(int x1, int y1, int z1, int x2, int y2, int z2) { }
+
+    @Override
+    public void playSoundToAllNearExcept(EntityPlayer player, SoundEvent soundIn, SoundCategory category, double x, double y, double z, float volume, float pitch) { }
+
+    @Override
+    public void playRecord(SoundEvent soundIn, BlockPos pos) { }
+
+    @Override
+    public void spawnParticle(int particleID, boolean ignoreRange, double xCoord, double yCoord, double zCoord, double xSpeed, double ySpeed, double zSpeed, int... parameters) { }
+
+    @Override
+    public void spawnParticle(int id, boolean ignoreRange, boolean p_190570_3_, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed, int... parameters) { }
+
+    @Override
+    public void onEntityAdded(Entity entityIn) { }
+
+    @Override
+    public void onEntityRemoved(Entity entityIn) { }
+
+    @Override
+    public void broadcastSound(int soundID, BlockPos pos, int data) { }
+
+    @Override
+    public void playEvent(EntityPlayer player, int type, BlockPos blockPosIn, int data) { }
+
+    @Override
+    public void sendBlockBreakProgress(int breakerId, BlockPos pos, int progress) { }
 }

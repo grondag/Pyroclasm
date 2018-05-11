@@ -270,7 +270,46 @@ public class EntityLavaBlob extends Entity
         if(!this.world.isRemote )
         {
             LavaSimulator sim = Simulator.instance().getNode(LavaSimulator.class);
-            if(sim != null) sim.addLava(this.getPosition(), this.getFluidAmount());
+            if(sim == null) return;
+            
+            BlockPos where = this.getPosition();
+            if(!LavaTerrainHelper.canLavaDisplace(sim.world.getBlockState(where)))
+            {
+                if(LavaTerrainHelper.canLavaDisplace(sim.world.getBlockState(where.up())))
+                {
+                    where = where.up();
+                }
+                else if(LavaTerrainHelper.canLavaDisplace(sim.world.getBlockState(where.east())))
+                {
+                    where = where.east();
+                }
+                else if(LavaTerrainHelper.canLavaDisplace(sim.world.getBlockState(where.north())))
+                {
+                    where = where.north();
+                }
+                else if(LavaTerrainHelper.canLavaDisplace(sim.world.getBlockState(where.west())))
+                {
+                    where = where.west();
+                }
+                else if(LavaTerrainHelper.canLavaDisplace(sim.world.getBlockState(where.south())))
+                {
+                    where = where.south();
+                }
+                else if(LavaTerrainHelper.canLavaDisplace(sim.world.getBlockState(where.up(2))))
+                {
+                    where = where.up(2);
+                }
+                else if(LavaTerrainHelper.canLavaDisplace(sim.world.getBlockState(where.up(3))))
+                {
+                    where = where.up(3);
+                }
+                else
+                {
+                    // give up
+                    return;
+                }
+            }
+            sim.addLava(where, this.getFluidAmount());
         }
         this.setDead();
     }

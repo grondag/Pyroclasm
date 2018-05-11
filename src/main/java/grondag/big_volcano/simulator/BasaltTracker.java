@@ -1,27 +1,25 @@
 package grondag.big_volcano.simulator;
 
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-
 import javax.annotation.Nullable;
-
-import com.google.common.collect.ImmutableList;
 
 import grondag.big_volcano.BigActiveVolcano;
 import grondag.big_volcano.Configurator;
-import grondag.big_volcano.lava.AgedBlockPos;
 import grondag.big_volcano.lava.CoolingBasaltBlock;
-import grondag.exotic_matter.concurrency.Job;
-import grondag.exotic_matter.concurrency.JobTask;
 import grondag.exotic_matter.concurrency.PerformanceCollector;
-import grondag.exotic_matter.concurrency.StreamJob;
+import grondag.exotic_matter.concurrency.PerformanceCounter;
 import grondag.exotic_matter.serialization.NBTDictionary;
 import grondag.exotic_matter.simulator.Simulator;
 import grondag.exotic_matter.varia.PackedBlockPos;
+import grondag.exotic_matter.varia.PackedChunkPos;
+import it.unimi.dsi.fastutil.longs.Long2IntMap.Entry;
+import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
 
 public class BasaltTracker
 {
@@ -29,29 +27,35 @@ public class BasaltTracker
     private static final int BASALT_BLOCKS_NBT_WIDTH = 3;
 
     /** Basalt blocks that are awaiting cooling */
-    private final Set<AgedBlockPos> basaltBlocks = ConcurrentHashMap.newKeySet();
+    private final Long2ObjectOpenHashMap<Long2IntOpenHashMap> basaltBlocks = new Long2ObjectOpenHashMap<>();
     
-    private Job basaltCoolingJob;
-    private final  WorldStateBuffer worldBuffer;
+    private final PerformanceCounter perfCounter;
+    private final  World world;
+    private final ChunkTracker chunkTracker;
     
-    private int lastEligibleBasaltCoolingTick;
+    private int size = 0;
     
-    private final JobTask<AgedBlockPos> basaltCoolingTask =  new JobTask<AgedBlockPos>() 
+    private void coolBlocks(Long2IntOpenHashMap targets)
     {
-        @Override
-        public void doJobTask(AgedBlockPos operand)
+        int lastEligibleBasaltCoolingTick = Simulator.instance().getTick() - Configurator.VOLCANO.basaltCoolingTicks;
+
+        ObjectIterator<Entry> it = targets.long2IntEntrySet().fastIterator();
+        while(it.hasNext())
         {
-            if(operand.getTick() <= lastEligibleBasaltCoolingTick)
+            Entry e = it.next();
+            
+            if(e.getIntValue() <= lastEligibleBasaltCoolingTick)
             {
-                IBlockState state = worldBuffer.getBlockState(operand.packedBlockPos);
+                BlockPos pos = PackedBlockPos.unpack(e.getLongKey());
+                IBlockState state = world.getBlockState(pos);
                 Block block = state.getBlock();
                 if(block instanceof CoolingBasaltBlock)
                 {
-                    switch(((CoolingBasaltBlock)block).tryCooling(worldBuffer, PackedBlockPos.unpack(operand.packedBlockPos), state))
+                    switch(((CoolingBasaltBlock)block).tryCooling(world, pos, state))
                     {
                         case PARTIAL:
                             // will be ready to cool again after delay
-                            operand.setTick(Simulator.instance().getTick());
+                            e.setValue(Simulator.instance().getTick());
                             break;
                             
                         case UNREADY:
@@ -61,62 +65,101 @@ public class BasaltTracker
                         case COMPLETE:
                         case INVALID:
                         default:
-                            basaltBlocks.remove(operand);
+                            it.remove();
+                            this.size--;
                     }
                 }
                 else
                 {
-                    basaltBlocks.remove(operand);
+                    it.remove();
+                    this.size--;
                 }
             };
         }
-    };
-
-    
-    public BasaltTracker(PerformanceCollector perfCollector, WorldStateBuffer worldBuffer)
-    {
-        this.worldBuffer = worldBuffer;
-        this.basaltCoolingJob = new StreamJob<AgedBlockPos>(this.basaltBlocks, this.basaltCoolingTask, Configurator.VOLCANO.enablePerformanceLogging, "Basalt Cooling", perfCollector);    
-    }
-    
-    protected void doBasaltCooling()
-    {
-        if(this.basaltBlocks.isEmpty()) return;
         
-        this.lastEligibleBasaltCoolingTick = Simulator.instance().getTick() - Configurator.VOLCANO.basaltCoolingTicks;
-
-        this.basaltCoolingJob.runOn(Simulator.SIMULATION_POOL);
     }
     
+    public BasaltTracker(PerformanceCollector perfCollector, World world, ChunkTracker chunkTracker)
+    {
+        this.world = world;
+        this.chunkTracker = chunkTracker;
+        this.perfCounter = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Basalt cooling", perfCollector);
+    }
+    
+    protected void doBasaltCooling(long packedChunkPos)
+    {
+        this.perfCounter.startRun();
+        if(!this.basaltBlocks.isEmpty())
+        {
+            Long2IntOpenHashMap targets = this.basaltBlocks.get(packedChunkPos);
+            
+            if(targets != null)
+            {
+                if(!targets.isEmpty()) this.coolBlocks(targets);
+                
+                if(targets.isEmpty())
+                {
+                    this.basaltBlocks.remove(packedChunkPos);
+                    this.chunkTracker.untrackChunk(packedChunkPos);
+                }
+            }
+        }
+        this.perfCounter.endRun();
+    }
+        
+    /**
+     * Call from world thread only - not thread-saffe
+     */
     public void trackCoolingBlock(BlockPos pos)
     {
-        this.basaltBlocks.add(new AgedBlockPos(pos, Simulator.instance().getTick()));
+        this.trackCoolingBlock(PackedBlockPos.pack(pos));
     }
     
+    /**
+     * Call from world thread only - not thread-saffe
+     */
     public void trackCoolingBlock(long packedBlockPos)
     {
-        this.basaltBlocks.add(new AgedBlockPos(packedBlockPos, Simulator.instance().getTick()));
+       this.trackCoolingBlock(packedBlockPos, Simulator.instance().getTick());
     }
     
+    /**
+     * Call from world thread only - not thread-saffe
+     */
+    public void trackCoolingBlock(long packedBlockPos, int tick)
+    {
+        long chunkPos = PackedChunkPos.getPackedChunkPos(packedBlockPos);
+        Long2IntOpenHashMap blocks = this.basaltBlocks.get(chunkPos);
+        
+        if(blocks == null)
+        {
+            blocks = new Long2IntOpenHashMap();
+            this.basaltBlocks.put(chunkPos, blocks);
+            this.chunkTracker.trackChunk(chunkPos);
+        }
+        if(blocks.put(packedBlockPos, tick) == blocks.defaultReturnValue()) this.size++;
+    }
     public int size()
     {
-        return this.basaltBlocks.size();
+        return this.size;
     }
     
     public void serializeNBT(NBTTagCompound nbt)
     {
         if(Configurator.VOLCANO.enablePerformanceLogging)
-            BigActiveVolcano.INSTANCE.info("Saving " + basaltBlocks.size() + " cooling basalt blocks.");
+            BigActiveVolcano.INSTANCE.info("Saving " + this.size + " cooling basalt blocks.");
         
-        ImmutableList<AgedBlockPos> saveList = ImmutableList.copyOf(this.basaltBlocks);
         
-        int[] saveData = new int[saveList.size() * BASALT_BLOCKS_NBT_WIDTH];
+        int[] saveData = new int[this.size * BASALT_BLOCKS_NBT_WIDTH];
         int i = 0;
-        for(AgedBlockPos apos: saveList)
+        for(Long2IntOpenHashMap blocks : this.basaltBlocks.values())
         {
-            saveData[i++] = (int) (apos.packedBlockPos & 0xFFFFFFFF);
-            saveData[i++] = (int) ((apos.packedBlockPos >> 32) & 0xFFFFFFFF);
-            saveData[i++] = apos.getTick();
+            for(Entry e : blocks.long2IntEntrySet())
+            {
+                saveData[i++] = (int) (e.getLongKey() & 0xFFFFFFFF);
+                saveData[i++] = (int) ((e.getLongKey() >> 32) & 0xFFFFFFFF);
+                saveData[i++] = e.getIntValue();
+            }
         }       
         nbt.setIntArray(NBT_BASALT_BLOCKS, saveData);
     }
@@ -138,9 +181,9 @@ public class BasaltTracker
             int i = 0;
             while(i < saveData.length)
             {
-                this.basaltBlocks.add(new AgedBlockPos(((long)saveData[i++] << 32) | (long)saveData[i++], saveData[i++]));
+                this.trackCoolingBlock(((long)saveData[i++] << 32) | (long)saveData[i++], saveData[i++]);
             }
-            BigActiveVolcano.INSTANCE.info("Loaded " + basaltBlocks.size() + " cooling basalt blocks.");
+            BigActiveVolcano.INSTANCE.info("Loaded " + this.size + " cooling basalt blocks.");
         }
     }
 }

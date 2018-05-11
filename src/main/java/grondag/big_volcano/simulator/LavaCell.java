@@ -5,6 +5,7 @@ import java.util.Comparator;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import com.google.common.collect.ComparisonChain;
@@ -20,7 +21,6 @@ import grondag.exotic_matter.varia.SimpleUnorderedArrayList;
 import io.netty.util.internal.ThreadLocalRandom;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.init.Blocks;
-import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
@@ -49,19 +49,19 @@ public class LavaCell extends AbstractLavaCell
      * The start cell in this x, z column will create this instance. 
      * All subsequent additions to the column must obtain the same instance.
      */
-    volatile CellLocator locator;
+    volatile @Nonnull CellLocator locator;
     
     /** 
      * Used to implement a doubly-linked list of all cells within an x,z coordinate.
      * Maintained by collection.
      */
-    volatile LavaCell above;
+    volatile @Nullable LavaCell above;
     
     /** 
      * Used to implement a doubly-linked list of all cells within an x,z coordinate.
      * Maintained by collection.
      */
-    volatile LavaCell below;
+    volatile @Nullable LavaCell below;
     
     /** set true when cell should no longer be processed and can be removed from storage */
     private volatile boolean isDeleted;
@@ -134,10 +134,12 @@ public class LavaCell extends AbstractLavaCell
     /**
      * The simulation tick when lava was lasted added or flowed in/out of this cell.<br>
      * Used to know when lava in a cell can be cooled.<br>
-     * Set to current simulation tick by {@link #updateLastFlowTick()}
-     * and can be incremented by 
+     * Set to current simulation tick by {@link #updateLastFlowTick()}<p>
+     * 
+     * Initialized to 1 (instead of 0) so that consistently has sign when serialized. The sign
+     * bit is used during serialization to store {@link #isCoolingDisabled}
      */
-    private int lastFlowTick;
+    private int lastFlowTick = 1;
     
     /** 
      * Value of worldSurfaceLevel that was last used for block update.
@@ -321,7 +323,7 @@ public class LavaCell extends AbstractLavaCell
      * Returns cell at given y block position if it exists.
      * Thread-safe.
      */
-    LavaCell getCellIfExists(int y)
+    @Nullable LavaCell getCellIfExists(int y)
     {
         synchronized(this.locator)
         {
@@ -857,6 +859,7 @@ public class LavaCell extends AbstractLavaCell
          * This same logic applies if the floor is already a partial floor and a space is added below.
          */
         
+        
         int myTop = this.ceilingY();
         int myBottom = this.floorY();
         
@@ -968,7 +971,7 @@ public class LavaCell extends AbstractLavaCell
      * and floor of top cell is at bottom of block or has melted.
      * If upper cell has any lava in it, we assume any flow floor has melted.
      */
-    private static boolean canMergeCells(LavaCell lowerCell, LavaCell upperCell)
+    private static boolean canMergeCells(@Nullable LavaCell lowerCell, @Nullable LavaCell upperCell)
     {
         if(lowerCell == null || upperCell == null) return false;
         
@@ -1118,6 +1121,7 @@ public class LavaCell extends AbstractLavaCell
          * 
          * Logic here borrows heavily from findCellNearestY.
          */
+        
         
         int myDist = this.distanceToY(y);
         
@@ -1876,14 +1880,8 @@ public class LavaCell extends AbstractLavaCell
         return this.locator.locationKey;
     }
     
-    public LavaCell firstCell()
+    public @Nullable LavaCell firstCell()
     {
-        if(this.locator == null)
-        {
-            assert false : "Missing cell locator object.";
-            return this;
-        }
-        
         LavaCell result = this.locator.firstCell;
         if(result == null)
         {
@@ -1903,7 +1901,7 @@ public class LavaCell extends AbstractLavaCell
         return result;
     }
     
-    public LavaCell aboveCell()
+    public @Nullable LavaCell aboveCell()
     {
         return this.above;
     }
@@ -1913,13 +1911,13 @@ public class LavaCell extends AbstractLavaCell
      * Link is both ways if the given cell is non-null. Thus no need for linkBelow method.
      * @param cellAbove  May be null - in which case simply sets above link to null if it was not already.
      */
-    public void linkAbove(LavaCell cellAbove)
+    public void linkAbove(@Nullable LavaCell cellAbove)
     {
         this.above = cellAbove;
         if(cellAbove != null) cellAbove.below = this;
     }
     
-    public LavaCell belowCell()
+    public @Nullable LavaCell belowCell()
     {
         return this.below;
     }
@@ -1994,34 +1992,57 @@ public class LavaCell extends AbstractLavaCell
         {
             final boolean hasLava = !this.isEmpty();
             
+            final int x = this.locator.x;
+            final int z = this.locator.z;
+            
+            final AdjustmentTracker tracker = new AdjustmentTracker();
+            
             for(int y = bottomY; y <= topY; y++)
             {
-                IBlockState priorState = sim.worldBuffer().getBlockState(this.locator.x, y, this.locator.z);
+                BlockPos pos = new BlockPos(x, y, z);
+                IBlockState priorState = sim.world.getBlockState(pos);
+                
                 if(hasLava && y == currentSurfaceY)
                 {
+                    // partial or full lava block
+                    sim.world.setBlockState(pos, 
+                            TerrainBlockHelper.stateWithDiscreteFlowHeight(ModBlocks.lava_dynamic_height.getDefaultState(), currentVisible - currentSurfaceY * TerrainState.BLOCK_LEVELS_INT));
+                
+                    tracker.setAdjustmentNeededAround(x, y, z);
+                    tracker.excludeAdjustmentNeededAt(x, y, z);
                     
-                    sim.worldBuffer().setBlockState(this.locator.x, y, this.locator.z, 
-                            TerrainBlockHelper.stateWithDiscreteFlowHeight(ModBlocks.lava_dynamic_height.getDefaultState(), currentVisible - currentSurfaceY * TerrainState.BLOCK_LEVELS_INT),
-                            priorState);
+                    if(priorState.getBlock().isWood(sim.world, pos))
+                    {
+                        sim.lavaTreeCutter.queueTreeCheck(pos.up());
+                    }
                 }
                 else if(hasLava && y < currentSurfaceY)
                 {
-                    sim.worldBuffer().setBlockState(this.locator.x, y, this.locator.z, 
-                            TerrainBlockHelper.stateWithDiscreteFlowHeight(ModBlocks.lava_dynamic_height.getDefaultState(), TerrainState.BLOCK_LEVELS_INT),
-                            priorState);
+                    // full lava block
+                    sim.world.setBlockState(pos, 
+                            TerrainBlockHelper.stateWithDiscreteFlowHeight(ModBlocks.lava_dynamic_height.getDefaultState(), TerrainState.BLOCK_LEVELS_INT));
+                    
+                    tracker.setAdjustmentNeededAround(x, y, z);
+                    tracker.excludeAdjustmentNeededAt(x, y, z);
                 }
                 else
                 {
                     // don't want to clear non-air blocks if they did not contain lava - let falling particles do that
                     if(priorState.getBlock() == ModBlocks.lava_dynamic_height)
                     {
-                        sim.worldBuffer().setBlockState(this.locator.x, y, this.locator.z, Blocks.AIR.getDefaultState(), priorState);
+                        sim.world.setBlockState(pos, Blocks.AIR.getDefaultState());
+                        
+                        // difference here is that we allow fillers in the block being set
+                        tracker.setAdjustmentNeededAround(x, y, z);
                     }
                 }
             }
+            
+            tracker.doAdjustments(sim);
         }
     }
     
+ 
     /**
      * Makes the last flow tick for this cell equal the current simulator tick.
      * Should be called whenever lava is added to this cell or flows in or out.
@@ -2121,7 +2142,7 @@ public class LavaCell extends AbstractLavaCell
     
     static private class CellLocator
     {
-        LavaCell firstCell;
+        @Nullable LavaCell firstCell;
         public final int x;
         public final int z;
         
