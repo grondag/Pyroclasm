@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.concurrent.ExecutionException;
 
 import javax.annotation.Nullable;
 
@@ -62,15 +63,6 @@ public class LavaCells implements Iterable<LavaCell>
     
             
     // off-tick tasks
-    private final JobTask<LavaCell> updateStuffTask = new JobTask<LavaCell>()
-    {
-        @Override
-        public void doJobTask(LavaCell operand)
-        {
-            operand.updateActiveStatus();
-            operand.updateConnectionsIfNeeded(sim);
-        }
-    };
     
     private final JobTask<LavaCell> prioritizeConnectionsTask = new JobTask<LavaCell>() 
     {
@@ -87,13 +79,13 @@ public class LavaCells implements Iterable<LavaCell>
     public final Job updateRetentionJob;   
     
     public final Job updateSmoothedRetentionJob;  
-    public final Job updateStuffJob;
     public final Job prioritizeConnectionsJob;
     
     
    private static final int MAX_CHUNKS_PER_TICK = 4;
     
-   PerformanceCounter perfCounterValidation;
+   private final PerformanceCounter perfCounterValidation;
+   private final PerformanceCounter perfCounterUpdateStuff;
    
     public LavaCells(LavaSimulator sim)
     {
@@ -103,6 +95,8 @@ public class LavaCells implements Iterable<LavaCell>
 
         perfCounterValidation = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Chunk validation", sim.perfCollectorOnTick);
         
+        perfCounterUpdateStuff = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Cell Upkeep", sim.perfCollectorOffTick);
+        
         // on-tick jobs
         
         updateRetentionJob = new CountedJob<LavaCell>(this.cellList, updateRetentionTask, BATCH_SIZE, 
@@ -111,9 +105,6 @@ public class LavaCells implements Iterable<LavaCell>
         // off-tick jobs
         updateSmoothedRetentionJob = new CountedJob<LavaCell>(this.cellList, updateSmoothedRetentionTask, BATCH_SIZE, 
                 Configurator.VOLCANO.enablePerformanceLogging, "Smoothed Retention Update", sim.perfCollectorOffTick);   
-        
-        updateStuffJob = new CountedJob<LavaCell>(this.cellList, updateStuffTask, BATCH_SIZE, 
-                Configurator.VOLCANO.enablePerformanceLogging, "Cell Upkeep", sim.perfCollectorOffTick);
         
         prioritizeConnectionsJob = new CountedJob<LavaCell>(this.cellList, prioritizeConnectionsTask, BATCH_SIZE, 
                 Configurator.VOLCANO.enablePerformanceLogging, "Connection Prioritization", sim.perfCollectorOffTick);
@@ -411,12 +402,28 @@ public class LavaCells implements Iterable<LavaCell>
             this.updateSmoothedRetentionJob.runOn(Simulator.SIMULATION_POOL);
             
             // Make sure other stuff is up to date
-            this.updateStuffJob.runOn(Simulator.SIMULATION_POOL);
-            
-            BigActiveVolcano.INSTANCE.info("Loaded " + this.cellList.size() + " lava cells.");
+            this.updateStuff();
         }
     }
     
+    public void updateStuff()
+    {
+        this.perfCounterUpdateStuff.startRun();
+        try
+        {
+            Simulator.SIMULATION_POOL.submit(() -> this.cellList.stream(true).forEach( operand -> 
+            {
+                operand.updateActiveStatus();
+                operand.updateConnectionsIfNeeded(sim);
+            })).get();
+        }
+        catch (InterruptedException | ExecutionException e)
+        {
+            BigActiveVolcano.INSTANCE.error("Unexpected error during lava cell upkeep", e);
+        }
+        this.perfCounterUpdateStuff.endRun();
+        this.perfCounterUpdateStuff.addCount(this.cellList.size());
+    }
     public void logDebugInfo()
     {
         BigActiveVolcano.INSTANCE.info(this.cellChunks.size() + " loaded cell chunks");
