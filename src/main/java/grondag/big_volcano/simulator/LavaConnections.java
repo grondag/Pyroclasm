@@ -3,50 +3,21 @@ package grondag.big_volcano.simulator;
 
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.Iterator;
-import java.util.concurrent.Executor;
 import java.util.function.Predicate;
 
 import javax.annotation.Nullable;
 
 import com.google.common.collect.ComparisonChain;
 
-import grondag.big_volcano.BigActiveVolcano;
 import grondag.big_volcano.Configurator;
-import grondag.big_volcano.simulator.LavaConnections.SortBucket;
-import grondag.exotic_matter.concurrency.CountedJob;
-import grondag.exotic_matter.concurrency.JobTask;
-import grondag.exotic_matter.concurrency.PerformanceCounter;
-import grondag.exotic_matter.concurrency.Job;
 import grondag.exotic_matter.concurrency.SimpleConcurrentList;
 import grondag.exotic_matter.simulator.Simulator;
 import grondag.exotic_matter.varia.SimpleUnorderedArrayList;
 
-@SuppressWarnings("unused")
-public class LavaConnections  implements Iterable<LavaConnection>
+public class LavaConnections extends AbstractLavaConnections
 {
-    private final SimpleConcurrentList<LavaConnection> connectionList;
-    
     @SuppressWarnings("unchecked")
-    private final SimpleConcurrentList<LavaConnection>[] sort = new SimpleConcurrentList[4];
-    
-    private final LavaSimulator sim;
-    
-    /** incremented each step, multiple times per tick */
-    private int stepIndex;
-    private int[] flowTotals = new int[8];
-    private int[] flowCounts = new int[8];
-    
-    private final JobTask<LavaConnection> setupTickTask = new JobTask<LavaConnection>()
-    {
-        @Override
-        public void doJobTask(LavaConnection operand)
-        {
-            operand.setupTick();
-        }
-    };
-    
-//    public final SimplePerformanceCounter sortRefreshPerf = new SimplePerformanceCounter();
+    final SimpleConcurrentList<LavaConnection>[] sort = new SimpleConcurrentList[4];
     
     public static enum SortBucket
     {
@@ -58,25 +29,11 @@ public class LavaConnections  implements Iterable<LavaConnection>
         ONE_TO_TWO, TWO_TO_ONE, NONE
     }
     
-    private boolean isSortCurrent = false;
-    
-    public final PerformanceCounter sortCounter;
-    public final PerformanceCounter setupCounter;
-    public final PerformanceCounter firstStepCounter;
-    public final PerformanceCounter stepCounter;
-    public final PerformanceCounter perfPrioritizeConnections;
-
+    boolean isSortCurrent = false;
     
     public LavaConnections(LavaSimulator sim)
     {
-        super();
-        this.sim = sim;
-        connectionList = SimpleConcurrentList.create(LavaConnection.class, Configurator.VOLCANO.enablePerformanceLogging, "Lava Connections", sim.perfCollectorOffTick);
-        sortCounter = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Connection Sorting", sim.perfCollectorOffTick);
-        setupCounter = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Connection Setup", sim.perfCollectorOffTick);
-        firstStepCounter = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "First Flow Step", sim.perfCollectorOffTick);
-        stepCounter = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Flow Step", sim.perfCollectorOffTick);
-        perfPrioritizeConnections = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Connection Prioritization", sim.perfCollectorOffTick);
+        super(sim);
         
         this.sort[SortBucket.A.ordinal()] = SimpleConcurrentList.create(LavaConnection.class, Configurator.VOLCANO.enablePerformanceLogging, "Sort Bucket", sim.perfCollectorOffTick);
         this.sort[SortBucket.B.ordinal()] = SimpleConcurrentList.create(LavaConnection.class, this.sort[SortBucket.A.ordinal()].removalPerfCounter());
@@ -87,72 +44,21 @@ public class LavaConnections  implements Iterable<LavaConnection>
         
     }
     
-    public void clear()
+    @Override
+    public synchronized void clear()
     {
-        synchronized(this)
-        {
-            this.connectionList.clear();
-            this.sort[SortBucket.A.ordinal()].clear();
-            this.sort[SortBucket.B.ordinal()].clear();
-            this.sort[SortBucket.C.ordinal()].clear();
-            this.sort[SortBucket.D.ordinal()].clear();
-        }
+        super.clear();
+        this.sort[SortBucket.A.ordinal()].clear();
+        this.sort[SortBucket.B.ordinal()].clear();
+        this.sort[SortBucket.C.ordinal()].clear();
+        this.sort[SortBucket.D.ordinal()].clear();
     }
     
-    public void createConnectionIfNotPresent(LavaCell first, LavaCell second)
-    {
-        if(first.id < second.id)
-        {
-            this.createConnectionIfNotPresentInner(first, second);
-        }
-        else
-        {
-            this.createConnectionIfNotPresentInner(second, first);
-        }
-    }
-    
-    private void createConnectionIfNotPresentInner(LavaCell first, LavaCell second)
-    {
-        boolean isIncomplete = true;
-        do
-        {
-            if(first.tryLock())
-            {
-                if(second.tryLock())
-                {
-                    if(!first.isConnectedTo(second))
-                    {
-                        LavaConnection newConnection = new LavaConnection(first, second);
-                        this.addConnectionToArray(newConnection);
-                    }
-                    
-                    isIncomplete = false;
-                    second.unlock();
-                }
-                first.unlock();
-            }
-        } while(isIncomplete);
-    }
-    
-    /** 
-     * Adds connection to the storage array and marks sort dirty.
-     * Does not do anything else.
-     * Thread-safe.
-     */
+    @Override
     public void addConnectionToArray(LavaConnection connection)
     {
-        this.connectionList.add(connection);
+        super.addConnectionToArray(connection);
         this.isSortCurrent = false;
-    }
-    
-    public void removeDeletedItems()
-    {
-        this.connectionList.removeSomeDeletedItems(LavaConnection.REMOVAL_PREDICATE);
-    }
-    
-    public int size()
-    {
-        return this.connectionList.size();
     }
     
     public void invalidateSortBuckets()
@@ -200,12 +106,6 @@ public class LavaConnections  implements Iterable<LavaConnection>
         this.isSortCurrent = true;
     }
 
-    @Override
-    public Iterator<LavaConnection> iterator()
-    {
-        return this.connectionList.iterator();
-    }
-
     protected void setupTick()
     {
         Simulator.runTaskAppropriately(
@@ -215,30 +115,6 @@ public class LavaConnections  implements Iterable<LavaConnection>
                 this.setupCounter);
     }
     
-    protected void doFirstStepInner()
-    {
-        for(SortBucket bucket : SortBucket.values())
-        {
-            Simulator.runTaskAppropriately(
-                    this.sort[bucket.ordinal()], 
-                    c -> c.doFirstStep(),
-                    Configurator.VOLCANO.concurrencyThreshold, 
-                    this.firstStepCounter);
-        }        
-    }
-    
-    protected void doStepInner()
-    {
-        for(SortBucket bucket : SortBucket.values())
-        {
-            Simulator.runTaskAppropriately(
-                    this.sort[bucket.ordinal()], 
-                    c -> c.doStep(),
-                    Configurator.VOLCANO.concurrencyThreshold, 
-                    this.firstStepCounter);
-        }        
-    }
-
     /** 
      * Working variable used during connection prioritization / sorting.
      * Maintained as a static threadlocal to conserve memory and prevent massive garbage collection each tick.
@@ -316,89 +192,45 @@ public class LavaConnections  implements Iterable<LavaConnection>
         Simulator.runTaskAppropriately(this.sim.cells.cellList, operand -> this.prioritize(operand), Configurator.VOLCANO.concurrencyThreshold, this.perfPrioritizeConnections);
     }
     
-    public void processConnections()
+    @Override
+    protected void doSetup()
     {
         // determines which connections can flow
         // MUST happen BEFORE connection sorting
         this.setupTick();
 
-        // connection sorting 
+        // Connection sorting - happens by Cell, so not part of tick setup.
         // MUST happen AFTER all connections are updated/formed and flow direction is determined
         // If not, will include connections with a flow type of NONE and may try to output from empty cells
         // Could add a check for this, but is wasteful/impactful in hot inner loop - simply should not be there
         this.prioritizeConnections();
         
         this.refreshSortBucketsIfNeeded();
-        
-        this.doFirstStep();
-        
-        this.doStep();
-        this.doStep();
-//        this.doStep();
-//        this.doStep();
-//        this.doStep();
-//        this.doStep();
-        this.doLastStep();        
+    }
+ 
+    @Override
+    protected void doFirstStepInner()
+    {
+        for(SortBucket bucket : SortBucket.values())
+        {
+            Simulator.runTaskAppropriately(
+                    this.sort[bucket.ordinal()], 
+                    c -> c.doFirstStep(),
+                    Configurator.VOLCANO.concurrencyThreshold, 
+                    this.firstStepCounter);
+        }        
     }
     
-    protected void doFirstStep()
+    @Override
+    protected void doStepInner()
     {
-        this.stepIndex = 0;
-        
-        int startingCount = 0;
-        if(Configurator.VOLCANO.enableFlowTracking)
-        {  
-            // all bucket jobs share the same perf counter, so simply use the start reference
-            startingCount = this.firstStepCounter.runCount();
-        }
-        
-        this.doFirstStepInner();
-       
-        
-        if(Configurator.VOLCANO.enableFlowTracking)
-        { 
-            this.flowCounts[0] += (this.firstStepCounter.runCount() - startingCount);
-            this.flowTotals[0] += LavaConnection.totalFlow.get();
-            LavaConnection.totalFlow.set(0);
-        }
-    }
-
-    protected void doStep()
-    {
-        this.stepIndex++;
-        
-        int startingCount = 0;
-        if(Configurator.VOLCANO.enableFlowTracking)
-        {    
-            // all bucket jobs share the same perf counter, so simply use the start reference
-            startingCount = this.stepCounter.runCount();
-        }
-        
-        this.doStepInner();
-        
-        if(Configurator.VOLCANO.enableFlowTracking)
-        { 
-            this.flowCounts[stepIndex] += (this.stepCounter.runCount() - startingCount);
-            this.flowTotals[stepIndex] += LavaConnection.totalFlow.get();
-            LavaConnection.totalFlow.set(0);
-        }
-    }
-
-    protected void doLastStep()
-    {
-        this.doStep();
-    }
-
-    public void reportFlowTrackingIfEnabled()
-    {
-        if(Configurator.VOLCANO.enableFlowTracking)
+        for(SortBucket bucket : SortBucket.values())
         {
-            for(int i = 0; i < 8; i++)
-            {
-                BigActiveVolcano.INSTANCE.info(String.format("Flow total for step %1$d = %2$,d with %3$,d connections", i, this.flowTotals[i], this.flowCounts[i]));
-                this.flowTotals[i] = 0;
-                this.flowCounts[i] = 0;
-            }
+            Simulator.runTaskAppropriately(
+                    this.sort[bucket.ordinal()], 
+                    c -> c.doStep(),
+                    Configurator.VOLCANO.concurrencyThreshold, 
+                    this.firstStepCounter);
         }        
     }
 }

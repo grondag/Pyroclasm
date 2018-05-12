@@ -35,9 +35,13 @@ public class LavaConnection
     
     public final int rand = ThreadLocalRandom.current().nextInt();
     
+    @Deprecated
     private SortBucket sortBucket;
     
+    @Deprecated
     private SortBucket lastSortBucket;
+    
+    public int priority;
     
     /**
      * True if connection should flow.
