@@ -474,7 +474,7 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
        this.cells.updateSmoothedRetentionJob.runOn(Simulator.SIMULATION_POOL);
      
         // update connections as needed, handle pressure propagation, or other housekeeping
-        this.cells.updateStuff();
+        this.cells.updateStuffJob.runOn(Simulator.SIMULATION_POOL);
        
         // determines which connections can flow
         // MUST happen BEFORE connection sorting
