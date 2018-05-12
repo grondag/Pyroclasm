@@ -38,7 +38,7 @@ public class BlockEventList
     
     public BlockEventList(int maxRetries, String nbtTagName, BlockEventHandler eventHandler, PerformanceCollector perfCollector)
     {
-        eventList = SimpleConcurrentList.create(Configurator.VOLCANO.enablePerformanceLogging, nbtTagName + " Block Events", perfCollector);
+        eventList = SimpleConcurrentList.create(BlockEventList.BlockEvent.class, Configurator.VOLCANO.enablePerformanceLogging, nbtTagName + " Block Events", perfCollector);
         
         processJob = new CountedJob<BlockEventList.BlockEvent>(this.eventList, processTask, 64, 
                 Configurator.VOLCANO.enablePerformanceLogging, nbtTagName + " Event Processing", perfCollector);

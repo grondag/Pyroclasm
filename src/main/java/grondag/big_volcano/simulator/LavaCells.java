@@ -99,7 +99,7 @@ public class LavaCells implements Iterable<LavaCell>
     {
         this.sim = sim;
         this.chunkTracker = sim.chunkTracker;
-        cellList = SimpleConcurrentList.create(Configurator.VOLCANO.enablePerformanceLogging, "Lava Cells", sim.perfCollectorOffTick);
+        cellList = SimpleConcurrentList.create(LavaCell.class , Configurator.VOLCANO.enablePerformanceLogging, "Lava Cells", sim.perfCollectorOffTick);
 
         perfCounterValidation = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Chunk validation", sim.perfCollectorOnTick);
         

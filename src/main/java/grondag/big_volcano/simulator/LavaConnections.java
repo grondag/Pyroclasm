@@ -92,12 +92,12 @@ public class LavaConnections  implements Iterable<LavaConnection>
     public LavaConnections(LavaSimulator sim)
     {
         super();
-        connectionList = SimpleConcurrentList.create(Configurator.VOLCANO.enablePerformanceLogging, "Lava Connections", sim.perfCollectorOffTick);
+        connectionList = SimpleConcurrentList.create(LavaConnection.class, Configurator.VOLCANO.enablePerformanceLogging, "Lava Connections", sim.perfCollectorOffTick);
         
-        this.sort[SortBucket.A.ordinal()] = SimpleConcurrentList.create(Configurator.VOLCANO.enablePerformanceLogging, "Sort Bucket", sim.perfCollectorOffTick);
-        this.sort[SortBucket.B.ordinal()] = SimpleConcurrentList.create(this.sort[SortBucket.A.ordinal()].removalPerfCounter());
-        this.sort[SortBucket.C.ordinal()] = SimpleConcurrentList.create(this.sort[SortBucket.A.ordinal()].removalPerfCounter());
-        this.sort[SortBucket.D.ordinal()] = SimpleConcurrentList.create(this.sort[SortBucket.A.ordinal()].removalPerfCounter());
+        this.sort[SortBucket.A.ordinal()] = SimpleConcurrentList.create(LavaConnection.class, Configurator.VOLCANO.enablePerformanceLogging, "Sort Bucket", sim.perfCollectorOffTick);
+        this.sort[SortBucket.B.ordinal()] = SimpleConcurrentList.create(LavaConnection.class, this.sort[SortBucket.A.ordinal()].removalPerfCounter());
+        this.sort[SortBucket.C.ordinal()] = SimpleConcurrentList.create(LavaConnection.class, this.sort[SortBucket.A.ordinal()].removalPerfCounter());
+        this.sort[SortBucket.D.ordinal()] = SimpleConcurrentList.create(LavaConnection.class, this.sort[SortBucket.A.ordinal()].removalPerfCounter());
         
         this.firstStepJob[SortBucket.A.ordinal()] = new CountedJob<LavaConnection>(this.sort[SortBucket.A.ordinal()] , firstStepTask, BATCH_SIZE,
                 Configurator.VOLCANO.enablePerformanceLogging, "First Flow Step", sim.perfCollectorOffTick);  
