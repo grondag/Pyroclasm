@@ -4,7 +4,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Iterator;
-import java.util.concurrent.ExecutionException;
 
 import javax.annotation.Nullable;
 
@@ -12,9 +11,6 @@ import com.google.common.collect.ComparisonChain;
 
 import grondag.big_volcano.BigActiveVolcano;
 import grondag.big_volcano.Configurator;
-import grondag.exotic_matter.concurrency.CountedJob;
-import grondag.exotic_matter.concurrency.Job;
-import grondag.exotic_matter.concurrency.JobTask;
 import grondag.exotic_matter.concurrency.PerformanceCounter;
 import grondag.exotic_matter.concurrency.SimpleConcurrentList;
 import grondag.exotic_matter.serialization.NBTDictionary;
@@ -31,7 +27,7 @@ public class LavaCells implements Iterable<LavaCell>
     private final static String NBT_LAVA_CELLS = NBTDictionary.claim("lavaCells");
     private final static int CAPACITY_INCREMENT = 0x10000;
 
-    private final SimpleConcurrentList<LavaCell> cellList;
+    public final SimpleConcurrentList<LavaCell> cellList;
     
     private final Long2ObjectOpenHashMap<CellChunk> cellChunks = new Long2ObjectOpenHashMap<CellChunk>();
     
@@ -47,7 +43,6 @@ public class LavaCells implements Iterable<LavaCell>
    private final PerformanceCounter perfCounterUpdateStuff;
    private final PerformanceCounter perfCounterUpdateRetention;
    private final PerformanceCounter perfCounterUpdateSmoothedRetention;
-   private final PerformanceCounter perfPrioritizeConnections;
    
     public LavaCells(LavaSimulator sim)
     {
@@ -62,7 +57,6 @@ public class LavaCells implements Iterable<LavaCell>
         // off tick
         perfCounterUpdateStuff = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Cell Upkeep", sim.perfCollectorOffTick);
         perfCounterUpdateSmoothedRetention = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Smoothed Retention Update", sim.perfCollectorOffTick);
-        perfPrioritizeConnections = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Connection Prioritization", sim.perfCollectorOffTick);
    }
 
    public void validateChunks()
@@ -374,11 +368,6 @@ public class LavaCells implements Iterable<LavaCell>
     public void updateSmoothedRetention()
     {
         Simulator.runTaskAppropriately(this.cellList, operand -> operand.updatedSmoothedRetentionIfNeeded(), Configurator.VOLCANO.concurrencyThreshold, this.perfCounterUpdateSmoothedRetention);
-    }
-    
-    public void prioritizeConnections()
-    {
-        Simulator.runTaskAppropriately(this.cellList, operand -> operand.prioritizeOutboundConnections(sim.connections), Configurator.VOLCANO.concurrencyThreshold, this.perfPrioritizeConnections);
     }
     
     public void logDebugInfo()

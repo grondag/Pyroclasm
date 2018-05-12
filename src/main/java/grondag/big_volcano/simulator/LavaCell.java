@@ -1,18 +1,13 @@
 package grondag.big_volcano.simulator;
 
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import com.google.common.collect.ComparisonChain;
-
 import grondag.big_volcano.Configurator;
 import grondag.big_volcano.init.ModBlocks;
-import grondag.big_volcano.simulator.LavaConnections.SortBucket;
 import grondag.exotic_matter.model.TerrainBlockHelper;
 import grondag.exotic_matter.model.TerrainState;
 import grondag.exotic_matter.simulator.Simulator;
@@ -1350,79 +1345,6 @@ public class LavaCell extends AbstractLavaCell
             }
                 
             candidate = candidate.aboveCell();
-        }
-    }
-    
-    /** 
-     * Working variable used during connection prioritization / sorting.
-     * Maintained as a static threadlocal to conserve memory and prevent massive garbage collection each tick.
-     */
-    private static ThreadLocal<ArrayList<LavaConnection>> sorter = new ThreadLocal<ArrayList<LavaConnection>>() 
-    {
-        @Override
-        protected ArrayList<LavaConnection> initialValue() 
-        {
-           return new ArrayList<LavaConnection>();
-        }
-     };
-  
-    
-    /**
-     * Assigns a sort bucket to each outbound connection and 
-     * invalidates sort order if any buckets change.
-     */
-    public void prioritizeOutboundConnections(LavaConnections connections)
-    {
-        if(this.isDeleted) return;
-        
-        ArrayList<LavaConnection> sort = sorter.get();
-        sort.clear();
-        
-        for(int i = this.connections.size() - 1; i >= 0; i--)
-        {
-            LavaConnection connection = this.connections.get(i);
-            
-            if(connection.isFlowEnabled())
-            {
-                if(connection.isDirectionOneToTwo())
-                {
-                    if(connection.firstCell == this) sort.add(connection);
-                }
-                else
-                {
-                    if(connection.secondCell == this) sort.add(connection);
-                }
-            }
-            else
-            {
-                connection.setSortBucket(connections, null);
-            }
-        }
-        
-        if(sort.size() > 0)
-        {
-            sort.sort(new Comparator<LavaConnection>()
-            {
-                @Override
-                public int compare(@Nullable LavaConnection o1, @Nullable LavaConnection o2)
-                {
-                    return ComparisonChain.start()
-                            // larger surface drop first
-                            .compare(o2.getSurfaceDrop(), o1.getSurfaceDrop())
-                            // larger floor drop first
-                            .compare(o2.getTerrainDrop(), o1.getTerrainDrop())
-                            // arbitrary tie breaker
-                            .compare(o1.id, o2.id)
-                            .result();
-                }
-            });
-            
-            for(int i = 0; i < sort.size(); i++)
-            {
-                // Don't think it is even possible for a cell to have more than four neighbors with a lower or same floor, but in case I'm wrong...
-                // For cells with more than four outbound connections, all connections beyond the start four get dropped in the last bucket.
-                sort.get(i).setSortBucket(connections, i < 4 ? SortBucket.values()[i] : SortBucket.D);
-            }
         }
     }
     

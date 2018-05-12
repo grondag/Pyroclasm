@@ -186,10 +186,6 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
     
     private final BlockEventList lavaAddEvents = new BlockEventList(10, NBT_LAVA_ADD_EVENTS, lavaAddEventHandler, this.perfCollectorOffTick);
     
-            
-    /** incremented each step, multiple times per tick */
-    private int stepIndex;
-    
     public LavaSimulator()
     {
         this.world = FMLCommonHandler.instance().getMinecraftServerInstance().worlds[0];
@@ -387,11 +383,6 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
         this.lavaTreeCutter.deserializeNBT(nbt);
     }
     
-    public int getStepIndex()
-    {
-        return this.stepIndex;
-    }
-
     public int getCellCount()
     {
         return this.cells.size();
@@ -461,9 +452,7 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
         perfOnTick.endRun();
         perfOnTick.addCount(1);
     }
-    
-    private int[] flowTotals = new int[8];
-    private int[] flowCounts = new int[8];
+
     
     @Override
     public void doOffTick()
@@ -475,27 +464,7 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
         // update connections as needed, handle pressure propagation, or other housekeeping
         this.cells.updateStuff();
        
-        // determines which connections can flow
-        // MUST happen BEFORE connection sorting
-        this.connections.setupTick();
-
-        // connection sorting 
-        // MUST happen AFTER all connections are updated/formed and flow direction is determined
-        // If not, will include connections with a flow type of NONE and may try to output from empty cells
-        // Could add a check for this, but is wasteful/impactful in hot inner loop - simply should not be there
-        this.cells.prioritizeConnections();
-        
-        this.connections.refreshSortBucketsIfNeeded(Simulator.SIMULATION_POOL);
-        
-        this.doFirstStep();
-        
-        this.doStep();
-        this.doStep();
-//        this.doStep();
-//        this.doStep();
-//        this.doStep();
-//        this.doStep();
-        this.doLastStep();
+        this.connections.processConnections();
         
 
         // Apply world events that may depend on new chunks that were just loaded
@@ -603,15 +572,7 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
             // this one is always maintained in order to compute load factor
             perfCollectorAllTick.clearStats();
 
-            if(Configurator.VOLCANO.enableFlowTracking)
-            {
-                for(int i = 0; i < 8; i++)
-                {
-                    BigActiveVolcano.INSTANCE.info(String.format("Flow total for step %1$d = %2$,d with %3$,d connections", i, this.flowTotals[i], this.flowCounts[i]));
-                    this.flowTotals[i] = 0;
-                    this.flowCounts[i] = 0;
-                }
-            }
+            this.connections.reportFlowTrackingIfEnabled();
 
             if(Configurator.VOLCANO.enablePerformanceLogging) 
             {
@@ -631,53 +592,7 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
         }
     }
 
-    protected void doFirstStep()
-    {
-        this.stepIndex = 0;
-        
-        int startingCount = 0;
-        if(Configurator.VOLCANO.enableFlowTracking)
-        {  
-            // all bucket jobs share the same perf counter, so simply use the start reference
-            startingCount = this.connections.firstStepCounter.runCount();
-        }
-        
-        this.connections.doFirstStep();
-       
-        
-        if(Configurator.VOLCANO.enableFlowTracking)
-        { 
-            this.flowCounts[0] += (this.connections.firstStepCounter.runCount() - startingCount);
-            this.flowTotals[0] += LavaConnection.totalFlow.get();
-            LavaConnection.totalFlow.set(0);
-        }
-    }
-
-    protected void doStep()
-    {
-        this.stepIndex++;
-        
-        int startingCount = 0;
-        if(Configurator.VOLCANO.enableFlowTracking)
-        {    
-            // all bucket jobs share the same perf counter, so simply use the start reference
-            startingCount = this.connections.stepCounter.runCount();
-        }
-        
-        this.connections.doStep();
-        
-        if(Configurator.VOLCANO.enableFlowTracking)
-        { 
-            this.flowCounts[stepIndex] += (this.connections.stepCounter.runCount() - startingCount);
-            this.flowTotals[stepIndex] += LavaConnection.totalFlow.get();
-            LavaConnection.totalFlow.set(0);
-        }
-    }
-
-    protected void doLastStep()
-    {
-        this.doStep();
-    }
+  
 
     public void coolCell(LavaCell cell)
     {
@@ -700,7 +615,6 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
             this.world.setBlockState(pos, ModBlocks.basalt_cut.getDefaultState());
         }
     }
-
 
     @Override
     public boolean isSaveDirty()
