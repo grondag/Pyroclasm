@@ -223,6 +223,11 @@ public class Configurator
                 + "Client-side only."})
         public boolean enableFlowDebugRender;
 
+        @Comment({"When cell/connection counts are above this limit, will use multiple threads.",
+            "Defaults should generally be OK, but allows ajustment to tune performance for your hardware."})
+        @RangeInt(min = 1000, max = 1000000)
+        public int concurrencyThreshold = 2000;
+
         /** Contains block objects configured to be destroyed by lava */
         public static final IdentityHashMap<Block, Block> blocksDestroyedByLava = new IdentityHashMap<Block, Block>();
 

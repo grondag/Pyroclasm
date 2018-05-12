@@ -409,21 +409,27 @@ public class LavaCells implements Iterable<LavaCell>
     public void updateStuff()
     {
         this.perfCounterUpdateStuff.startRun();
-        try
+        if(cellList.size() > Configurator.VOLCANO.concurrencyThreshold)
         {
-            Simulator.SIMULATION_POOL.submit(() -> this.cellList.stream(true).forEach( operand -> 
+            try
             {
-                operand.updateActiveStatus();
-                operand.updateConnectionsIfNeeded(sim);
-            })).get();
+                Simulator.SIMULATION_POOL.submit(() -> this.cellList.stream(true).forEach( operand -> 
+                    operand.updateStuff(sim)
+                )).get();
+            }
+            catch (InterruptedException | ExecutionException e)
+            {
+                BigActiveVolcano.INSTANCE.error("Unexpected error during lava cell upkeep", e);
+            }
         }
-        catch (InterruptedException | ExecutionException e)
+        else
         {
-            BigActiveVolcano.INSTANCE.error("Unexpected error during lava cell upkeep", e);
+            this.cellList.stream(false).forEach( operand -> operand.updateStuff(sim));
         }
         this.perfCounterUpdateStuff.endRun();
         this.perfCounterUpdateStuff.addCount(this.cellList.size());
     }
+    
     public void logDebugInfo()
     {
         BigActiveVolcano.INSTANCE.info(this.cellChunks.size() + " loaded cell chunks");

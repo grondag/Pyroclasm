@@ -1292,7 +1292,7 @@ public class LavaCell extends AbstractLavaCell
     /** 
      * Forms new connections and removes invalid connections if necessary.
      */
-    public void updateConnectionsIfNeeded(LavaSimulator sim)
+    private void updateConnectionsIfNeeded(LavaSimulator sim)
     {
         if(this.isDeleted) return;
         
@@ -1427,7 +1427,7 @@ public class LavaCell extends AbstractLavaCell
     }
     
     /** maintains indication of whether or not this cell must remain loaded */
-    public void updateActiveStatus()
+    private void updateActiveStatus()
     {
         boolean shouldBeActive = this.shouldBeActive();
         
@@ -1447,6 +1447,12 @@ public class LavaCell extends AbstractLavaCell
                 this.isActive = true;
             }
         }
+    }
+    
+    public void updateStuff(LavaSimulator sim)
+    {
+        this.updateActiveStatus();
+        this.updateConnectionsIfNeeded(sim);
     }
 
     /**
