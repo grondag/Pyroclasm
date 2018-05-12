@@ -157,8 +157,8 @@ public class BasaltTracker
         {
             for(Entry e : blocks.long2IntEntrySet())
             {
-                saveData[i++] = (int) (e.getLongKey() & 0xFFFFFFFF);
                 saveData[i++] = (int) ((e.getLongKey() >> 32) & 0xFFFFFFFF);
+                saveData[i++] = (int) (e.getLongKey() & 0xFFFFFFFF);
                 saveData[i++] = e.getIntValue();
             }
         }       

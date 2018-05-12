@@ -15,7 +15,6 @@ import grondag.big_volcano.lava.LavaTerrainHelper;
 import grondag.big_volcano.lava.LavaTreeCutter;
 import grondag.big_volcano.simulator.BlockEventList.BlockEvent;
 import grondag.big_volcano.simulator.BlockEventList.BlockEventHandler;
-import grondag.big_volcano.simulator.LavaConnections.SortBucket;
 import grondag.exotic_matter.block.SuperBlock;
 import grondag.exotic_matter.concurrency.PerformanceCollector;
 import grondag.exotic_matter.concurrency.PerformanceCounter;
@@ -455,7 +454,7 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
         // needs to happen after lava cooling because cooled cell have new floors
         
         //TODO: move to single thread and limit to chunks that just cooled or revalidated
-        this.cells.updateRetentionJob.runOn(Simulator.SIMULATION_POOL);
+        this.cells.updateRawRetention();
         
         this.setDirty();
 
@@ -469,22 +468,22 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
     @Override
     public void doOffTick()
     {
-       if(Configurator.VOLCANO.enablePerformanceLogging) perfOffTick.startRun();
+        if(Configurator.VOLCANO.enablePerformanceLogging) perfOffTick.startRun();
        
-       this.cells.updateSmoothedRetentionJob.runOn(Simulator.SIMULATION_POOL);
+        this.cells.updateSmoothedRetention();
      
         // update connections as needed, handle pressure propagation, or other housekeeping
         this.cells.updateStuff();
        
         // determines which connections can flow
         // MUST happen BEFORE connection sorting
-        this.connections.setupTickJob.runOn(Simulator.SIMULATION_POOL);
+        this.connections.setupTick();
 
         // connection sorting 
         // MUST happen AFTER all connections are updated/formed and flow direction is determined
         // If not, will include connections with a flow type of NONE and may try to output from empty cells
         // Could add a check for this, but is wasteful/impactful in hot inner loop - simply should not be there
-        this.cells.prioritizeConnectionsJob.runOn(Simulator.SIMULATION_POOL);
+        this.cells.prioritizeConnections();
         
         this.connections.refreshSortBucketsIfNeeded(Simulator.SIMULATION_POOL);
         
@@ -500,7 +499,7 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
         
 
         // Apply world events that may depend on new chunks that were just loaded
-        this.lavaAddEvents.processAllEventsOn(Simulator.SIMULATION_POOL);
+        this.lavaAddEvents.processAllEvents();
 
 
         // Apply pending lava block placements
@@ -511,7 +510,7 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
         // extra tick to fully handle block placement events.
         // However, lava blocks are not normally expected to be placed or broken except by the simulation
         // which does not rely on world events for that purpose.
-        this.lavaBlockPlacementEvents.processAllEventsOn(Simulator.SIMULATION_POOL);
+        this.lavaBlockPlacementEvents.processAllEvents();
         
         // unload cell chunks that are no longer necessary
         // important that this run right after cell update so that
@@ -640,17 +639,15 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
         if(Configurator.VOLCANO.enableFlowTracking)
         {  
             // all bucket jobs share the same perf counter, so simply use the start reference
-            startingCount = this.connections.firstStepJob[0].perfCounter.runCount();
+            startingCount = this.connections.firstStepCounter.runCount();
         }
         
-        for(SortBucket bucket : SortBucket.values())
-        {
-            this.connections.firstStepJob[bucket.ordinal()].runOn(Simulator.SIMULATION_POOL);
-        }
+        this.connections.doFirstStep();
+       
         
         if(Configurator.VOLCANO.enableFlowTracking)
         { 
-            this.flowCounts[0] += (this.connections.firstStepJob[0].perfCounter.runCount() - startingCount);
+            this.flowCounts[0] += (this.connections.firstStepCounter.runCount() - startingCount);
             this.flowTotals[0] += LavaConnection.totalFlow.get();
             LavaConnection.totalFlow.set(0);
         }
@@ -664,17 +661,14 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
         if(Configurator.VOLCANO.enableFlowTracking)
         {    
             // all bucket jobs share the same perf counter, so simply use the start reference
-            startingCount = this.connections.stepJob[0].perfCounter.runCount();
+            startingCount = this.connections.stepCounter.runCount();
         }
         
-        for(SortBucket bucket : SortBucket.values())
-        {
-            this.connections.stepJob[bucket.ordinal()].runOn(Simulator.SIMULATION_POOL);
-        }
+        this.connections.doStep();
         
         if(Configurator.VOLCANO.enableFlowTracking)
         { 
-            this.flowCounts[stepIndex] += (this.connections.stepJob[0].perfCounter.runCount() - startingCount);
+            this.flowCounts[stepIndex] += (this.connections.stepCounter.runCount() - startingCount);
             this.flowTotals[stepIndex] += LavaConnection.totalFlow.get();
             LavaConnection.totalFlow.set(0);
         }

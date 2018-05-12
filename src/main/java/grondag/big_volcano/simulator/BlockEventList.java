@@ -1,18 +1,16 @@
 package grondag.big_volcano.simulator;
 
 import java.util.Arrays;
-import java.util.concurrent.Executor;
 import java.util.function.Predicate;
 
 import javax.annotation.Nullable;
 
 import grondag.big_volcano.BigActiveVolcano;
 import grondag.big_volcano.Configurator;
-import grondag.exotic_matter.concurrency.CountedJob;
-import grondag.exotic_matter.concurrency.JobTask;
-import grondag.exotic_matter.concurrency.Job;
 import grondag.exotic_matter.concurrency.PerformanceCollector;
+import grondag.exotic_matter.concurrency.PerformanceCounter;
 import grondag.exotic_matter.concurrency.SimpleConcurrentList;
+import grondag.exotic_matter.simulator.Simulator;
 import grondag.exotic_matter.varia.PackedBlockPos;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.math.BlockPos;
@@ -25,23 +23,13 @@ public class BlockEventList
     private final String nbtTagName;
     private final BlockEventHandler eventHandler;
     
-    private final JobTask<BlockEventList.BlockEvent> processTask = new JobTask<BlockEventList.BlockEvent>() {
-
-        @Override
-        public void doJobTask(BlockEventList.BlockEvent operand)
-        {
-            if(!operand.isDeleted()) operand.process(maxRetries);
-        }
-    };
-    
-    private final Job processJob;
+    private PerformanceCounter perfCounter;
     
     public BlockEventList(int maxRetries, String nbtTagName, BlockEventHandler eventHandler, PerformanceCollector perfCollector)
     {
         eventList = SimpleConcurrentList.create(BlockEventList.BlockEvent.class, Configurator.VOLCANO.enablePerformanceLogging, nbtTagName + " Block Events", perfCollector);
         
-        processJob = new CountedJob<BlockEventList.BlockEvent>(this.eventList, processTask, 64, 
-                Configurator.VOLCANO.enablePerformanceLogging, nbtTagName + " Event Processing", perfCollector);
+        perfCounter = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, nbtTagName + " Block Events", perfCollector);
         
         this.maxRetries = maxRetries;
         this.nbtTagName = nbtTagName;
@@ -64,11 +52,15 @@ public class BlockEventList
         this.addEvent(pos.getX(), pos.getY(), pos.getZ(), amount);
     }
     
-    public void processAllEventsOn(Executor executor)
+    public void processAllEvents()
     {
         synchronized(this)
         {
-            processJob.runOn(executor);
+            Simulator.runTaskAppropriately(
+                    this.eventList, 
+                    e -> { if(!(e == null || e.isDeleted())) e.process(maxRetries); }, 
+                    Configurator.VOLCANO.concurrencyThreshold, 
+                    perfCounter);
             this.eventList.removeSomeDeletedItems(EVENT_REMOVAL_PREDICATE);
         }
     }

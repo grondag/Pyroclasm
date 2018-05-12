@@ -17,7 +17,7 @@ public class LavaConnection
         @Override
         public boolean test(@Nullable LavaConnection t)
         {
-            return t.isDeleted;
+            return t == null || t.isDeleted;
         }
     };
     
