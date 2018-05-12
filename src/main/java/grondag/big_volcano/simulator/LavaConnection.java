@@ -7,7 +7,7 @@ import java.util.function.Predicate;
 import javax.annotation.Nullable;
 
 import grondag.big_volcano.Configurator;
-import grondag.big_volcano.simulator.LavaConnections.SortBucket;
+import grondag.big_volcano.simulator.LavaConnectionsSorted.SortBucket;
 
 public class LavaConnection
 {
@@ -369,6 +369,9 @@ public class LavaConnection
     
     private void doStepFromTo(LavaCell cellFrom, LavaCell cellTo )
     {
+        //TODO:  WUT?!?!??  Is this loop needed?
+        // Guessing this was an experiment to speed up flow that never got cleaned up
+        
         for(int i = 0; i < 10; i++)
         {
             int fluidFrom = cellFrom.fluidUnits();
@@ -643,7 +646,7 @@ public class LavaConnection
         return this.sortBucket;
     }
     
-    public void setSortBucket(LavaConnections connections, SortBucket newBucket)
+    public void setSortBucket(LavaConnectionsSorted connections, SortBucket newBucket)
     {
         if(newBucket != this.sortBucket)
         {

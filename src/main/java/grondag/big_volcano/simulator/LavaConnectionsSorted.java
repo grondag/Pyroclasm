@@ -14,7 +14,7 @@ import grondag.exotic_matter.concurrency.SimpleConcurrentList;
 import grondag.exotic_matter.simulator.Simulator;
 import grondag.exotic_matter.varia.SimpleUnorderedArrayList;
 
-public class LavaConnections extends AbstractLavaConnections
+public class LavaConnectionsSorted extends AbstractLavaConnections
 {
     @SuppressWarnings("unchecked")
     final SimpleConcurrentList<LavaConnection>[] sort = new SimpleConcurrentList[4];
@@ -24,14 +24,9 @@ public class LavaConnections extends AbstractLavaConnections
         A, B, C, D
     }
     
-    public static enum FlowDirection
-    {
-        ONE_TO_TWO, TWO_TO_ONE, NONE
-    }
-    
     boolean isSortCurrent = false;
     
-    public LavaConnections(LavaSimulator sim)
+    public LavaConnectionsSorted(LavaSimulator sim)
     {
         super(sim);
         

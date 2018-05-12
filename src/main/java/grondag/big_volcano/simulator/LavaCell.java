@@ -1307,7 +1307,7 @@ public class LavaCell extends AbstractLavaCell
             int x = this.x();
             int z = this.z();
             LavaCells cells = sim.cells;
-            LavaConnections connections = sim.connections;
+            LavaConnectionsSorted connections = sim.connections;
             
             this.updateConnectionsWithColumn(cells.getEntryCell(x - 1, z), connections);
             this.updateConnectionsWithColumn(cells.getEntryCell(x + 1, z), connections);
@@ -1320,7 +1320,7 @@ public class LavaCell extends AbstractLavaCell
     /** 
      * Forms new connections with cells in the column with the given entry cell.
      */
-    private void updateConnectionsWithColumn(LavaCell entryCell, LavaConnections connections)
+    private void updateConnectionsWithColumn(LavaCell entryCell, LavaConnectionsSorted connections)
     {
         if(entryCell == null) return;
         

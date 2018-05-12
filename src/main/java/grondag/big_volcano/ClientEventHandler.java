@@ -8,7 +8,7 @@ import grondag.big_volcano.simulator.AbstractLavaCell;
 import grondag.big_volcano.simulator.CellChunk;
 import grondag.big_volcano.simulator.LavaCell;
 import grondag.big_volcano.simulator.LavaConnection;
-import grondag.big_volcano.simulator.LavaConnections.SortBucket;
+import grondag.big_volcano.simulator.LavaConnectionsSorted.SortBucket;
 import grondag.big_volcano.simulator.LavaSimulator;
 import grondag.exotic_matter.ClientProxy;
 import grondag.exotic_matter.simulator.Simulator;
