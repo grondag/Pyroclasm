@@ -202,7 +202,7 @@ public class LavaConnection
                 this.isFlowEnabled = false;
             }
         }
-        else
+        else // surface1 < surface2
         {
             if(this.setFlowLimitsThisTick(this.secondCell, this.firstCell, surface2, surface1, !this.isDirectionOneToTwo))
             {

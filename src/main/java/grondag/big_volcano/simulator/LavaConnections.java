@@ -73,7 +73,7 @@ public class LavaConnections  implements Iterable<LavaConnection>
         this.sim = sim;
         connectionList = SimpleConcurrentList.create(LavaConnection.class, Configurator.VOLCANO.enablePerformanceLogging, "Lava Connections", sim.perfCollectorOffTick);
         sortCounter = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Connection Sorting", sim.perfCollectorOffTick);
-        setupCounter = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Tick Setup", sim.perfCollectorOffTick);
+        setupCounter = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Connection Setup", sim.perfCollectorOffTick);
         firstStepCounter = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "First Flow Step", sim.perfCollectorOffTick);
         stepCounter = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Flow Step", sim.perfCollectorOffTick);
         perfPrioritizeConnections = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Connection Prioritization", sim.perfCollectorOffTick);
@@ -169,7 +169,7 @@ public class LavaConnections  implements Iterable<LavaConnection>
         }
     };
     
-    public void refreshSortBucketsIfNeeded(Executor executor)
+    public void refreshSortBucketsIfNeeded()
     {
         if(this.isSortCurrent) return;
         
@@ -328,7 +328,7 @@ public class LavaConnections  implements Iterable<LavaConnection>
         // Could add a check for this, but is wasteful/impactful in hot inner loop - simply should not be there
         this.prioritizeConnections();
         
-        this.refreshSortBucketsIfNeeded(Simulator.SIMULATION_POOL);
+        this.refreshSortBucketsIfNeeded();
         
         this.doFirstStep();
         
