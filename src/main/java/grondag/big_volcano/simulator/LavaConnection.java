@@ -230,6 +230,64 @@ public class LavaConnection
         }
     }
     
+    /**
+     * Called when already determined that connection can flow, the direction is known,
+     * and the total drop of all outbound connections from the source cell
+     * (pressure surface to pressure surface) is also known.
+     */
+    public void setupTickWithTotalDrop(int totalDrop)
+    {
+        
+        int surface1 = this.firstCell.pressureSurfaceUnits();
+        int surface2 = this.secondCell.pressureSurfaceUnits();
+        
+        if(this.isDirectionOneToTwo)
+        {
+            
+            // TODO: not sure we need the same direction thingy now
+            
+            if(this.setWeightedFlowLimitsThisTick(this.firstCell, this.secondCell, surface1, surface2, this.isDirectionOneToTwo, totalDrop))
+            {
+                final int floorUnits1 = this.firstCell.floorUnits();
+                final int volumeUnits1 = this.firstCell.ceilingUnits() - floorUnits1;
+                final int floorUnits2 = this.secondCell.floorUnits();
+                final int volumeUnits2 = this.secondCell.ceilingUnits() - floorUnits2;
+                
+                this.isFlowEnabled = true;
+                this.floorUnitsFrom = floorUnits1;
+                this.floorUnitsTo = floorUnits2;
+                this.volumeUnitsFrom = volumeUnits1;
+                this.volumeUnitsTo = volumeUnits2;
+                this.setPressureThresholds();
+            }
+            else
+            {
+                this.isFlowEnabled = false;
+            }
+        }
+        else // surface1 < surface2
+        {
+            if(this.setWeightedFlowLimitsThisTick(this.secondCell, this.firstCell, surface2, surface1, !this.isDirectionOneToTwo, totalDrop))
+            {
+                final int floorUnits1 = this.firstCell.floorUnits();
+                final int volumeUnits1 = this.firstCell.ceilingUnits() - floorUnits1;
+                final int floorUnits2 = this.secondCell.floorUnits();
+                final int volumeUnits2 = this.secondCell.ceilingUnits() - floorUnits2;
+                
+                this.isFlowEnabled = true;
+                this.floorUnitsFrom = floorUnits2;
+                this.floorUnitsTo = floorUnits1;
+                this.volumeUnitsFrom = volumeUnits2;
+                this.volumeUnitsTo = volumeUnits1;
+                this.setPressureThresholds();
+            }
+            else
+            {
+                this.isFlowEnabled = false;
+            }
+        }
+    }
+    
     private void setPressureThresholds()
     {
         int ceilFrom = this.floorUnitsFrom + this.volumeUnitsFrom;
@@ -285,6 +343,41 @@ public class LavaConnection
         
         this.flowRemainingThisTick =  flowWindow;
         this.maxFlowPerStep = flowWindow;
+        return true;
+    }
+    
+    /**
+     * Returns true if connection should be allowed to flow from high to low.
+     * Also updates {@link #flowRemainingThisTick} and {@link #maxFlowPerStep}
+     * This version allocates based on total pressure drop of all outbound connections from the same source cell.
+     * Can safely assume high cell is not empty.
+     */
+    private boolean setWeightedFlowLimitsThisTick(LavaCell cellHigh, LavaCell cellLow, int surfaceHigh, int surfaceLow, boolean sameDirection, int totalDrop)
+    {
+        // don't flow into empty cells unless have enough for a full level
+        int min = sameDirection ? 2 : 100;
+        int diff = surfaceHigh - surfaceLow;
+        
+        if(diff < min)
+        {
+            //not enough lava to flow
+            return false;
+        }
+     
+        // want to flow faster if under pressure - so use surface of high cell if above low cell ceiling
+        // and if flowing into an open area use the max height of the low cell
+        int flowWindow = Math.max(surfaceHigh, cellLow.ceilingUnits()) - Math.max(cellHigh.floorUnits(), cellLow.floorUnits());
+        //int flowWindow = Math.min(surfaceHigh, cellLow.ceilingUnits()) - Math.max(cellHigh.floorUnits(), cellLow.floorUnits());
+        
+        if(flowWindow < LavaSimulator.FLUID_UNITS_PER_LEVEL)
+        {
+            //cross-section too small
+            return false;
+        }
+        
+        this.flowRemainingThisTick =  flowWindow;
+        // try to give competing cells a chance to flow
+        this.maxFlowPerStep = flowWindow * diff / totalDrop / 4;
         return true;
     }
     
@@ -631,6 +724,11 @@ public class LavaConnection
     public boolean isDirectionOneToTwo()
     {
         return this.isDirectionOneToTwo;
+    }
+    
+    public void setDirectionOneToTwo(boolean isDirectionOneToTwo)
+    {
+        this.isDirectionOneToTwo = isDirectionOneToTwo;
     }
     
     public boolean isFlowEnabled()

@@ -86,7 +86,7 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
     
 
     public final LavaCells cells = new LavaCells(this);
-    public final LavaConnectionsSorted connections = new LavaConnectionsSorted(this);
+    public final AbstractLavaConnections connections = new LavaConnectionsCellFirst(this);
     public final LavaTreeCutter lavaTreeCutter;
 
     private boolean isDirty;

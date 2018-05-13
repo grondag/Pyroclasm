@@ -1307,7 +1307,7 @@ public class LavaCell extends AbstractLavaCell
             int x = this.x();
             int z = this.z();
             LavaCells cells = sim.cells;
-            LavaConnectionsSorted connections = sim.connections;
+            AbstractLavaConnections connections = sim.connections;
             
             this.updateConnectionsWithColumn(cells.getEntryCell(x - 1, z), connections);
             this.updateConnectionsWithColumn(cells.getEntryCell(x + 1, z), connections);
@@ -1320,7 +1320,7 @@ public class LavaCell extends AbstractLavaCell
     /** 
      * Forms new connections with cells in the column with the given entry cell.
      */
-    private void updateConnectionsWithColumn(LavaCell entryCell, LavaConnectionsSorted connections)
+    private void updateConnectionsWithColumn(LavaCell entryCell, AbstractLavaConnections connections)
     {
         if(entryCell == null) return;
         
@@ -1667,6 +1667,16 @@ public class LavaCell extends AbstractLavaCell
     {
         LavaCell neighbor = this.getFloorNeighbor(xOffset, zOffset, true);
         return neighbor == null ? defaultValue : neighbor.floorUnits();
+    }
+    
+    /**
+     * The number of fluid units that could flow out of this cell to other cells
+     * based on current contents and retention.  Does not consider if any 
+     * neighboring cells have a lower pressure surface.
+     */
+    public int getAvailableFluidUnits()
+    {
+        return this.fluidUnits() - this.getSmoothedRetainedUnits();
     }
     
     /** see {@link #smoothedRetainedUnits} */
