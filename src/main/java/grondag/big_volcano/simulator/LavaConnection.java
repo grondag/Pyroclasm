@@ -19,16 +19,11 @@ public class LavaConnection
         }
     };
     
-    //TODO: okay that this is non-atomic?
-    protected static int nextConnectionID = 0;
-    
     /** by convention, start cell will have the lower-valued id */
     public final LavaCell firstCell;
     
     /** by convention, second cell will have the higher-valued id */
     public final LavaCell secondCell;
-    
-    public final int id = nextConnectionID++;
     
     private FlowDirection direction = FlowDirection.NONE;
     
@@ -498,12 +493,6 @@ public class LavaConnection
     public int getSurfaceDrop()
     {
         return Math.abs(this.firstCell.pressureSurfaceLevel() - this.secondCell.pressureSurfaceLevel());
-    }
-    
-    @Override
-    public int hashCode()
-    {
-        return this.id;
     }
     
     /**
