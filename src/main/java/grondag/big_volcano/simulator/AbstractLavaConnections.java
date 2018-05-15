@@ -125,10 +125,10 @@ public abstract class AbstractLavaConnections implements Iterable<LavaConnection
         
         this.doStep();
         this.doStep();
-//        this.doStep();
-//        this.doStep();
-//        this.doStep();
-//        this.doStep();
+        this.doStep();
+        this.doStep();
+        this.doStep();
+        this.doStep();
         this.doLastStep();        
     }
     

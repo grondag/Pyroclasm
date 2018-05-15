@@ -1,6 +1,7 @@
 package grondag.big_volcano.simulator;
 
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 
 import javax.annotation.Nonnull;
@@ -135,6 +136,21 @@ public class LavaCell extends AbstractLavaCell
      * bit is used during serialization to store {@link #isCoolingDisabled}
      */
     private int lastFlowTick = 1;
+    
+    /**
+     * Used in conneciton processing - if this is an output cell, set to zero before flow
+     * starts and incremented every time lava flows out of this cell.
+     * 
+     * TODO: can be a normal int if all processing for the same output cell
+     * happens on same thread.
+     */
+    public final AtomicInteger flowThisTick = new AtomicInteger();
+    
+    /**
+     * Used in conneciton processing - if this is an output cell, set to amount of available
+     * fluid / number of steps before start of connection processing. Used to throttle secondary outputs.
+     */
+    public int maxOutputPerStep;
     
     /** 
      * Value of worldSurfaceLevel that was last used for block update.
