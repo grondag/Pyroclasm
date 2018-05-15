@@ -8,23 +8,15 @@ import grondag.exotic_matter.concurrency.SimpleConcurrentList;
 import grondag.exotic_matter.simulator.Simulator;
 import grondag.exotic_matter.varia.SimpleUnorderedArrayList;
 
-public class LavaConnectionsCellwise extends AbstractLavaConnections
+public class LavaConnections extends AbstractLavaConnections
 {
-//    @SuppressWarnings("unchecked")
-//    final SimpleConcurrentList<LavaConnection>[] sort = new SimpleConcurrentList[4];
-    
     final SimpleConcurrentList<LavaConnection> toProcess = SimpleConcurrentList.create(LavaConnection.class, Configurator.VOLCANO.enablePerformanceLogging, "Connection Processing", sim.perfCollectorOffTick);
     
     private int step = 1;
     
-    public LavaConnectionsCellwise(LavaSimulator sim)
+    public LavaConnections(LavaSimulator sim)
     {
         super(sim);
-        
-//        this.sort[0] = SimpleConcurrentList.create(LavaConnection.class, Configurator.VOLCANO.enablePerformanceLogging, "Sort Bucket", sim.perfCollectorOffTick);
-//        this.sort[1] = SimpleConcurrentList.create(LavaConnection.class, this.sort[0].removalPerfCounter());
-//        this.sort[2] = SimpleConcurrentList.create(LavaConnection.class, this.sort[0].removalPerfCounter());
-//        this.sort[3] = SimpleConcurrentList.create(LavaConnection.class, this.sort[0].removalPerfCounter());
     }
     
     @Override
@@ -59,7 +51,7 @@ public class LavaConnectionsCellwise extends AbstractLavaConnections
                 
         for(LavaConnection connection : cell.connections)
         {
-            if(connection.setupTickFromCell(cell))
+            if(connection.setupTick(cell))
             {
                 if(keeper == null)
                 {
@@ -75,29 +67,6 @@ public class LavaConnectionsCellwise extends AbstractLavaConnections
         }
         
         if(keeper != null) this.toProcess.add(keeper);
-        
-//        if(keeperCount > 1)
-//        {       
-//                int lastDrop = keepers[0].drop;
-//                int sortIndex = 0;
-//                
-//                Arrays.sort(keepers, 0, keeperCount, CONNECTION_SORT);
-//                for(int i = 0; i < keeperCount; i++)
-//                {
-//                    LavaConnection c = keepers[i];
-//                    if(c.drop != lastDrop && sortIndex < 3)
-//                    {
-//                        sortIndex++;
-//                        lastDrop = c.drop;
-//                    }
-//                    
-//                    sort[sortIndex].add(c);
-//                }
-//        }
-//        else if(keeperCount == 1)
-//        {
-//            sort[0].add(keepers[0]);
-//        }
     }
     
     private LavaConnection addToFlowChain(LavaConnection start, LavaConnection toBeAdded)
@@ -128,32 +97,14 @@ public class LavaConnectionsCellwise extends AbstractLavaConnections
         }
     }
     
-//    private static final Comparator<LavaConnection> CONNECTION_SORT = new Comparator<LavaConnection>()
-//    {
-//        @Override
-//        public int compare(LavaConnection o1, LavaConnection o2)
-//        {
-//            return Integer.compare(o2.drop, o1.drop);
-//        }
-//
-//    };
-    
     public static final int STEP_COUNT = 4;
             
-//    private void reset()
-//    {
-//        this.sort[0].clear();
-//        this.sort[1].clear();
-//        this.sort[2].clear();
-//        this.sort[3].clear();
-//    }
-    
     @Override
     protected void doFirstStepInner()
     {
         this.step = 1;
         this.firstStepCounter.startRun();
-        this.firstStepCounter.addCount(doStepInner(LavaConnection::doFirstStepCellwise));
+        this.firstStepCounter.addCount(doStepInner(LavaConnection::doFirstStep));
         this.firstStepCounter.endRun();
     }
     
@@ -162,7 +113,7 @@ public class LavaConnectionsCellwise extends AbstractLavaConnections
     {
         this.step++;
         this.stepCounter.startRun();
-        this.stepCounter.addCount(doStepInner(LavaConnection::doStepCellwise));
+        this.stepCounter.addCount(doStepInner(LavaConnection::doStep));
         this.stepCounter.endRun();
     }
     

@@ -7,8 +7,6 @@ import org.lwjgl.opengl.GL11;
 import grondag.big_volcano.simulator.AbstractLavaCell;
 import grondag.big_volcano.simulator.CellChunk;
 import grondag.big_volcano.simulator.LavaCell;
-import grondag.big_volcano.simulator.LavaConnection;
-import grondag.big_volcano.simulator.LavaConnectionsSorted.SortBucket;
 import grondag.big_volcano.simulator.LavaSimulator;
 import grondag.exotic_matter.ClientProxy;
 import grondag.exotic_matter.simulator.Simulator;
@@ -33,7 +31,7 @@ public class ClientEventHandler
     @SubscribeEvent()
     public static void renderWorldLastEvent(RenderWorldLastEvent event)
     {
-        if(!(Configurator.VOLCANO.enableLavaCellDebugRender || Configurator.VOLCANO.enableLavaChunkDebugRender || Configurator.VOLCANO.enableFlowDebugRender)) return;
+        if(!(Configurator.VOLCANO.enableLavaCellDebugRender || Configurator.VOLCANO.enableLavaChunkDebugRender)) return;
         
         LavaSimulator lavaSim = Simulator.instance().getNode(LavaSimulator.class);
         if(lavaSim == null) return;
@@ -68,8 +66,6 @@ public class ClientEventHandler
             for(Object c : lavaSim.cells.allChunks().toArray()) { renderCellChunk(tessellator, bufferBuilder, (CellChunk)c); }
         }
         
-        if(Configurator.VOLCANO.enableFlowDebugRender) lavaSim.connections.forEach(c -> renderFlow(tessellator, bufferBuilder, c));
-       
         bufferBuilder.setTranslation(0, 0, 0);
         
         GlStateManager.disablePolygonOffset();
@@ -79,41 +75,6 @@ public class ClientEventHandler
         GlStateManager.disableBlend();
         GlStateManager.enableAlpha();
         
-    }
-    
-    private static final float [] FLOW_COLOR_R = {1, 0, 0, 0};
-    private static final float [] FLOW_COLOR_G = {0, 1, 0, 0};
-    private static final float [] FLOW_COLOR_B = {0, 0, 1, 0};
-    
-    private static void renderFlow(Tessellator tessellator, BufferBuilder bufferBuilder, @Nullable LavaConnection connection)
-    {
-        if(connection == null || connection.isDeleted()) return;
-        final @Nullable SortBucket bucket = connection.getSortBucket();
-        
-        if(bucket == null || bucket == SortBucket.D) return;
-        int ord = bucket.ordinal();
-        
-        
-        final LavaCell cell1 = connection.firstCell;
-        final LavaCell cell2 = connection.secondCell;
-        
-        final double x1 = cell1.x() + 0.5;
-        final double y1 = cell1.pressureSurfaceLevel() / (double) LavaSimulator.LEVELS_PER_BLOCK;
-        final double z1 = cell1.z() + 0.5;
-        
-        final double x2 = cell2.x() + 0.5;
-        final double y2 = cell2.pressureSurfaceLevel() / (double) LavaSimulator.LEVELS_PER_BLOCK;
-        final double z2 = cell2.z() + 0.5;
-        
-        AxisAlignedBB box = new AxisAlignedBB(x1, y1, z1, x2, y2, z2);
-        
-        if(ClientProxy.camera() == null || !ClientProxy.camera().isBoundingBoxInFrustum(box)) return;
-        
-        GlStateManager.glLineWidth(3 - ord);
-        bufferBuilder.begin(GL11.GL_LINE_STRIP, DefaultVertexFormats.POSITION_COLOR);
-        bufferBuilder.pos(x1, y1, z1).color(FLOW_COLOR_R[ord], FLOW_COLOR_G[ord], FLOW_COLOR_B[ord], 1f).endVertex();
-        bufferBuilder.pos(x2, y2, z2).color(FLOW_COLOR_R[ord], FLOW_COLOR_G[ord], FLOW_COLOR_B[ord], 1f).endVertex();
-        tessellator.draw();
     }
     
     private static void renderCell(Tessellator tessellator, BufferBuilder bufferBuilder, @Nullable LavaCell cell)
