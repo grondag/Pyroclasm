@@ -57,7 +57,6 @@ public class LavaConnections extends AbstractLavaConnections
                 {
                     keeper = connection;
                     keeper.nextToFlow = null;
-                    keeper.isEndOfRound = true;
                 }
                 else
                 {
@@ -71,10 +70,11 @@ public class LavaConnections extends AbstractLavaConnections
     
     private LavaConnection addToFlowChain(LavaConnection start, LavaConnection toBeAdded)
     {
-        if(toBeAdded.drop > start.drop)
+        // if new node has the highest drop or the same drop, can 
+        // simply make it the new head
+        if(toBeAdded.drop >= start.drop)
         {
             toBeAdded.nextToFlow = start;
-            toBeAdded.isEndOfRound = true;
             return toBeAdded;
         }
         
@@ -82,11 +82,14 @@ public class LavaConnections extends AbstractLavaConnections
         
         while(true)
         {
-            if(current.nextToFlow == null || toBeAdded.drop > current.nextToFlow.drop)
+            // add to end of current node if it is the last node, has the same drop
+            // or if the node after this one has a smaller drop than the node being 
+            // inserted - this last case implies the current node drop is higher than
+            // than the drop of the node being insert - which is what we want.
+            
+            if(current.nextToFlow == null || toBeAdded.drop == current.drop || toBeAdded.drop > current.nextToFlow.drop)
             {
                 toBeAdded.nextToFlow = current.nextToFlow;
-                toBeAdded.isEndOfRound = true;
-                current.isEndOfRound = !(current.drop == toBeAdded.drop);
                 current.nextToFlow = toBeAdded;
                 return start;
             }
@@ -144,9 +147,15 @@ public class LavaConnections extends AbstractLavaConnections
                     
                     if(n.nextToFlow == null) break;
                     
-                    if(n.isEndOfRound)
+                    // change in drop implies end of round
+                    // intent is to let all connections in each round that share the 
+                    // same drop to go before any cell in the next round goes
+                    if(n.drop != n.nextToFlow.drop)
                     {
-                        if(source != null && source.flowThisTick.get() < source.maxOutputPerStep * this.step)
+                        // no need to go in next round if already exhausted available supply of lava 
+                        // supply is rationed for each step - can be exceeded in any round that starts
+                        // (and the first round always starts) but once exceeded stops subsequent rounds
+                        if(source.flowThisTick.get() < source.maxOutputPerStep * this.step)
                         {
                             nextList.add(n.nextToFlow);
                         }

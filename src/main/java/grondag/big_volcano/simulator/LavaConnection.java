@@ -54,32 +54,37 @@ public class LavaConnection
      * 
      * Set during {@link #setupTick(LavaCell)}.
      * 
-     * TODO: encapsulate if keeping
-     * 
+     * TODO: redundant with other method? 
+     * TODO: Should use level or units?
+     * TODO: can be pre-computed?
      */
     public int drop;
     
     /**
-     * Fluid units that can low through this connection during a single step.
-     * Is simply 1/4 of the initial value of {@link #flowRemainingThisTick} at the start of the tick.
+     * Fluid units that can flow through this connection during a single step.
+     * Is the lesser of {@link LavaCell#maxOutputPerStep} from the source cell and 
+     * the max amount that could flow based on connection size. <p>
+     * 
+     * Set during {@link #setFlowLimitsThisTick(LavaCell, LavaCell, int, int)}<p>
+     * 
      * Necessary so that fluid has a chance to flow in more than one direction. 
      * If we did not limit flow per step, then flow would usually always go across a single
-     * connection, even if the vertical drop is the same.
+     * connection, even if the vertical drop is the same. <p>
      * 
-     * TODO: encapsulate if need to reference externally
+     * This is a per-connection max, and is enforced in {@link #tryFlow(LavaCell, LavaCell)}.
+     * The per-cell step max is <em>not</em> enforced, which is what allows multiple
+     * connections sharing the same drop to flow (usually in the first round) before
+     * other connections with less drop.
      */
     public int maxFlowPerStep;
     
     /**
      * Established during tick setup - the next connection to flow after this one.
+     * All linked connections share the same source cell but could be in different rounds.
+     * (a new round starts whenever there is a change in drop.)
+     * Null if this is the last (or only) connection for a given source cell.
      */
     public @Nullable LavaConnection nextToFlow;
-    
-    /**
-     * If {@link #nextToFlow} is non-null and this is true, 
-     * next connection should wait until next round to be processed.
-     */
-    public boolean isEndOfRound = false;
     
     /**
      * Floor of the "from" cell, in fluid units. 
