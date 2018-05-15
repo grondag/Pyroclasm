@@ -25,17 +25,21 @@ public class LavaConnection
     /** by convention, second cell will have the higher-valued id */
     public final LavaCell secondCell;
     
+    /**
+     * Direction of flow in the current tick, if any.
+     * Set by {@link #setupTick(LavaCell)} at the start of each tick.
+     */
     private FlowDirection direction = FlowDirection.NONE;
     
-    
     /**
-     * True if flow occurred during the last step or if
-     * lava has been added to either cell.
-     * Maintained by {@link #doStepWork()}.
-     * Connection will skip processing after start step if false.
-     * Ignored during start step.
+     * True if updated the last tick for cells in this connection because we
+     * had a flow this tick.  If false, has been no flow, or we haven't updated yet.
+     * Set to false during {@link #doFirstStep()} unless there was a flow on the first step.
+     * Subsequent calls to {@link #doStep()} will set to true if there is a flow
+     * (and will also update the cell ticks.)
      */
-    private boolean flowedLastStep = false;
+    private boolean didUpdateCellTicks = false;
+    
     
     /**
      * True if this connection has been marked for removal.
@@ -188,23 +192,32 @@ public class LavaConnection
     
     /**
      *  Does a step and if there was a flow on this connection 
-     *  will set {@link #flowedLastStep} to true. 
-     *  If there was a flow, also updates the tick index of both cells.
-     *  If there was no flow, connection will be ignored in remaining passes this tick.
+     *  will update the tick index of both cells.  Also is a hook for
+     *  any internal setup or accounting the connection needs to do at
+     *  the start of each tick.
      */
     public void doFirstStep()
     {
-        this.doStepWork();
-        if(this.flowedLastStep)
+        if(this.doStepWork() != 0)
         {
             this.firstCell.updateLastFlowTick();
             this.secondCell.updateLastFlowTick();
+            this.didUpdateCellTicks = true;
         }
+        else this.didUpdateCellTicks = false;
     }
     
+    /**
+     * Like {@link #doFirstStep()} but doesn't do per-tick setup or accounting.
+     */
     public void doStep()
     {
-        this.doStepWork();
+        if(this.doStepWork() != 0 && !this.didUpdateCellTicks)
+        {
+            this.firstCell.updateLastFlowTick();
+            this.secondCell.updateLastFlowTick();
+            this.didUpdateCellTicks = true;
+        }
     }
     
     /**
@@ -218,41 +231,24 @@ public class LavaConnection
     }
     
     /**
-     * Guts of doStep.
+     * Guts of doStep.  Returns amount that flowed.
      */
-    private void doStepWork()
+    private int doStepWork()
     {
-        if(this.isDeleted) return;
+        if(this.isDeleted) return 0;
 
         switch(this.direction)
         {
         case ONE_TO_TWO:
-            this.doStepFromTo(this.firstCell, this.secondCell);
-            break;
+            return this.tryFlow(this.firstCell, this.secondCell);
 
         case TWO_TO_ONE:
-            this.doStepFromTo(this.secondCell, this.firstCell);
-            break;
+            return this.tryFlow(this.secondCell, this.firstCell);
 
         case NONE:
         default:
-            break;
+            return 0;
         
-        }
-    }
-    
-    //TODO: probably don't need flowedLastStep and could update flowThisTick in from
-    //cell at once after all the connections for the cell are processed
-    private void doStepFromTo(LavaCell cellFrom, LavaCell cellTo )
-    {
-        final int flow = this.tryFlow(cellFrom, cellTo);
-        if(flow == 0)
-        {
-            if(this.flowedLastStep) this.flowedLastStep = false;
-        }
-        else
-        {
-            cellFrom.flowThisTick.addAndGet(flow);
         }
     }
     
@@ -392,6 +388,7 @@ public class LavaConnection
     
     /** 
      * Returns absolute value of units that flowed, if any.
+     * Also updates per-tick tracking total for from cell.
      */
     private int tryFlow(LavaCell cellFrom, LavaCell cellTo)
     {
@@ -422,7 +419,6 @@ public class LavaConnection
 
             if(flow < LavaSimulator.MIN_FLOW_UNITS)
             {
-                if(this.flowedLastStep) this.flowedLastStep = false;
                 return 0;
             }
             else 
@@ -431,8 +427,8 @@ public class LavaConnection
                 {
                     if(cellTo.changeFluidUnitsIfMatches(flow, fluidTo))
                     {                        
-                        if(!this.flowedLastStep) this.flowedLastStep = true;
                         if(Configurator.VOLCANO.enableFlowTracking) totalFlow.addAndGet(flow);
+                        cellFrom.flowThisTick.addAndGet(flow);
                         return flow;
                     }
                     else
@@ -450,7 +446,6 @@ public class LavaConnection
         }
         else
         {
-            if(this.flowedLastStep) this.flowedLastStep = false;
             return 0;
         }
     }
