@@ -1,6 +1,6 @@
 package grondag.big_volcano.simulator;
 
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Predicate;
 
 import javax.annotation.Nullable;
@@ -101,7 +101,7 @@ public class LavaConnection
     /**
      * Accumulates total units flowed across all connections when flow tracking is enabled.
      */
-    public static AtomicInteger totalFlow = new AtomicInteger(0);
+    public static LongAdder totalFlow = new LongAdder();
     
     /** 
      * True if ceiling of "to" cell is lower than ceiling of "from" cell. 
@@ -503,7 +503,7 @@ public class LavaConnection
                 {
                     if(cellTo.changeFluidUnitsIfMatches(flow, fluidTo))
                     {                        
-                        if(Configurator.VOLCANO.enableFlowTracking) totalFlow.addAndGet(flow);
+                        if(Configurator.VOLCANO.enableFlowTracking) totalFlow.add(flow);
                         cellFrom.flowThisTick.addAndGet(flow);
                         return flow;
                     }

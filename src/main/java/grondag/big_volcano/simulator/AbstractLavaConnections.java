@@ -122,8 +122,7 @@ public abstract class AbstractLavaConnections implements Iterable<LavaConnection
         if(Configurator.VOLCANO.enableFlowTracking)
         { 
             this.flowCounts[0] += (this.firstStepCounter.runCount() - startingCount);
-            this.flowTotals[0] += LavaConnection.totalFlow.get();
-            LavaConnection.totalFlow.set(0);
+            this.flowTotals[0] += LavaConnection.totalFlow.sumThenReset();
         }
     }
 
@@ -142,8 +141,7 @@ public abstract class AbstractLavaConnections implements Iterable<LavaConnection
         if(Configurator.VOLCANO.enableFlowTracking)
         { 
             this.flowCounts[stepIndex] += (this.stepCounter.runCount() - startingCount);
-            this.flowTotals[stepIndex] += LavaConnection.totalFlow.get();
-            LavaConnection.totalFlow.set(0);
+            this.flowTotals[stepIndex] += LavaConnection.totalFlow.sumThenReset();
         }
     }
 

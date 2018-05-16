@@ -1,8 +1,12 @@
 package grondag.big_volcano.simulator;
 
 
+import java.util.concurrent.CountedCompleter;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Consumer;
 
+import grondag.big_volcano.BigActiveVolcano;
 import grondag.big_volcano.Configurator;
 import grondag.exotic_matter.concurrency.SimpleConcurrentList;
 import grondag.exotic_matter.simulator.Simulator;
@@ -107,7 +111,8 @@ public class LavaConnections extends AbstractLavaConnections
     {
         this.step = 1;
         this.firstStepCounter.startRun();
-        this.firstStepCounter.addCount(doStepInner(LavaConnection::doFirstStep));
+//        this.firstStepCounter.addCount(doStepInner(LavaConnection::doFirstStep));
+        this.firstStepCounter.addCount(doStepInnerParallel(LavaConnection::doFirstStep));
         this.firstStepCounter.endRun();
     }
     
@@ -116,7 +121,8 @@ public class LavaConnections extends AbstractLavaConnections
     {
         this.step++;
         this.stepCounter.startRun();
-        this.stepCounter.addCount(doStepInner(LavaConnection::doStep));
+//        this.stepCounter.addCount(doStepInner(LavaConnection::doStep));
+        this.stepCounter.addCount(doStepInnerParallel(LavaConnection::doStep));
         this.stepCounter.endRun();
     }
     
@@ -170,5 +176,129 @@ public class LavaConnections extends AbstractLavaConnections
         }
         
         return count;
+    }
+    
+    protected int doStepInnerParallel(Consumer<LavaConnection> consumer)
+    {
+        if(this.toProcess.isEmpty()) return 0;
+        
+        this.currentOperation = consumer;
+        
+        try
+        {
+            Simulator.SIMULATION_POOL.submit(new OuterStepTask(this.toProcess)).get();
+        }
+        catch (InterruptedException | ExecutionException e)
+        {
+            BigActiveVolcano.INSTANCE.error("Unexpected error during lava connection processing", e);
+        }
+        
+        return (int) counter.sumThenReset();
+    }
+    
+    private Consumer<LavaConnection> currentOperation;
+    
+    private LongAdder counter = new LongAdder();
+    
+    private static final int BATCH_SIZE = 128;
+    
+    @SuppressWarnings("serial")
+    private class OuterStepTask extends CountedCompleter<Void>
+    {
+        
+        private final SimpleConcurrentList<LavaConnection> inputs;
+        private final SimpleConcurrentList<LavaConnection> outputs;
+        
+        private OuterStepTask(SimpleConcurrentList<LavaConnection> inputs)
+        {
+            super();
+            this.inputs = inputs;
+            this.outputs = new SimpleConcurrentList<>(LavaConnection.class, Math.max(4, inputs.size() / 2));
+        }
+        
+        @Override
+        public void compute()
+        {
+            final int size = inputs.size();
+            
+            int endExclusive = BATCH_SIZE;
+            
+            for(; endExclusive < size; endExclusive += BATCH_SIZE)
+            {
+                this.addToPendingCount(1);
+                new RoundTask(endExclusive - BATCH_SIZE, endExclusive).fork();
+            }
+            
+            new RoundTask(
+                    endExclusive - BATCH_SIZE,
+                    Math.min(endExclusive, size)).compute(); // invokes tryComplete for us
+            
+        }
+        
+        @Override
+        public void onCompletion(CountedCompleter<?> caller)
+        {
+            if(!this.outputs.isEmpty())
+            {
+                new OuterStepTask(this.outputs).fork();
+            }
+        }
+
+        private class RoundTask extends CountedCompleter<Void>
+        {
+            private final int startInclusive;
+            private final int endExclusive;
+            
+            private RoundTask(final int startInclusive, final int endExclusive)
+            {
+                this.startInclusive = startInclusive;
+                this.endExclusive = endExclusive;
+            }
+            
+            @Override
+            public void compute()
+            {
+                SimpleUnorderedArrayList<LavaConnection> results = new SimpleUnorderedArrayList<>();
+                int count = 0;
+                
+                for(int i = startInclusive; i < endExclusive; i++)
+                {
+                    LavaConnection n = inputs.get(i);
+                    
+                    LavaCell source = n.fromCell();
+                    
+                    if(source == null || source.getAvailableFluidUnits() <= 0) continue;
+                    
+                    while(true)
+                    {
+                        currentOperation.accept(n);
+                        count++;
+                        
+                        if(n.nextToFlow == null) break;
+                        
+                        // change in drop implies end of round
+                        // intent is to let all connections in each round that share the 
+                        // same drop to go before any cell in the next round goes
+                        if(n.drop != n.nextToFlow.drop)
+                        {
+                            // no need to go in next round if already exhausted available supply of lava 
+                            // supply is rationed for each step - can be exceeded in any round that starts
+                            // (and the first round always starts) but once exceeded stops subsequent rounds
+                            if(source.flowThisTick.get() < source.maxOutputPerStep * step)
+                            {
+                                results.add(n.nextToFlow);
+                            }
+                            break;
+                        }
+                        else n = n.nextToFlow;
+                    }
+                }
+                
+                counter.add(count);
+                if(!results.isEmpty()) outputs.addAll(results);
+                
+                OuterStepTask.this.tryComplete();
+            }
+        }
     }
 }
