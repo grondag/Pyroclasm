@@ -59,14 +59,19 @@ public class BigActiveVolcano  implements IGrondagMod
         Simulator.register(LavaSimulator.class);
     }
 
-    private static Logger log;
+    private @Nullable static Logger log;
 
     @Override
-    public @Nullable Logger getLog()
+    public Logger getLog()
     {
         // allow access to log during unit testing or other debug scenarios
-        if(BigActiveVolcano.log == null) BigActiveVolcano.log = LogManager.getLogger();
-        return BigActiveVolcano.log;
+        Logger result = log;
+        if(result == null)
+        {
+            result = LogManager.getLogger();
+            log = result;
+        }
+        return result;
     }
 
     public static void setLog(Logger lOG)
