@@ -1,7 +1,6 @@
 package grondag.big_volcano.simulator;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
@@ -11,7 +10,6 @@ import javax.annotation.Nullable;
 import com.google.common.collect.ImmutableMap;
 
 import grondag.big_volcano.core.VolcanoStage;
-import grondag.exotic_matter.ExoticMatter;
 import grondag.exotic_matter.serialization.NBTDictionary;
 import grondag.exotic_matter.simulator.ISimulationTickable;
 import grondag.exotic_matter.simulator.Simulator;
@@ -29,8 +27,6 @@ import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.Vec3i;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
-import net.minecraftforge.common.ForgeChunkManager;
-import net.minecraftforge.common.ForgeChunkManager.Ticket;
 
 public class VolcanoManager implements ISimulationTickable, ISimulationTopNode
 {
@@ -55,7 +51,7 @@ public class VolcanoManager implements ISimulationTickable, ISimulationTopNode
     
     private boolean isDirty = true;
     
-    private BlueNoise noise;
+    private @Nullable BlueNoise noise;
     
     @Override
     public void afterCreated(Simulator sim)
@@ -103,7 +99,7 @@ public class VolcanoManager implements ISimulationTickable, ISimulationTopNode
         node = this.nodes.computeIfAbsent(key, new Function<Long, VolcanoNode>()
         {
             @Override
-            public VolcanoNode apply(Long k)
+            public VolcanoNode apply(@Nullable Long k)
             {
                 VolcanoManager.this.setDirty();
                 return new VolcanoNode(VolcanoManager.this, chunkPos);
@@ -284,8 +280,7 @@ public class VolcanoManager implements ISimulationTickable, ISimulationTopNode
             {
                 for (int i = 0; i < nbtSubNodes.tagCount(); ++i)
                 {
-                    VolcanoNode node = new VolcanoNode(this, null);
-                    node.deserializeNBT(nbtSubNodes.getCompoundTagAt(i));
+                    VolcanoNode node = new VolcanoNode(this, nbtSubNodes.getCompoundTagAt(i));
                     nodes.put(node.packedChunkPos(), node);
                     if(node.isActive()) this.activeNodes.put(node.packedChunkPos(), node);
                 }   

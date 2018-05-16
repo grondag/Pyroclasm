@@ -58,11 +58,23 @@ public class VolcanoNode implements IReadWriteNBT, IDirtListener, ISimulationTic
         
         private int lavaCooldownTicks;
 
-        public VolcanoNode(VolcanoManager volcanoManager, ChunkPos position)
+        @SuppressWarnings("null")
+        private VolcanoNode(VolcanoManager volcanoManager)
         {
             this.volcanoManager = volcanoManager;
-            this.position = position;
             this.lavaSim = Simulator.instance().getNode(LavaSimulator.class);
+        }
+        
+        public VolcanoNode(VolcanoManager volcanoManager, ChunkPos position)
+        {
+            this(volcanoManager);
+            this.position = position;
+        }
+        
+        public VolcanoNode(VolcanoManager volcanoManager, NBTTagCompound tag)
+        {
+            this(volcanoManager);
+            this.deserializeNBT(tag);
         }
         
         public ChunkPos chunkPos()
@@ -140,6 +152,7 @@ public class VolcanoNode implements IReadWriteNBT, IDirtListener, ISimulationTic
             }
         }
         
+        @SuppressWarnings("null")
         public void loadChunks(boolean shouldLoad)
         {
             int centerX = this.chunkPos().x;
