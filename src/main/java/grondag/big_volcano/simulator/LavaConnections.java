@@ -6,6 +6,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Consumer;
 
+import javax.annotation.Nullable;
+
 import grondag.big_volcano.BigActiveVolcano;
 import grondag.big_volcano.Configurator;
 import grondag.exotic_matter.concurrency.SimpleConcurrentList;
@@ -14,7 +16,13 @@ import grondag.exotic_matter.varia.SimpleUnorderedArrayList;
 
 public class LavaConnections extends AbstractLavaConnections
 {
+    private static final int BATCH_SIZE = 128;
+    
     final SimpleConcurrentList<LavaConnection> toProcess = SimpleConcurrentList.create(LavaConnection.class, Configurator.VOLCANO.enablePerformanceLogging, "Connection Processing", sim.perfCollectorOffTick);
+    
+    private @Nullable Consumer<LavaConnection> currentOperation;
+    
+    private LongAdder counter = new LongAdder();
     
     private int step = 1;
     
@@ -41,7 +49,7 @@ public class LavaConnections extends AbstractLavaConnections
      * Connections in subsequent rounds don't get to go if previous rounds have
      * used or exceeded the cumulative per-step max for the given step.
      */
-    private void setupCell(LavaCell cell)
+    private void setupCell(@Nullable LavaCell cell)
     {
         if(cell == null || cell.isEmpty() || cell.isDeleted() ) return;
         
@@ -72,6 +80,7 @@ public class LavaConnections extends AbstractLavaConnections
         if(keeper != null) this.toProcess.add(keeper);
     }
     
+    @SuppressWarnings("null")
     private LavaConnection addToFlowChain(LavaConnection start, LavaConnection toBeAdded)
     {
         // if new node has the highest drop or the same drop, can 
@@ -140,34 +149,36 @@ public class LavaConnections extends AbstractLavaConnections
         
             for(LavaConnection c : currentList)
             {
-                LavaConnection n = c;
+                LavaConnection current = c;
                 
-                LavaCell source = n.fromCell();
+                final LavaCell source = current.fromCell();
                 
-                if(source == null || source.getAvailableFluidUnits() <= 0) continue;
+                if(source.getAvailableFluidUnits() <= 0) continue;
                 
                 while(true)
                 {
-                    consumer.accept(n);
+                    consumer.accept(current);
                     count++;
                     
-                    if(n.nextToFlow == null) break;
+                    final LavaConnection next = current.nextToFlow;
+                    
+                    if(next == null) break;
                     
                     // change in drop implies end of round
                     // intent is to let all connections in each round that share the 
                     // same drop to go before any cell in the next round goes
-                    if(n.drop != n.nextToFlow.drop)
+                    if(current.drop != next.drop)
                     {
                         // no need to go in next round if already exhausted available supply of lava 
                         // supply is rationed for each step - can be exceeded in any round that starts
                         // (and the first round always starts) but once exceeded stops subsequent rounds
                         if(source.flowThisTick.get() < source.maxOutputPerStep * this.step)
                         {
-                            nextList.add(n.nextToFlow);
+                            nextList.add(next);
                         }
                         break;
                     }
-                    else n = n.nextToFlow;
+                    else current = next;
                 }
             }
             
@@ -195,12 +206,6 @@ public class LavaConnections extends AbstractLavaConnections
         
         return (int) counter.sumThenReset();
     }
-    
-    private Consumer<LavaConnection> currentOperation;
-    
-    private LongAdder counter = new LongAdder();
-    
-    private static final int BATCH_SIZE = 128;
     
     @SuppressWarnings("serial")
     private class OuterStepTask extends CountedCompleter<Void>
@@ -236,7 +241,7 @@ public class LavaConnections extends AbstractLavaConnections
         }
         
         @Override
-        public void onCompletion(CountedCompleter<?> caller)
+        public void onCompletion(@Nullable CountedCompleter<?> caller)
         {
             if(!this.outputs.isEmpty())
             {
@@ -263,34 +268,36 @@ public class LavaConnections extends AbstractLavaConnections
                 
                 for(int i = startInclusive; i < endExclusive; i++)
                 {
-                    LavaConnection n = inputs.get(i);
+                    LavaConnection current = inputs.get(i);
                     
-                    LavaCell source = n.fromCell();
+                    final LavaCell source = current.fromCell();
                     
-                    if(source == null || source.getAvailableFluidUnits() <= 0) continue;
+                    if(source.getAvailableFluidUnits() <= 0) continue;
                     
                     while(true)
                     {
-                        currentOperation.accept(n);
+                        currentOperation.accept(current);
                         count++;
                         
-                        if(n.nextToFlow == null) break;
+                        final LavaConnection next = current.nextToFlow;
+                        
+                        if(next == null) break;
                         
                         // change in drop implies end of round
                         // intent is to let all connections in each round that share the 
                         // same drop to go before any cell in the next round goes
-                        if(n.drop != n.nextToFlow.drop)
+                        if(current.drop != next.drop)
                         {
                             // no need to go in next round if already exhausted available supply of lava 
                             // supply is rationed for each step - can be exceeded in any round that starts
                             // (and the first round always starts) but once exceeded stops subsequent rounds
                             if(source.flowThisTick.get() < source.maxOutputPerStep * step)
                             {
-                                results.add(n.nextToFlow);
+                                results.add(next);
                             }
                             break;
                         }
-                        else n = n.nextToFlow;
+                        else current = next;
                     }
                 }
                 

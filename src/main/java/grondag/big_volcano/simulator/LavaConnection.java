@@ -282,8 +282,7 @@ public class LavaConnection
     
     /**
      * Returns the "from" cell based on current flow direction.
-     * Returns null if no flow direction.
-     * @return
+     * Returns {@link LavaCell#NULL_CELL} if no flow direction.
      */
     public LavaCell fromCell()
     {
@@ -292,8 +291,7 @@ public class LavaConnection
     
     /**
      * Returns the "to" cell based on current flow direction.
-     * Returns null if no flow direction.
-     * @return
+     * Returns {@link LavaCell#NULL_CELL} if no flow direction.
      */
     public LavaCell toCell()
     {
