@@ -1,5 +1,7 @@
 package grondag.big_volcano.simulator;
 
+import javax.annotation.Nullable;
+
 import net.minecraft.world.chunk.Chunk;
 
 /** Builds a new cell stack from a CellColumn */
@@ -13,7 +15,7 @@ public class CellStackBuilder
   
     private boolean isFlowFloor;
     
-    private LavaCell entryCell;
+    private @Nullable LavaCell entryCell;
     
     private void startCell(int floor, boolean isFlowFloor)
     {
@@ -25,6 +27,7 @@ public class CellStackBuilder
     
     // TODO:  consider having newly built cells retain lava found in world - just in case
     // need to recover from loss of cell state
+    @SuppressWarnings("null")
     private void completeCell(LavaCells cells, int x, int z, int ceiling)
     {
         
@@ -47,7 +50,7 @@ public class CellStackBuilder
      * Expands, splits, adds, deletes or merges cells as needed to match world data on CellColumn.
      * If entry cell is null, functions identically to buildNewCellStack().
      */
-    public LavaCell updateCellStack(LavaCells cells, Chunk chunk, LavaCell simEntryCell, int x, int z)
+    public @Nullable LavaCell updateCellStack(LavaCells cells, Chunk chunk, @Nullable LavaCell simEntryCell, int x, int z)
     {
         int y = 0;
         
@@ -156,7 +159,7 @@ public class CellStackBuilder
      * Returns the starting cell for a new list of cells at the given location from the provided column data.
      * Retuns null if there are no spaces for cells in the column data provided.
      */
-    public LavaCell buildNewCellStack(LavaCells cells, Chunk chunk, int x, int z)
+    public @Nullable LavaCell buildNewCellStack(LavaCells cells, Chunk chunk, int x, int z)
     {
         BlockType lastType = BlockType.BARRIER;
         this.entryCell = null;
@@ -229,7 +232,7 @@ public class CellStackBuilder
         // if got all the way to the top of the world with an open cell, close it
         if(this.isCellStarted) this.completeCell(cells, x, z, 256 * LavaSimulator.LEVELS_PER_BLOCK);
         
-        
-        return this.entryCell == null ? null : this.entryCell.selectStartingCell();
+        LavaCell entryCell = this.entryCell;
+        return entryCell == null ? null : entryCell.selectStartingCell();
     }
 }
