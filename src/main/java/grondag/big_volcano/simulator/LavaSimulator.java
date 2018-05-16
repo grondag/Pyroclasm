@@ -23,7 +23,6 @@ import grondag.exotic_matter.model.TerrainBlockHelper;
 import grondag.exotic_matter.model.TerrainState;
 import grondag.exotic_matter.serialization.NBTDictionary;
 import grondag.exotic_matter.simulator.ISimulationTickable;
-import grondag.exotic_matter.simulator.Simulator;
 import grondag.exotic_matter.simulator.persistence.ISimulationTopNode;
 import grondag.exotic_matter.varia.PackedBlockPos;
 import grondag.exotic_matter.world.WorldInfo;
@@ -33,6 +32,7 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvent;
@@ -376,9 +376,11 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
     @Override
     public void deserializeNBT(@Nullable NBTTagCompound nbt)
     {
-
-        this.particleManager.readFromNBT(nbt);
-        this.readLavaNBT(nbt);
+        if(nbt != null)
+        {
+            this.particleManager.readFromNBT(nbt);
+            this.readLavaNBT(nbt);
+        }
         this.basaltTracker.deserializeNBT(nbt);
         this.lavaTreeCutter.deserializeNBT(nbt);
     }
@@ -506,13 +508,14 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
     {
         perfParticles.startRun();
         
-        int capacity =  Configurator.VOLCANO.maxLavaEntities - EntityLavaBlob.getLiveParticleCount(this.world.getMinecraftServer());
+        final MinecraftServer server = this.world.getMinecraftServer();
+        int capacity =  server == null ? 0 : Configurator.VOLCANO.maxLavaEntities - EntityLavaBlob.getLiveParticleCount(server);
         
         if(capacity <= 0) return;
         
         Collection<ParticleInfo> particles = this.particleManager.pollEligible(this, capacity);
         
-        if(particles != null && !particles.isEmpty())
+        if(!particles.isEmpty())
         {
             for(ParticleInfo p : particles)
             {
@@ -699,7 +702,7 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
     public void markBlockRangeForRenderUpdate(int x1, int y1, int z1, int x2, int y2, int z2) { }
 
     @Override
-    public void playSoundToAllNearExcept(EntityPlayer player, SoundEvent soundIn, SoundCategory category, double x, double y, double z, float volume, float pitch) { }
+    public void playSoundToAllNearExcept(@Nullable EntityPlayer player, SoundEvent soundIn, SoundCategory category, double x, double y, double z, float volume, float pitch) { }
 
     @Override
     public void playRecord(SoundEvent soundIn, BlockPos pos) { }
