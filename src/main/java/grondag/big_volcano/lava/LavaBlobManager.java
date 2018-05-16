@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 
 import com.google.common.collect.ComparisonChain;
+import com.google.common.collect.ImmutableList;
 
 import grondag.big_volcano.BigActiveVolcano;
 import grondag.big_volcano.Configurator;
@@ -61,7 +62,7 @@ public class LavaBlobManager
     /** returns a collection of eligible particles up the max count given */
     public Collection<ParticleInfo> pollEligible(LavaSimulator sim, int maxCount)
     {
-        if(map.isEmpty()) return null;
+        if(map.isEmpty()) return ImmutableList.of();
         
         int firstEligibleTick = Simulator.instance().getTick() - MIN_WAIT_TICKS;
         int forceEligibleTick = Simulator.instance().getTick() - MAX_WAIT_TICKS;
@@ -73,6 +74,7 @@ public class LavaBlobManager
                     || (p.tickCreated <= firstEligibleTick && p.fluidUnits >= LavaSimulator.FLUID_UNITS_PER_LEVEL))
                 .sorted(new Comparator<ParticleInfo>() {
 
+                    @SuppressWarnings("null")
                     @Override
                     public int compare(@Nullable ParticleInfo o1, @Nullable ParticleInfo o2)
                     {
@@ -126,7 +128,7 @@ public class LavaBlobManager
         int[] saveData = nbt.getIntArray(NBT_LAVA_PARTICLE_MANAGER);
 
         //confirm correct size
-        if(saveData == null || saveData.length % NBT_SAVE_DATA_WIDTH != 0)
+        if(saveData.length % NBT_SAVE_DATA_WIDTH != 0)
         {
             BigActiveVolcano.INSTANCE.warn("Invalid save data loading lava entity state buffer. Lava entities may have been lost.");
             return;

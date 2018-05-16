@@ -5,13 +5,13 @@ import grondag.big_volcano.core.TerrainWand;
 import grondag.big_volcano.lava.LavaBlobItem;
 import grondag.exotic_matter.init.RegistratingItem;
 import net.minecraft.item.Item;
-import net.minecraft.item.ItemBlock;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.registry.GameRegistry.ObjectHolder;
 import net.minecraftforge.registries.IForgeRegistry;
 
+@SuppressWarnings("null")
 @Mod.EventBusSubscriber
 @ObjectHolder(BigActiveVolcano.MODID)
 public class ModItems

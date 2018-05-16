@@ -8,6 +8,7 @@ import grondag.exotic_matter.init.RegistratingItem;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.SoundEvents;
 import net.minecraft.item.ItemStack;
+import net.minecraft.stats.StatBase;
 import net.minecraft.stats.StatList;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.EnumActionResult;
@@ -44,7 +45,9 @@ public class LavaBlobItem extends RegistratingItem
                 worldIn.spawnEntity(blob);
             }
 
-            playerIn.addStat(StatList.getObjectUseStats(this));
+            StatBase stats = StatList.getObjectUseStats(this);
+            if(stats != null) playerIn.addStat(stats);
+            
             return new ActionResult<ItemStack>(EnumActionResult.SUCCESS, stack);
         }
         
