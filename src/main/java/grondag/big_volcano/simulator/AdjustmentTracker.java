@@ -38,7 +38,12 @@ public class AdjustmentTracker
         int minY = Math.max(0, yIn - 2);
         int maxY = Math.min(255, yIn + 2);
         
-        if(inclusions == null) inclusions = new LongOpenHashSet();
+        LongOpenHashSet inclusions = this.inclusions;
+        if(inclusions == null)
+        {
+            inclusions = new LongOpenHashSet();
+            this.inclusions = inclusions;
+        }
         
         for(int y = minY; y <= maxY; y++)
         {
@@ -61,12 +66,20 @@ public class AdjustmentTracker
      */
     public void excludeAdjustmentNeededAt(int xIn, int yIn, int zIn)
     {
-        if(exclusions == null) exclusions = new LongOpenHashSet();
+        LongOpenHashSet exclusions = this.exclusions;
+        if(exclusions == null)
+        {
+            exclusions = new LongOpenHashSet();
+            this.exclusions = exclusions;
+        }
         exclusions.add(PackedBlockPos.pack(xIn, yIn, zIn));
     }
     
     public void doAdjustments(LavaSimulator sim)
     {
+        LongOpenHashSet inclusions = this.inclusions;
+        LongOpenHashSet exclusions = this.exclusions;
+        
         if(inclusions == null || inclusions.isEmpty()) return;
         
         if(exclusions == null || exclusions.isEmpty())
@@ -93,7 +106,7 @@ public class AdjustmentTracker
         @Override
         public boolean test(@Nullable IBlockState t)
         {
-            return LavaTerrainHelper.canLavaDisplace(t);
+            return t == null ? false : LavaTerrainHelper.canLavaDisplace(t);
         }
     };
     
