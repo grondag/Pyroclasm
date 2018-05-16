@@ -34,7 +34,7 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 @SuppressWarnings("null")
 public class BigActiveVolcano  implements IGrondagMod
 {
-	public static final String MODID = "big_volcano";
+	public static final @Nonnull String MODID = "big_volcano";
 	public static final String MODNAME = "Big Active Volcano";
 	public static final String VERSION = "0.0.1";
 	

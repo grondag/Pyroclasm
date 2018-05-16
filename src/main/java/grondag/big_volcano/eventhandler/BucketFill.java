@@ -2,6 +2,8 @@ package grondag.big_volcano.eventhandler;
 
 import java.util.concurrent.ThreadLocalRandom;
 
+import javax.annotation.Nullable;
+
 import com.google.gson.Gson;
 
 import grondag.big_volcano.lava.LavaBlock;
@@ -19,13 +21,15 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 @Mod.EventBusSubscriber
 public class BucketFill
 {
-    private static String[] lazyDenialsUseMethodInstead;
+    private @Nullable static String[] lazyDenialsUseMethodInstead;
+    
+    private static final String[] DEFAULT_DENIALS = {"DENIED"};
     
     private static String[] denials()
     {
-        if(lazyDenialsUseMethodInstead == null) 
+        String[] result = lazyDenialsUseMethodInstead;
+        if(result == null) 
         {
-            String[] result = {"DENIED"};
             try
             {
                 Gson g = new Gson();
@@ -36,14 +40,17 @@ public class BucketFill
             {
                 Log.warn("Unable to parse localized denial messages. Using default.");
             }
+            if(result == null) result = DEFAULT_DENIALS;
+            
             lazyDenialsUseMethodInstead = result;
         }
-        return lazyDenialsUseMethodInstead;
+        return result;
     }
     
     /**
      * Troll user if they attempt to put volcanic lava in a bucket.
      */
+    @SuppressWarnings("null")
     @SubscribeEvent(priority = EventPriority.HIGH) 
     public static void onFillBucket(FillBucketEvent event)
     {

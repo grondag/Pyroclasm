@@ -1,5 +1,7 @@
 package grondag.big_volcano.eventhandler;
 
+import javax.annotation.Nullable;
+
 import grondag.big_volcano.BigActiveVolcano;
 import grondag.big_volcano.Configurator;
 import grondag.big_volcano.init.ModBlocks;
@@ -34,11 +36,12 @@ public class CommonEventHandler
     
 
     //TODO: make these player caps, vs static global
-    private static String lastTroubleMaker = null;
-    private static BlockPos lastAttemptLocation = null;
+    private static @Nullable String lastTroubleMaker = null;
+    private static @Nullable BlockPos lastAttemptLocation = null;
     private static long lastAttemptTimeMillis = -1;
     private static int attemptsAtTrouble = 0;
     
+    @SuppressWarnings("null")
     @SubscribeEvent
     public static void onAskingForIt(ServerChatEvent event)
     {
