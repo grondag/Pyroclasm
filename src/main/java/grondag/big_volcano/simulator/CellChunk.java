@@ -454,7 +454,7 @@ public class CellChunk
      * Sets the entry cell for the stack of cells located at x, z.
      * Should be thread safe if not accessing same x, z.
      */
-    void setEntryCell(int x, int z, LavaCell entryCell)
+    void setEntryCell(int x, int z, @Nullable LavaCell entryCell)
     {
         if(this.isUnloaded) return;
 
