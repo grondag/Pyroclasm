@@ -132,7 +132,7 @@ public class LavaBlock extends TerrainDynamicBlock
             }
             else
             {
-                probeInfo.text("Cell ID = " + cell.id)
+                probeInfo.text("Cell ID = " + cell.hashCode())
                     .text("FluidUnits=" + cell.fluidUnits() + "  FluidSurfaceLevel=" + cell.worldSurfaceLevel() + "  Fluid Levels=" + (cell.fluidLevels()))
                     .text("RawRetainedUnits=" + cell.getRawRetainedUnits() + "  RawRetained Depth=" + (cell.getRawRetainedUnits() / LavaSimulator.FLUID_UNITS_PER_LEVEL))
                     .text("SmoothRetainedUnits=" + cell.getSmoothedRetainedUnits() + "  SmoothRetained Depth=" + (cell.getSmoothedRetainedUnits() / LavaSimulator.FLUID_UNITS_PER_LEVEL))

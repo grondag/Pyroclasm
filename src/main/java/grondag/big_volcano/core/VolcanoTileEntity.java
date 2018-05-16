@@ -324,7 +324,7 @@ public class VolcanoTileEntity extends TileEntity implements ITickable
             LavaCell c = cells.getEntryCell(this.pos.getX() + offset.getX(), this.pos.getZ() + offset.getZ());
             if(c != null)
             {
-                c.firstCell().setBoreCell(enabled);
+//                c.firstCell().setBoreCell(enabled);
             }
         }
     }

@@ -23,6 +23,8 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class LavaCell extends AbstractLavaCell
 {
+    public static final LavaCell NULL_CELL = new LavaCell();
+    
     public static final Predicate<LavaCell> REMOVAL_PREDICATE = new Predicate<LavaCell>()
     {
         @Override
@@ -66,12 +68,6 @@ public class LavaCell extends AbstractLavaCell
     public final SimpleUnorderedArrayList<LavaConnection> connections = new SimpleUnorderedArrayList<LavaConnection>();
    
     private boolean isCoolingDisabled = false;
-    
-    //TODO: remove when TE is gone - isCoolingDisabled should be enough
-    /** true if is in an active flowing volcano bore and should generate lava */
-    @Deprecated
-    private boolean isBoreCell = false;
-
     
     /** value for {@link #lastVisibleLevel} indicating level has never been reported via {@link #provideBlockUpdateIfNeeded(LavaSimulator)} */
     private static final int NEVER_REPORTED = -1;
@@ -212,6 +208,13 @@ public class LavaCell extends AbstractLavaCell
         this.clearBlockUpdate();
         cells.add(this);
         this.updateActiveStatus();
+    }
+    
+    /** for the empty cell */
+    @SuppressWarnings("null")
+    private LavaCell()
+    {
+        
     }
     
 //    protected boolean hasSurfaceChanged()
@@ -558,7 +561,7 @@ public class LavaCell extends AbstractLavaCell
      * Cells that are below and adjacent (cell ceiling = level) count as below.
      * If the lowest existing cell is above or intersecting with the level, returns null.
      */
-    public LavaCell findNearestCellBelowLeve(int level)
+    public @Nullable LavaCell findNearestCellBelowLeve(int level)
     {
         LavaCell candidate = this;
 
@@ -961,6 +964,7 @@ public class LavaCell extends AbstractLavaCell
      * Lava in cell above transfers to this cell.
      * Otherwise returns this cell.
      */
+    @SuppressWarnings("null")
     private LavaCell checkForMergeUp()
     {
         return canMergeCells(this, this.above) ? mergeCells(this, this.above) : this;
@@ -971,6 +975,7 @@ public class LavaCell extends AbstractLavaCell
      * Lava in this cell transfers to cell below.
      * Otherwise returns this cell.
      */
+    @SuppressWarnings("null")
     private LavaCell checkForMergeDown()
     {
         return canMergeCells(this.below, this) ? mergeCells(this.below, this) : this;
@@ -1209,6 +1214,7 @@ public class LavaCell extends AbstractLavaCell
      * Adds cell at the appropriate place in the linked list of cells.
      * Used in NBT load.  Should only be used when know that cell does not overlap existing cells.
      */
+    @SuppressWarnings("null")
     public void addCellToColumn(LavaCell newCell)
     {
         newCell.locator = this.locator;
@@ -1302,6 +1308,7 @@ public class LavaCell extends AbstractLavaCell
     
     /** 
      * Forms new connections and removes invalid connections if necessary.
+     * Also notifies remaining valid connections that cell shape has changed.
      */
     private void updateConnectionsIfNeeded(LavaSimulator sim)
     {
@@ -1318,6 +1325,7 @@ public class LavaCell extends AbstractLavaCell
                     this.removeConnection(c);
                     c.getOther(this).removeConnection(c);
                 }
+                else c.setCellShapeDirty();
             }
             
             int x = this.x();
@@ -1336,7 +1344,7 @@ public class LavaCell extends AbstractLavaCell
     /** 
      * Forms new connections with cells in the column with the given entry cell.
      */
-    private void updateConnectionsWithColumn(LavaCell entryCell, AbstractLavaConnections connections)
+    private void updateConnectionsWithColumn(@Nullable LavaCell entryCell, AbstractLavaConnections connections)
     {
         if(entryCell == null) return;
         
@@ -1798,27 +1806,6 @@ public class LavaCell extends AbstractLavaCell
         if(this.isCoolingDisabled != isCoolingDisabled) this.isCoolingDisabled = isCoolingDisabled;
     }
     
-    public boolean isBoreCell()
-    {
-        return this.isBoreCell;
-    }
-    
-    public void setBoreCell(boolean isBore)
-    {
-        if(this.isBoreCell != isBore) this.isBoreCell = isBore;
-    }
-    
-    public static long computeKey(int x, int z)
-    {
-        return PackedBlockPos.pack(x, 0, z);  
-    }
-    
-    @Override
-    public int hashCode()
-    {
-        return this.id;
-    }
-    
     public int x()
     {
         return this.locator.x;
@@ -1827,11 +1814,6 @@ public class LavaCell extends AbstractLavaCell
     public int z()
     {
         return this.locator.z;
-    }
-    
-    public long locationKey()
-    {
-        return this.locator.locationKey;
     }
     
     public @Nullable LavaCell firstCell()
@@ -2100,8 +2082,6 @@ public class LavaCell extends AbstractLavaCell
         public final int x;
         public final int z;
         
-        public final long locationKey;
-        
         /** True if cells in this column should be validated with world state */
         private boolean isValidationNeeded = false;
         
@@ -2115,7 +2095,6 @@ public class LavaCell extends AbstractLavaCell
             this.x = x;
             this.z = z;
             this.cellChunk = cellChunk;
-            this.locationKey = LavaCell.computeKey(x, z);
             this.firstCell = firstCell;
         }
 

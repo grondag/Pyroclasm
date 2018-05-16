@@ -41,18 +41,6 @@ public abstract class AbstractLavaConnections implements Iterable<LavaConnection
 
     public final void createConnectionIfNotPresent(LavaCell first, LavaCell second)
     {
-        if(first.id < second.id)
-        {
-            this.createConnectionIfNotPresentInner(first, second);
-        }
-        else
-        {
-            this.createConnectionIfNotPresentInner(second, first);
-        }
-    }
-
-    private void createConnectionIfNotPresentInner(LavaCell first, LavaCell second)
-    {
         boolean isIncomplete = true;
         do
         {

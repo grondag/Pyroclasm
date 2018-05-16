@@ -1,20 +1,28 @@
 package grondag.big_volcano.simulator;
 
-import javax.annotation.Nullable;
-
 public enum FlowDirection
 {
     ONE_TO_TWO() 
     {
         @Override
-        public @Nullable LavaCell fromCell(LavaConnection connection) { return connection.firstCell; }
+        public LavaCell fromCell(LavaConnection connection) { return connection.firstCell; }
+        
+        @Override
+        public LavaCell toCell(LavaConnection connection) { return connection.secondCell; }
     }, 
+    
     TWO_TO_ONE()
     {
         @Override
-        public @Nullable LavaCell fromCell(LavaConnection connection) { return connection.secondCell; }
+        public LavaCell fromCell(LavaConnection connection) { return connection.secondCell; }
+        
+        @Override
+        public LavaCell toCell(LavaConnection connection) { return connection.firstCell; }
     }, 
+    
     NONE;
     
-    public @Nullable LavaCell fromCell(LavaConnection connection) { return null; }
+    public LavaCell fromCell(LavaConnection connection) { return LavaCell.NULL_CELL; }
+    
+    public LavaCell toCell(LavaConnection connection) { return LavaCell.NULL_CELL; }
 }

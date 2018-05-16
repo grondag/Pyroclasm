@@ -6,10 +6,6 @@ import grondag.exotic_matter.model.TerrainState;
 
 public abstract class AbstractLavaCell
 {
-    private static AtomicInteger nextCellID = new AtomicInteger(0);
-    
-    public final int id = nextCellID.getAndIncrement();
-    
     /** 
      * Excess fluid in a cell above it's normal volume is multiplied by this
      * factor to compute an effective fluid surface for determining flow. <p>
@@ -215,7 +211,7 @@ public abstract class AbstractLavaCell
     {
         if(newUnits < 0)
         {
-            assert false: String.format("Negative fluid units detected.  NewAmount=%1$d cellID=%2$d", newUnits, this.id);
+            assert false: String.format("Negative fluid units detected.  NewAmount=%d cell ID=%s", newUnits, this.hashCode());
             newUnits = 0;
         }
         this.fluidUnits.set(newUnits);
@@ -223,14 +219,6 @@ public abstract class AbstractLavaCell
     
     public boolean changeFluidUnitsIfMatches(int deltaUnits, int expectedPriorUnits)
     {
-        int newUnits = expectedPriorUnits + deltaUnits;
-        
-//        if(newUnits < 0)
-//        {
-//            newUnits = 0;
-//            assert false : String.format("Negative fluid units detected.  PriorAmount=%1$d Deltar=%2$d cellID=%3$d", expectedPriorUnits, deltaUnits, this.id);
-//        }
-      
         return this.fluidUnits.compareAndSet(expectedPriorUnits, expectedPriorUnits + deltaUnits);
     }
     

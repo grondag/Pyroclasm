@@ -136,7 +136,7 @@ public class LavaConnections extends AbstractLavaConnections
             {
                 LavaConnection n = c;
                 
-                LavaCell source = n.getFromCell();
+                LavaCell source = n.fromCell();
                 
                 if(source == null || source.getAvailableFluidUnits() <= 0) continue;
                 
