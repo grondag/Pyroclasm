@@ -1,12 +1,8 @@
 package grondag.big_volcano.simulator;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 import javax.annotation.Nullable;
-
-import com.google.common.collect.ImmutableList;
 
 import grondag.big_volcano.BigActiveVolcano;
 import grondag.big_volcano.Configurator;
