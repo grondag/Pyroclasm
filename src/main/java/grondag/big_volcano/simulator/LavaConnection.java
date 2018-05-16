@@ -98,7 +98,9 @@ public class LavaConnection
      */
     public @Nullable LavaConnection nextToFlow;
     
-    //TODO: can probably be normal int because will alwoays be updated from same thread?
+    /**
+     * Accumulates total units flowed across all connections when flow tracking is enabled.
+     */
     public static AtomicInteger totalFlow = new AtomicInteger(0);
     
     /** 

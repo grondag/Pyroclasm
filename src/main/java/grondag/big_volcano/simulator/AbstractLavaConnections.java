@@ -16,22 +16,18 @@ public abstract class AbstractLavaConnections implements Iterable<LavaConnection
     protected int stepIndex;
     protected int[] flowTotals = new int[8];
     protected int[] flowCounts = new int[8];
-    public final PerformanceCounter sortCounter;
     public final PerformanceCounter setupCounter;
     public final PerformanceCounter firstStepCounter;
     public final PerformanceCounter stepCounter;
-    public final PerformanceCounter perfPrioritizeConnections;
 
     protected AbstractLavaConnections(LavaSimulator sim)
     {
         super();
         this.sim = sim;
         connectionList = SimpleConcurrentList.create(LavaConnection.class, Configurator.VOLCANO.enablePerformanceLogging, "Lava Connections", sim.perfCollectorOffTick);
-        sortCounter = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Connection Sorting", sim.perfCollectorOffTick);
         setupCounter = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Connection Setup", sim.perfCollectorOffTick);
         firstStepCounter = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "First Flow Step", sim.perfCollectorOffTick);
         stepCounter = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Flow Step", sim.perfCollectorOffTick);
-        perfPrioritizeConnections = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Connection Prioritization", sim.perfCollectorOffTick);
     }
 
     public synchronized void clear()
@@ -51,7 +47,7 @@ public abstract class AbstractLavaConnections implements Iterable<LavaConnection
                     if(!first.isConnectedTo(second))
                     {
                         LavaConnection newConnection = new LavaConnection(first, second);
-                        this.addConnectionToArray(newConnection);
+                        this.connectionList.add(newConnection);
                     }
                     
                     isIncomplete = false;
@@ -60,16 +56,6 @@ public abstract class AbstractLavaConnections implements Iterable<LavaConnection
                 first.unlock();
             }
         } while(isIncomplete);
-    }
-
-    /** 
-     * Adds connection to the storage array and marks sort dirty.
-     * Does not do anything else.
-     * Thread-safe.
-     */
-    public void addConnectionToArray(LavaConnection connection)
-    {
-        this.connectionList.add(connection);
     }
 
     public final void removeDeletedItems()
@@ -127,7 +113,6 @@ public abstract class AbstractLavaConnections implements Iterable<LavaConnection
         int startingCount = 0;
         if(Configurator.VOLCANO.enableFlowTracking)
         {  
-            // all bucket jobs share the same perf counter, so simply use the start reference
             startingCount = this.firstStepCounter.runCount();
         }
         
@@ -149,7 +134,6 @@ public abstract class AbstractLavaConnections implements Iterable<LavaConnection
         int startingCount = 0;
         if(Configurator.VOLCANO.enableFlowTracking)
         {    
-            // all bucket jobs share the same perf counter, so simply use the start reference
             startingCount = this.stepCounter.runCount();
         }
         
