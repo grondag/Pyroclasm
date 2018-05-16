@@ -31,6 +31,7 @@ import net.minecraftforge.fml.relauncher.SideOnly;
         acceptedMinecraftVersions = "[1.12]",
         dependencies = "after:theoneprobe")
 
+@SuppressWarnings("null")
 public class BigActiveVolcano  implements IGrondagMod
 {
 	public static final String MODID = "big_volcano";
@@ -50,7 +51,8 @@ public class BigActiveVolcano  implements IGrondagMod
 	@Instance
 	public static BigActiveVolcano INSTANCE = new BigActiveVolcano();
 
-	@SidedProxy(clientSide = "grondag.big_volcano.ClientProxy", serverSide = "grondag.big_volcano.ServerProxy")
+
+    @SidedProxy(clientSide = "grondag.big_volcano.ClientProxy", serverSide = "grondag.big_volcano.ServerProxy")
 	public static CommonProxy proxy;
 
     static
