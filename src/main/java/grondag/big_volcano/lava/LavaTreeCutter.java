@@ -186,6 +186,7 @@ public class LavaTreeCutter implements ISimulationTickable, IReadWriteNBT
         
     }
     
+    @SuppressWarnings({ "deprecation", "null" })
     private Operation doSearch()
     {
         final Visit toVisit = this.toVisit.poll();
@@ -298,7 +299,6 @@ public class LavaTreeCutter implements ISimulationTickable, IReadWriteNBT
                 .filter(e -> e.getByteValue() != POS_TYPE_IGNORE)
                 .sorted(new  Comparator<Long2ByteMap.Entry>() {
 
-                    @SuppressWarnings("null")
                     @Override
                     public int compare(Entry o1, Entry o2)
                     {
@@ -363,9 +363,11 @@ public class LavaTreeCutter implements ISimulationTickable, IReadWriteNBT
     }
 
     @Override
-    public void deserializeNBT(NBTTagCompound tag)
+    public void deserializeNBT(@Nullable NBTTagCompound tag)
     {
         this.reset();
+        
+        if(tag == null) return;
         
         if(tag.hasKey(NBT_LAVA_TREE_CUTTER_QUEUE))
         {
@@ -390,6 +392,7 @@ public class LavaTreeCutter implements ISimulationTickable, IReadWriteNBT
         }
     }
 
+    @SuppressWarnings("null")
     @Override
     public void serializeNBT(NBTTagCompound tag)
     {
