@@ -118,75 +118,35 @@ public class LavaConnections extends AbstractLavaConnections
     @Override
     protected void doFirstStepInner()
     {
+        if(this.toProcess.isEmpty()) return;
         this.step = 1;
         this.firstStepCounter.startRun();
-//        this.firstStepCounter.addCount(doStepInner(LavaConnection::doFirstStep));
-        this.firstStepCounter.addCount(doStepInnerParallel(LavaConnection::doFirstStep));
+        if(this.toProcess.size() / 4 < Configurator.VOLCANO.concurrencyThreshold)
+        {
+            this.firstStepCounter.addCount(RoundProcessor.PRIMARY.doStep(toProcess, step));
+        }
+        else
+        {
+            this.firstStepCounter.addCount(doStepInnerParallel(LavaConnection::doFirstStep));
+        }
         this.firstStepCounter.endRun();
     }
     
     @Override
     protected void doStepInner()
     {
+        if(this.toProcess.isEmpty()) return;
         this.step++;
         this.stepCounter.startRun();
-//        this.stepCounter.addCount(doStepInner(LavaConnection::doStep));
-        this.stepCounter.addCount(doStepInnerParallel(LavaConnection::doStep));
-        this.stepCounter.endRun();
-    }
-    
-    protected int doStepInner(Consumer<LavaConnection> consumer)
-    {
-        if(this.toProcess.isEmpty()) return 0;
-        
-        Iterable<LavaConnection> currentList = this.toProcess;
-        
-        int count = 0;
-        
-        while(true)
+        if(this.toProcess.size() / 4 < Configurator.VOLCANO.concurrencyThreshold)
         {
-            SimpleUnorderedArrayList<LavaConnection> nextList = new SimpleUnorderedArrayList<LavaConnection>();
-        
-            for(LavaConnection c : currentList)
-            {
-                LavaConnection current = c;
-                
-                final LavaCell source = current.fromCell();
-                
-                if(source.getAvailableFluidUnits() <= 0) continue;
-                
-                while(true)
-                {
-                    consumer.accept(current);
-                    count++;
-                    
-                    final LavaConnection next = current.nextToFlow;
-                    
-                    if(next == null) break;
-                    
-                    // change in drop implies end of round
-                    // intent is to let all connections in each round that share the 
-                    // same drop to go before any cell in the next round goes
-                    if(current.drop != next.drop)
-                    {
-                        // no need to go in next round if already exhausted available supply of lava 
-                        // supply is rationed for each step - can be exceeded in any round that starts
-                        // (and the first round always starts) but once exceeded stops subsequent rounds
-                        if(source.flowThisTick.get() < source.maxOutputPerStep * this.step)
-                        {
-                            nextList.add(next);
-                        }
-                        break;
-                    }
-                    else current = next;
-                }
-            }
-            
-            if(nextList.isEmpty()) break;
-            currentList = nextList;
+            this.firstStepCounter.addCount(RoundProcessor.SECONDARY.doStep(toProcess, step));
         }
-        
-        return count;
+        else
+        {
+            this.firstStepCounter.addCount(doStepInnerParallel(LavaConnection::doStep));
+        }
+        this.stepCounter.endRun();
     }
     
     protected int doStepInnerParallel(Consumer<LavaConnection> consumer)
@@ -306,6 +266,89 @@ public class LavaConnections extends AbstractLavaConnections
                 
                 OuterStepTask.this.tryComplete();
             }
+        }
+    }
+    
+    private abstract static class RoundProcessor
+    {
+        protected final int doStep(Iterable<LavaConnection> startingList, final int step)
+        {
+            int count = 0;
+            while(true)
+            {
+                SimpleUnorderedArrayList<LavaConnection> nextList = new SimpleUnorderedArrayList<LavaConnection>();
+                count += this.doRound(startingList, nextList, step);
+                if(nextList.isEmpty()) break;
+                startingList = nextList;
+            }
+            return count;
+        }
+        
+        protected abstract void process(LavaConnection connection);
+        
+        protected final int doRound(final Iterable<LavaConnection> inputs, final SimpleUnorderedArrayList<LavaConnection> outputs, final int step)
+        {
+            int count = 0;
+            
+            for(LavaConnection c : inputs)
+            {
+                LavaConnection current = c;
+                
+                final LavaCell source = current.fromCell();
+                
+                if(source.getAvailableFluidUnits() <= 0) continue;
+                
+                while(true)
+                {
+                    this.process(current);
+                    count++;
+                    
+                    final LavaConnection next = current.nextToFlow;
+                    
+                    if(next == null) break;
+                    
+                    // change in drop implies end of round
+                    // intent is to let all connections in each round that share the 
+                    // same drop to go before any cell in the next round goes
+                    if(current.drop != next.drop)
+                    {
+                        // no need to go in next round if already exhausted available supply of lava 
+                        // supply is rationed for each step - can be exceeded in any round that starts
+                        // (and the first round always starts) but once exceeded stops subsequent rounds
+                        if(source.flowThisTick.get() < source.maxOutputPerStep * step)
+                        {
+                            outputs.add(next);
+                        }
+                        break;
+                    }
+                    else current = next;
+                }
+            }
+            return count;
+        }
+        
+        protected static final RoundProcessor PRIMARY = new Primary();
+        
+        protected static final RoundProcessor SECONDARY = new Secondary();
+        
+        private final static class Primary extends RoundProcessor
+        {
+            @Override
+            protected final void process(LavaConnection connection)
+            {
+               connection.doFirstStep(); 
+            }
+            
+        }
+        
+        private final static class Secondary extends RoundProcessor
+        {
+            @Override
+            protected final void process(LavaConnection connection)
+            {
+               connection.doStep(); 
+            }
+            
         }
     }
 }
