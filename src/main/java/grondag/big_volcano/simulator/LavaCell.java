@@ -537,25 +537,6 @@ public class LavaCell extends AbstractLavaCell
             
     }
     
-//    /** 
-//     * Distance from this cell to the given space, in block levels.
-//     * Space floor is exclusive, space ceiling in inclusive. Inputs are in block levels.
-//     * Returns 0 if the space is adjacent or intersecting.
-//     */
-//    private int distanceToSpace(int spaceFloor, int spaceCeiling)
-//    {
-//        if(this.getFloor() > spaceCeiling)
-//            return this.getFloor() - spaceCeiling;
-//        
-//        else if(this.getCeiling() < spaceFloor)
-//            
-//            return spaceFloor - this.getCeiling();
-//        else
-//            // intersects or adjacent
-//            return 0; 
-//            
-//    }
-    
     /** 
      * Finds the uppermost cell within this column that is below to the given level.
      * Cells that are below and adjacent (cell ceiling = level) count as below.
@@ -2007,72 +1988,95 @@ public class LavaCell extends AbstractLavaCell
                 this.lastFlowTick + ThreadLocalRandom.current().nextInt(Configurator.VOLCANO.lavaCoolingPropagationMin, Configurator.VOLCANO.lavaCoolingPropagationMax));
     }
     
-    
-//    /**
-//     * Called when lava is placed via a world event.
-//     * If lava does not already exist at level, adds lava to cell in appropriate way.
-//     * If lava does already exist, does nothing.
-//     * Also does nothing if location is partially occupied - indicates cell should be revalidated vs. world.
-//     * 
-//     * @param y  World y level of lava block.
-//     * @param flowHeight Height (1-12) of placed lava block.
-//     * @return true if successful, false if not. If false, chunk should be revalidated.
-//     */
-//    public boolean notifyPlacedLava(int tickIndex, int y, int flowHeight)
-//    {
-//        
-//        /**
-//         * Paths
-//         * -----
-//         * Lava already exists at same or higher level - no action
-//         * Lava already exists but at a lower level - increase level
-//         * Lava does not exist and is a fully open space close to surface - increase level, adjustIfEnabled visible height
-//         * Lava does not exist and is a fully open space above surface - create falling particles
-//         * 
-//         * Space is outside this cell - super strange - re-validate this chunk
-//         * Lava does not exist and space is a partial barrier at floor - super strange - re-validate this chunk
-//         */
-//        
-//        //handle strangeness
-//        if(y > this.topY() || y < this.bottomY()) return false;
-//        
-//        // handle more strangeness - partially solid floors should not normally be replaced by block events
-//        // if this happens, best to revalidate this chunk
-//        if(y == this.bottomY() && this.floorFlowHeight() != 0) return false;
-//        
-//        // should only be able to place lava above surface level unless cell is empty
-//        if(this.getFluidUnits() == 0 || y >= this.fluidSurfaceY() + 1)
-//        {
-//            this.addLavaAtLevel(tickIndex, y * LavaSimulator.LEVELS_PER_BLOCK, flowHeight * LavaSimulator.FLUID_UNITS_PER_LEVEL);
-//            this.setRefreshRange(y, y);
-//        }
-//        
-//        return true;
-//   
-//    }
-    
-//    /**
-//     * Called when lava is destroyed via a world event.
-//     * If lava does not already exist at level, does nothing.
-//     * If lava does already exist, removes an appropriate amount of lava from this cell.
-//     * 
-//     * @param y  World y level of lava block destroyed.
-//     */
-//    public void notifyDestroyedLava(int y)
-//    {
-//        //handle strangeness
-//        if(y > this.topY() || y < this.bottomY()) return;
-//        
-//        if(y == this.fluidSurfaceY())
-//        {
-//            this.changeLevel(this.locator.cellChunk.cells.sim.getTickIndex(), -this.fluidSurfaceFlowHeight() * LavaSimulator.FLUID_UNITS_PER_LEVEL);
-//        }
-//        else if(y < this.fluidSurfaceY())
-//        {
-//            this.changeLevel(this.locator.cellChunk.cells.sim.getTickIndex(), -LavaSimulator.FLUID_UNITS_PER_BLOCK);
-//        }
-//    }
-    
+
+    /**
+     * If cell contains lava and some connections can flow, returns a linked
+     * list of those connections built as needed for flow processing. Null if
+     * no lava or no connections can flow from this cell.
+     */
+    public @Nullable LavaConnection getFlowChain()
+    {
+        if(this.isDeleted) return null;
+
+        // duplicating logic of getAvailableFluidUnits here as a performance optimizaiton.
+        final int fluid = this.fluidUnits();
+        
+        if(fluid == 0) return null;
+        
+        final int available = fluid - this.getSmoothedRetainedUnits();
+        
+        if(available < LavaSimulator.MIN_FLOW_UNITS) return null;
+        
+        // needed by LavaConnection.setupTick
+        this.maxOutputPerStep = Math.max(LavaSimulator.MIN_FLOW_UNITS, available / LavaConnections.STEP_COUNT);
+        
+        
+        LavaConnection keeper = null;
+        
+        final int conSize = this.connections.size();
+        final SimpleUnorderedArrayList<LavaConnection> connections = this.connections;
+        
+        for(int i = 0; i < conSize; i++)
+        {
+            LavaConnection connection = connections.get(i);
+            
+            if(connection.setupTick(this))
+            {
+                if(keeper == null)
+                {
+                    keeper = connection;
+                    keeper.nextToFlow = null;
+                    
+                    // only necessary if we're going to flow
+                    this.flowThisTick.set(0);
+                }
+                else
+                {
+                    keeper = addToFlowChain(keeper, connection);
+                }
+            }
+        }
+        
+        return keeper;
+    }
+    /**
+     * Adds connection to end of flow chain list. See comments within.
+     * @param start
+     * @param toBeAdded
+     * @return
+     */
+    @SuppressWarnings("null")
+    private LavaConnection addToFlowChain(LavaConnection start, LavaConnection toBeAdded)
+    {
+        // if new node has the highest drop or the same drop, can 
+        // simply make it the new head
+        if(toBeAdded.drop >= start.drop)
+        {
+            toBeAdded.nextToFlow = start;
+            return toBeAdded;
+        }
+        
+        LavaConnection current = start;
+        
+        while(true)
+        {
+            // add to end of current node if it is the last node, has the same drop
+            // or if the node after this one has a smaller drop than the node being 
+            // inserted - this last case implies the current node drop is higher than
+            // than the drop of the node being insert - which is what we want.
+            
+            if(current.nextToFlow == null || toBeAdded.drop == current.drop || toBeAdded.drop > current.nextToFlow.drop)
+            {
+                toBeAdded.nextToFlow = current.nextToFlow;
+                current.nextToFlow = toBeAdded;
+                return start;
+            }
+            else
+            {
+                current = current.nextToFlow;
+            }
+        }
+    }
     
     // CELL-COLUMN COORDINATION / SYNCHONIZATION CLASS
     
