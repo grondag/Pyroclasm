@@ -298,12 +298,18 @@ public class LavaCell extends AbstractLavaCell
     }
     
     /** Removes all lava and prevents further processing.
-     *  Invalidates all connections but does not actually remove them.
+     *  Removes all connections.
      *  Also maintains above/below list references in remaining cells
      *  and removes references to/from this cell.
      */
     public void setDeleted()
     {
+        for(LavaConnection c : this.connections)
+        {
+            c.getOther(this).removeConnection(c);
+        }
+        this.connections.clear();
+        
         if(this.locator.firstCell == this)
         {
             this.locator.firstCell = this.above;
@@ -323,12 +329,6 @@ public class LavaCell extends AbstractLavaCell
         this.below = null;
         this.clearBlockUpdate();
         this.isDeleted = true;
-        
-        for(int i = this.connections.size() - 1; i >= 0; i--)
-        {
-            this.connections.get(i).setDeleted();
-        }
-        this.connections.clear();
         
         this.updateActiveStatus();
     }
@@ -1302,7 +1302,6 @@ public class LavaCell extends AbstractLavaCell
                 LavaConnection c = (LavaConnection)o;
                 if(!c.isValid())
                 {
-                    c.setDeleted();
                     this.removeConnection(c);
                     c.getOther(this).removeConnection(c);
                 }

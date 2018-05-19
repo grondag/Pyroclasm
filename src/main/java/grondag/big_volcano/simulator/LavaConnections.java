@@ -24,6 +24,7 @@ public class LavaConnections extends AbstractLavaConnections
     public LavaConnections(LavaSimulator sim)
     {
         super(sim);
+        
     }
     
     @Override

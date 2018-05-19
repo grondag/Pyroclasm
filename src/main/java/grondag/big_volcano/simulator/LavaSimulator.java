@@ -493,8 +493,6 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
         // validates that chunk cell is in has been unloaded, so should happen after chunk unload
         this.cells.removeDeletedItems();
         
-        this.connections.removeDeletedItems();
-        
         this.setDirty();
         
         if(Configurator.VOLCANO.enablePerformanceLogging)

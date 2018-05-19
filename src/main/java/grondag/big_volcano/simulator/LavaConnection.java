@@ -1,7 +1,6 @@
 package grondag.big_volcano.simulator;
 
 import java.util.concurrent.atomic.LongAdder;
-import java.util.function.Predicate;
 
 import javax.annotation.Nullable;
 
@@ -9,15 +8,8 @@ import grondag.big_volcano.Configurator;
 
 public class LavaConnection
 {
-   
-    public static final Predicate<LavaConnection> REMOVAL_PREDICATE = new Predicate<LavaConnection>()
-    {
-        @Override
-        public boolean test(@Nullable LavaConnection t)
-        {
-            return t == null || t.isDeleted;
-        }
-    };
+    
+    public static final LongAdder connectionCount = new LongAdder();
     
     /** by convention, start cell will have the lower-valued id */
     public final LavaCell firstCell;
@@ -89,13 +81,6 @@ public class LavaConnection
      */
     private boolean didUpdateCellTicks = false;
     
-    
-    /**
-     * True if this connection has been marked for removal.
-     * Connection should not be processed or considered valid if true.
-     */
-    private boolean isDeleted = false;
-
     /**
      * Used in cell-wise connection processing.  The drop from floor of
      * "from" cell to the floor of the "to" cell, in units.  Capped at 2 blocks of drop
@@ -165,8 +150,18 @@ public class LavaConnection
         this.secondCell = secondCell;
         firstCell.addConnection(this);
         secondCell.addConnection(this);
+        connectionCount.increment();
     }
     
+    
+    @Override
+    protected void finalize() throws Throwable
+    {
+        super.finalize();
+        connectionCount.decrement();
+    }
+
+
     public LavaCell getOther(LavaCell cellIAlreadyHave)
     {
         return cellIAlreadyHave == this.firstCell ? this.secondCell : this.firstCell;
@@ -529,20 +524,9 @@ public class LavaConnection
       }
     }
     
-    /** marks connection deleted. Does not release cells */
-    public void setDeleted()
-    {
-        this.isDeleted = true;
-    }
-
-    public boolean isDeleted()
-    {
-        return this.isDeleted;
-    }
-    
     public boolean isValid()
     {
-        return !this.isDeleted && this.firstCell.canConnectWith(this.secondCell);
+        return this.firstCell.canConnectWith(this.secondCell);
     }
     
     /** true if either cell has fluid */
@@ -558,8 +542,6 @@ public class LavaConnection
      */
     public boolean setupTick(LavaCell sourceCell)
     {
-        if(this.isDeleted) return false;
-        
         int surface1 = this.firstCell.pressureSurfaceUnits();
         int surface2 = this.secondCell.pressureSurfaceUnits();
         

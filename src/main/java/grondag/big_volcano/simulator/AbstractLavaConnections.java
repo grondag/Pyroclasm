@@ -1,21 +1,16 @@
 package grondag.big_volcano.simulator;
 
-import java.util.Iterator;
-
 import grondag.big_volcano.BigActiveVolcano;
 import grondag.big_volcano.Configurator;
 import grondag.exotic_matter.concurrency.PerformanceCounter;
-import grondag.exotic_matter.concurrency.SimpleConcurrentList;
 
-public abstract class AbstractLavaConnections implements Iterable<LavaConnection>
+public abstract class AbstractLavaConnections
 {
-
-    protected final SimpleConcurrentList<LavaConnection> connectionList;
     protected final LavaSimulator sim;
     /** incremented each step, multiple times per tick */
     protected int stepIndex;
-    protected int[] flowTotals = new int[8];
-    protected int[] flowCounts = new int[8];
+    protected int[] flowTotals = new int[5];
+    protected int[] flowCounts = new int[5];
     public final PerformanceCounter setupCounter;
     public final PerformanceCounter firstStepCounter;
     public final PerformanceCounter stepCounter;
@@ -27,7 +22,6 @@ public abstract class AbstractLavaConnections implements Iterable<LavaConnection
     {
         super();
         this.sim = sim;
-        connectionList = SimpleConcurrentList.create(LavaConnection.class, Configurator.VOLCANO.enablePerformanceLogging, "Lava Connections", sim.perfCollectorOffTick);
         setupCounter = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Connection Setup -  Server Thread", sim.perfCollectorOffTick);
         firstStepCounter = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "First Flow Step - Server Thread", sim.perfCollectorOffTick);
         stepCounter = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Flow Step - Server Thread", sim.perfCollectorOffTick);
@@ -37,10 +31,6 @@ public abstract class AbstractLavaConnections implements Iterable<LavaConnection
         parallelStepCounter = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Flow Step - Multi-threaded", sim.perfCollectorOffTick);
     }
 
-    public synchronized void clear()
-    {
-        this.connectionList.clear();
-    }
 
     public final void createConnectionIfNotPresent(LavaCell first, LavaCell second)
     {
@@ -53,8 +43,7 @@ public abstract class AbstractLavaConnections implements Iterable<LavaConnection
                 {
                     if(!first.isConnectedTo(second))
                     {
-                        LavaConnection newConnection = new LavaConnection(first, second);
-                        this.connectionList.add(newConnection);
+                        new LavaConnection(first, second);
                     }
                     
                     isIncomplete = false;
@@ -65,21 +54,11 @@ public abstract class AbstractLavaConnections implements Iterable<LavaConnection
         } while(isIncomplete);
     }
 
-    public final void removeDeletedItems()
-    {
-        this.connectionList.removeSomeDeletedItems(LavaConnection.REMOVAL_PREDICATE);
-    }
-
     public final int size()
     {
-        return this.connectionList.size();
+        return LavaConnection.connectionCount.intValue();
     }
 
-    @Override
-    public final Iterator<LavaConnection> iterator()
-    {
-        return this.connectionList.iterator();
-    }
 
     public final void reportFlowTrackingIfEnabled()
     {
@@ -108,9 +87,6 @@ public abstract class AbstractLavaConnections implements Iterable<LavaConnection
         this.doStep();
         this.doStep();
         this.doStep();
-        this.doStep();
-        this.doStep();
-        this.doLastStep();        
     }
     
     protected void doFirstStep()
@@ -150,10 +126,5 @@ public abstract class AbstractLavaConnections implements Iterable<LavaConnection
             this.flowCounts[stepIndex] += (this.stepCounter.runCount() - startingCount);
             this.flowTotals[stepIndex] += LavaConnection.totalFlow.sumThenReset();
         }
-    }
-
-    protected void doLastStep()
-    {
-        this.doStep();
     }
 }
