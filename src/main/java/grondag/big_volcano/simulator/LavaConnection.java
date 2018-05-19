@@ -55,6 +55,30 @@ public class LavaConnection
      */
     private LavaCell toCell = LavaCell.NULL_CELL;
     
+    /**
+     * Direction-dependent. Cache value of from cell's smoothed retained units.
+     */
+    private int fromRetained;
+    
+    /**
+     * Direction-dependent. Cache value of from cell's floor units.
+     */
+    private int fromFloor;
+    
+    /**
+     * Direction-dependent. Cache value of to cell's floor units.
+     */
+    private int toFloor;
+    
+    /**
+     * Direction-dependent. Cache value of from cell's volume units.
+     */
+    private int fromVolume;
+    
+    /**
+     * Direction-dependent. Cache value of to cell's volume units.
+     */
+    private int toVolume;
     
     /**
      * True if updated the last tick for cells in this connection because we
@@ -171,26 +195,36 @@ public class LavaConnection
         this.fromCell = fromCell;
         this.toCell = toCell;
         
-        final int floorUnitsFrom = fromCell.floorUnits();
-        final int floorUnitsTo = toCell.floorUnits();
-        final int ceilFrom = fromCell.ceilingUnits();
-        final int ceilTo = toCell.ceilingUnits();
-        
+        this.fromRetained = fromCell.getSmoothedRetainedUnits();
 
-        this.drop = Math.min(floorUnitsFrom - floorUnitsTo, LavaSimulator.FLUID_UNITS_PER_TWO_BLOCKS);
+        final int fromFloor = fromCell.floorUnits();
+        final int toFloor = toCell.floorUnits();
+        this.fromFloor = fromFloor;
+        this.toFloor = toFloor;
         
-        if(ceilFrom > ceilTo)
+        final int fromCeiling = fromCell.ceilingUnits();
+        final int toCeiling = toCell.ceilingUnits();
+        
+        final int fromVolume = fromCeiling - fromFloor;
+        final int toVolume = toCeiling - toFloor;
+        this.fromVolume = fromVolume;
+        this.toVolume = toVolume;
+        
+        this.drop = Math.min(fromFloor - toFloor, LavaSimulator.FLUID_UNITS_PER_TWO_BLOCKS);
+        
+        if(fromCeiling > toCeiling)
         {
             this.isToLowerThanFrom = true;
-            this.dualPressureThreshold = AbstractLavaCell.dualPressureThreshold(floorUnitsFrom, fromCell.volumeUnits(), floorUnitsTo, toCell.volumeUnits());
-            this.singlePressureThreshold = AbstractLavaCell.singlePressureThreshold(floorUnitsFrom, floorUnitsTo, ceilTo);
+            this.dualPressureThreshold = AbstractLavaCell.dualPressureThreshold(fromFloor, fromVolume, toFloor, toVolume);
+            this.singlePressureThreshold = AbstractLavaCell.singlePressureThreshold(fromFloor, toFloor, toCeiling);
         }
         else
         {
             this.isToLowerThanFrom = false;
-            this.dualPressureThreshold = AbstractLavaCell.dualPressureThreshold(floorUnitsTo, toCell.volumeUnits(), floorUnitsFrom, fromCell.volumeUnits());
-            this.singlePressureThreshold = AbstractLavaCell.singlePressureThreshold(floorUnitsFrom, floorUnitsTo, ceilFrom);
+            this.dualPressureThreshold = AbstractLavaCell.dualPressureThreshold(toFloor, toVolume, fromFloor, fromVolume);
+            this.singlePressureThreshold = AbstractLavaCell.singlePressureThreshold(fromFloor, toFloor, fromCeiling);
         }
+        
     }
     
     
@@ -225,11 +259,15 @@ public class LavaConnection
      *  Does a step and if there was a flow on this connection 
      *  will update the tick index of both cells.  Also is a hook for
      *  any internal setup or accounting the connection needs to do at
-     *  the start of each tick.
+     *  the start of each tick. <p>
+     *  
+     *  Note there is no checking for deleted or non-flowing connections here
+     *  or forward. Assumes any deleted or non-flowing connections were excluded
+     *  during setup.
      */
     public void doFirstStep()
     {
-        if(this.doStepWork() != 0)
+        if(this.tryFlow() != 0)
         {
             this.firstCell.updateLastFlowTick();
             this.secondCell.updateLastFlowTick();
@@ -243,7 +281,7 @@ public class LavaConnection
      */
     public void doStep()
     {
-        if(this.doStepWork() != 0 && !this.didUpdateCellTicks)
+        if(this.tryFlow() != 0 && !this.didUpdateCellTicks)
         {
             this.firstCell.updateLastFlowTick();
             this.secondCell.updateLastFlowTick();
@@ -267,16 +305,6 @@ public class LavaConnection
     public LavaCell toCell()
     {
         return this.toCell;
-    }
-    
-    /**
-     * Guts of doStep.  Returns amount that flowed.
-     */
-    private int doStepWork()
-    {
-        if(this.isDeleted || this.direction == FlowDirection.NONE) return 0;
-        
-        return this.tryFlow();
     }
     
     /** 
@@ -421,35 +449,46 @@ public class LavaConnection
     private int tryFlow()
     {
         final LavaCell fromCell = this.fromCell;
-        final LavaCell toCell = this.toCell;
         
-        final int availableFluidUnits = Math.min(this.maxFlowPerStep, fromCell.getAvailableFluidUnits());
+        final int fromFluid = fromCell.fluidUnits();
+        
+        int availableFluidUnits = fromFluid - this.fromRetained;
         if(availableFluidUnits < LavaSimulator.MIN_FLOW_UNITS) return 0;
+        if(availableFluidUnits > this.maxFlowPerStep) availableFluidUnits = this.maxFlowPerStep;
         
-        final int fluidFrom = fromCell.fluidUnits();
-        final int fluidTo = toCell.fluidUnits();
-        final int floorFrom = fromCell.floorUnits();
-        final int floorTo = toCell.floorUnits();
-        final int volumeFrom = fromCell.volumeUnits();
-        final int volumeTo = toCell.volumeUnits();
-        final int surfaceTo = AbstractLavaCell.pressureSurface(floorTo, volumeTo, fluidTo);
-        final int surfaceFrom = AbstractLavaCell.pressureSurface(floorFrom, volumeFrom, fluidFrom);
-        if(surfaceFrom > surfaceTo)
+        final LavaCell toCell = this.toCell;
+        final int toFluid = toCell.fluidUnits();
+
+        final int fromFloor = this.fromFloor;
+        final int toFloor = this.toFloor;
+        
+        final int fromVolume = this.fromVolume;
+        final int toVolume = this.toVolume;
+        
+        final int toSurface = toFluid > toVolume
+                ? toFloor + toFluid * AbstractLavaCell.PRESSURE_FACTOR_PLUS - toVolume * AbstractLavaCell.PRESSURE_FACTOR
+                : toFloor + toFluid;
+        
+        final int fromSurface = fromFluid > fromVolume
+                ? fromFloor + fromFluid * AbstractLavaCell.PRESSURE_FACTOR_PLUS - fromVolume * AbstractLavaCell.PRESSURE_FACTOR
+                : fromFloor + fromFluid;
+        
+        if(fromSurface > toSurface)
         {
-            final int fluidTotal = fluidTo + fluidFrom;
+            final int fluidTotal = toFluid + fromFluid;
             int flow;
             
             if(fluidTotal > this.dualPressureThreshold)
             {
-                flow = Math.min(availableFluidUnits, this.dualPressureFlow(fluidTo, fluidFrom, fluidTotal, floorTo, floorFrom, volumeTo, volumeFrom));
+                flow = Math.min(availableFluidUnits, this.dualPressureFlow(toFluid, fromFluid, fluidTotal, toFloor, fromFloor, toVolume, fromVolume));
             }
             else if(fluidTotal > this.singlePressureThreshold)
             {
-                flow = Math.min(availableFluidUnits, this.singlePressureFlow(fluidTo, fluidFrom, fluidTotal, floorTo, floorFrom, volumeTo, volumeFrom));
+                flow = Math.min(availableFluidUnits, this.singlePressureFlow(toFluid, fromFluid, fluidTotal, toFloor, fromFloor, toVolume, fromVolume));
             }
             else
             {
-                flow = Math.min(availableFluidUnits, this.freeFlow(fluidTo, fluidFrom, fluidTotal, floorTo, floorFrom));
+                flow = Math.min(availableFluidUnits, this.freeFlow(toFluid, fromFluid, fluidTotal, toFloor, fromFloor));
             }
 
             if(flow < LavaSimulator.MIN_FLOW_UNITS)
@@ -458,31 +497,36 @@ public class LavaConnection
             }
             else 
             {
-                if(fromCell.changeFluidUnitsIfMatches(-flow, fluidFrom))
-                {
-                    if(toCell.changeFluidUnitsIfMatches(flow, fluidTo))
-                    {                        
-                        if(Configurator.VOLCANO.enableFlowTracking) totalFlow.add(flow);
-                        fromCell.flowThisTick.addAndGet(flow);
-                        return flow;
-                    }
-                    else
-                    {
-                        //undo start change if second isn't successful
-                        fromCell.changeFluidUnits(flow);
-                        return 0;
-                    }
-                }
-                else
-                {
-                    return 0;
-                }
+                return executeFlow(fromCell, fromFluid, toCell, toFluid, flow);
             }
         }
         else
         {
             return 0;
         }
+    }
+    
+    private int executeFlow(LavaCell fromCell, int expectedFromUnits, LavaCell toCell, int expectedToUnits, int flow)
+    {
+      if(fromCell.changeFluidUnitsIfMatches(-flow, expectedFromUnits))
+      {
+          if(toCell.changeFluidUnitsIfMatches(flow, expectedToUnits))
+          {                        
+              if(Configurator.VOLCANO.enableFlowTracking) totalFlow.add(flow);
+              fromCell.flowThisTick.addAndGet(flow);
+              return flow;
+          }
+          else
+          {
+              //undo start change if second isn't successful
+              fromCell.changeFluidUnits(flow);
+              return 0;
+          }
+      }
+      else
+      {
+          return 0;
+      }
     }
     
     /** marks connection deleted. Does not release cells */
