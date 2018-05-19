@@ -1679,13 +1679,13 @@ public class LavaCell extends AbstractLavaCell
      * based on current contents and retention.  Does not consider if any 
      * neighboring cells have a lower pressure surface.
      */
-    public int getAvailableFluidUnits()
+    public final int getAvailableFluidUnits()
     {
         return this.fluidUnits() - this.getSmoothedRetainedUnits();
     }
     
     /** see {@link #smoothedRetainedUnits} */
-    public int getSmoothedRetainedUnits()
+    public final int getSmoothedRetainedUnits()
     {
         // provide default value until retention can be updated
         return this.smoothedRetainedUnits;

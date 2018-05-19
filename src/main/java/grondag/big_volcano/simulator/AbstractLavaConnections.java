@@ -19,15 +19,22 @@ public abstract class AbstractLavaConnections implements Iterable<LavaConnection
     public final PerformanceCounter setupCounter;
     public final PerformanceCounter firstStepCounter;
     public final PerformanceCounter stepCounter;
+    public final PerformanceCounter parallelSetupCounter;
+    public final PerformanceCounter parallelFirstStepCounter;
+    public final PerformanceCounter parallelStepCounter;
 
     protected AbstractLavaConnections(LavaSimulator sim)
     {
         super();
         this.sim = sim;
         connectionList = SimpleConcurrentList.create(LavaConnection.class, Configurator.VOLCANO.enablePerformanceLogging, "Lava Connections", sim.perfCollectorOffTick);
-        setupCounter = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Connection Setup", sim.perfCollectorOffTick);
-        firstStepCounter = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "First Flow Step", sim.perfCollectorOffTick);
-        stepCounter = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Flow Step", sim.perfCollectorOffTick);
+        setupCounter = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Connection Setup -  Server Thread", sim.perfCollectorOffTick);
+        firstStepCounter = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "First Flow Step - Server Thread", sim.perfCollectorOffTick);
+        stepCounter = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Flow Step - Server Thread", sim.perfCollectorOffTick);
+        
+        parallelSetupCounter = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Connection Setup -  Multi-threaded", sim.perfCollectorOffTick);
+        parallelFirstStepCounter = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "First Flow Step - Multi-threaded", sim.perfCollectorOffTick);
+        parallelStepCounter = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Flow Step - Multi-threaded", sim.perfCollectorOffTick);
     }
 
     public synchronized void clear()

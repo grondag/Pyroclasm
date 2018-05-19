@@ -31,14 +31,18 @@ public class LavaConnections extends AbstractLavaConnections
     {
         this.toProcess.clear();
         final int cellCount = this.sim.cells.cellList.size();
-        this.setupCounter.startRun();
+        
         
         if(cellCount < Configurator.VOLCANO.concurrencyThreshold)
         {
+            this.setupCounter.startRun();
             this.sim.cells.cellList.forEach(c -> setupCell(c));
+            this.setupCounter.endRun();
+            this.setupCounter.addCount(cellCount);
         }
         else
         {
+            this.parallelSetupCounter.startRun();
             try
             {
                 Simulator.SIMULATION_POOL.submit(new CellSetupTask(this.sim.cells.cellList)).get();
@@ -47,10 +51,11 @@ public class LavaConnections extends AbstractLavaConnections
             {
                 BigActiveVolcano.INSTANCE.error("Unexpected error during lava cell setup", e);
             }
+            this.parallelSetupCounter.endRun();
+            this.parallelSetupCounter.addCount(cellCount);
         }
         
-        this.setupCounter.endRun();
-        this.setupCounter.addCount(cellCount);
+
     }
     
     /**
@@ -74,16 +79,19 @@ public class LavaConnections extends AbstractLavaConnections
     {
         if(this.toProcess.isEmpty()) return;
         this.step = 1;
-        this.firstStepCounter.startRun();
-        if(this.toProcess.size() / 4 < Configurator.VOLCANO.concurrencyThreshold)
+        
+        if(this.toProcess.size() < Configurator.VOLCANO.concurrencyThreshold)
         {
+            this.firstStepCounter.startRun();
             this.firstStepCounter.addCount(new RoundProcessor.Primary(toProcess.toArray(), step).runToCompletion());
+            this.firstStepCounter.endRun();
         }
         else
         {
-            this.firstStepCounter.addCount(doStepInnerParallel());
+            this.parallelFirstStepCounter.startRun();
+            this.parallelFirstStepCounter.addCount(doStepInnerParallel());
+            this.parallelFirstStepCounter.endRun();
         }
-        this.firstStepCounter.endRun();
     }
     
     @Override
@@ -91,16 +99,18 @@ public class LavaConnections extends AbstractLavaConnections
     {
         if(this.toProcess.isEmpty()) return;
         this.step++;
-        this.stepCounter.startRun();
-        if(this.toProcess.size() / 4 < Configurator.VOLCANO.concurrencyThreshold)
+        if(this.toProcess.size()  < Configurator.VOLCANO.concurrencyThreshold)
         {
+            this.stepCounter.startRun();
             this.stepCounter.addCount(new RoundProcessor.Secondary(toProcess.toArray(), step).runToCompletion());
+            this.stepCounter.endRun();
         }
         else
         {
-            this.stepCounter.addCount(doStepInnerParallel());
+            this.parallelStepCounter.startRun();
+            this.parallelStepCounter.addCount(doStepInnerParallel());
+            this.parallelStepCounter.endRun();
         }
-        this.stepCounter.endRun();
     }
     
     protected int doStepInnerParallel()

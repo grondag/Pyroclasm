@@ -1,9 +1,9 @@
 package grondag.big_volcano.simulator;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
+import grondag.exotic_matter.concurrency.Danger;
 import grondag.exotic_matter.model.TerrainState;
 
+@SuppressWarnings("restriction")
 public abstract class AbstractLavaCell
 {
     /** 
@@ -185,7 +185,7 @@ public abstract class AbstractLavaCell
     /** volume of space in this cell, in fluid units */
     public int volumeUnits()
     {
-        return this.ceilingUnits() - this.floorUnits();
+        return this.ceilingUnits - this.floorUnits;
     }
     
     /******************************************************
@@ -195,13 +195,22 @@ public abstract class AbstractLavaCell
     /**
      * Amount of fluid currently in the cell as measured in fluid units.  
      */
-    private AtomicInteger fluidUnits = new AtomicInteger(0);
+    private volatile int fluidUnits;
+    
+    private static final long fluidUnitsOffset;
+
+    static {
+        try {
+            fluidUnitsOffset = Danger.UNSAFE.objectFieldOffset
+                (AbstractLavaCell.class.getDeclaredField("fluidUnits"));
+        } catch (Exception ex) { throw new Error(ex); }
+    }
     
     public void changeFluidUnits(int deltaUnits)
     {
-        if(this.fluidUnits.addAndGet(deltaUnits) < 0)
+        if(Danger.UNSAFE.getAndAddInt(this, fluidUnitsOffset, deltaUnits) + deltaUnits < 0) 
         {
-            this.fluidUnits.set(0);
+            this.fluidUnits = 0;
 //            assert false : String.format("Negative fluid units detected.  NewAmount=%1$d Delta=%2$d cellID=%3$d", this.fluidUnits.get(), deltaUnits, this.id);
         }
         
@@ -214,12 +223,12 @@ public abstract class AbstractLavaCell
             assert false: String.format("Negative fluid units detected.  NewAmount=%d cell ID=%s", newUnits, this.hashCode());
             newUnits = 0;
         }
-        this.fluidUnits.set(newUnits);
+        this.fluidUnits = newUnits;
     }
     
     public boolean changeFluidUnitsIfMatches(int deltaUnits, int expectedPriorUnits)
     {
-        return this.fluidUnits.compareAndSet(expectedPriorUnits, expectedPriorUnits + deltaUnits);
+        return Danger.UNSAFE.compareAndSwapInt(this, fluidUnitsOffset, expectedPriorUnits, expectedPriorUnits + deltaUnits);
     }
     
     /**
@@ -230,7 +239,7 @@ public abstract class AbstractLavaCell
     
     public int fluidUnits()
     {
-        return this.fluidUnits.get();
+        return this.fluidUnits;
     }
     
     /**
@@ -238,18 +247,18 @@ public abstract class AbstractLavaCell
      */
     public int fluidLevels()
     {
-        int units = this.fluidUnits.get();
+        int units = this.fluidUnits;
         return units == 0 ? 0 : Math.max(1, units / LavaSimulator.FLUID_UNITS_PER_LEVEL);
     }
 
     public boolean isEmpty()
     {
-        return this.fluidUnits.get() == 0;
+        return this.fluidUnits == 0;
     }
 
     protected void emptyCell()
     {
-        this.fluidUnits.set(0);
+        this.fluidUnits = 0;
     }
 
     /******************************************************
