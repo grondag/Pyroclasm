@@ -767,8 +767,8 @@ public class LavaCell extends AbstractLavaCell
     @Override
     public void changeFluidUnits(int deltaUnits)
     {
-     // Check for melting of shallow floor that might causing this cell to merge with the cell below
-        if(this.isEmpty() && deltaUnits > 0 && this.isBottomFlow() && this.floorFlowHeight() > 0)
+        // Check for melting of shallow floor that might causing this cell to merge with the cell below
+        if(this.isEmpty() && this.floorFlowHeight() > 0)
         {
             this.setValidationNeeded(true);
         }
@@ -780,7 +780,7 @@ public class LavaCell extends AbstractLavaCell
     public boolean changeFluidUnitsIfMatches(int deltaUnits, int expectedPriorUnits)
     {
         // Check for melting of shallow floor that might causing this cell to merge with the cell below
-        if(expectedPriorUnits == 0 && deltaUnits > 0 && this.isBottomFlow() && this.floorFlowHeight() > 0)
+        if(expectedPriorUnits == 0 && this.floorFlowHeight() > 0)
         {
             this.setValidationNeeded(true);
         }
