@@ -1452,7 +1452,7 @@ public class LavaCell extends AbstractLavaCell
     @SideOnly(Side.CLIENT)
     public float activityLevel()
     {
-        return Math.max(0, 1f - ((float) (Simulator.instance().getTick() - this.lastFlowTick)) / Configurator.VOLCANO.lavaCoolingTicks);
+        return Math.max(0, 1f - ((float) (Simulator.currentTick() - this.lastFlowTick)) / Configurator.VOLCANO.lavaCoolingTicks);
     }
     
     /** 
@@ -1966,7 +1966,7 @@ public class LavaCell extends AbstractLavaCell
      */
     public void updateLastFlowTick()
     {
-        this.lastFlowTick = Simulator.instance().getTick();
+        this.lastFlowTick = Simulator.currentTick();
     }
     
     /**
@@ -1984,7 +1984,7 @@ public class LavaCell extends AbstractLavaCell
     public void delayCooling()
     {
         if(this.fluidUnits() == 0) return;
-        this.lastFlowTick = Math.min(Simulator.instance().getTick(), 
+        this.lastFlowTick = Math.min(Simulator.currentTick(), 
                 this.lastFlowTick + ThreadLocalRandom.current().nextInt(Configurator.VOLCANO.lavaCoolingPropagationMin, Configurator.VOLCANO.lavaCoolingPropagationMax));
     }
     

@@ -37,7 +37,7 @@ public class BasaltTracker
     
     private void coolBlocks(Long2IntOpenHashMap targets)
     {
-        int lastEligibleBasaltCoolingTick = Simulator.instance().getTick() - Configurator.VOLCANO.basaltCoolingTicks;
+        int lastEligibleBasaltCoolingTick = Simulator.currentTick() - Configurator.VOLCANO.basaltCoolingTicks;
 
         ObjectIterator<Entry> it = targets.long2IntEntrySet().fastIterator();
         while(it.hasNext())
@@ -55,7 +55,7 @@ public class BasaltTracker
                     {
                         case PARTIAL:
                             // will be ready to cool again after delay
-                            e.setValue(Simulator.instance().getTick());
+                            e.setValue(Simulator.currentTick());
                             break;
                             
                         case UNREADY:
@@ -120,11 +120,11 @@ public class BasaltTracker
      */
     public void trackCoolingBlock(long packedBlockPos)
     {
-       this.trackCoolingBlock(packedBlockPos, Simulator.instance().getTick());
+       this.trackCoolingBlock(packedBlockPos, Simulator.currentTick());
     }
     
     /**
-     * Call from world thread only - not thread-saffe
+     * Call from world thread only - not thread-safe
      */
     public void trackCoolingBlock(long packedBlockPos, int tick)
     {

@@ -47,7 +47,7 @@ public class LavaBlobManager
         
         if(particle == null)
         {
-            particle = new ParticleInfo(Simulator.instance().getTick(), packedBlockPos, fluidAmount);
+            particle = new ParticleInfo(Simulator.currentTick(), packedBlockPos, fluidAmount);
             map.put(packedBlockPos, particle);
 //            HardScience.log.info("ParticleManager added new particle @" + PackedBlockPos.unpack(particle.packedBlockPos).toString() + " with amount=" + particle.getFluidUnits());
         }
@@ -64,8 +64,8 @@ public class LavaBlobManager
     {
         if(map.isEmpty()) return ImmutableList.of();
         
-        int firstEligibleTick = Simulator.instance().getTick() - MIN_WAIT_TICKS;
-        int forceEligibleTick = Simulator.instance().getTick() - MAX_WAIT_TICKS;
+        int firstEligibleTick = Simulator.currentTick() - MIN_WAIT_TICKS;
+        int forceEligibleTick = Simulator.currentTick() - MAX_WAIT_TICKS;
         
         // wait until minimum size * minimum age, full size,  or max age
         List<ParticleInfo> candidates = map.values().parallelStream()

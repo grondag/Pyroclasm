@@ -121,7 +121,7 @@ public class VolcanoNode implements IReadWriteNBT, IDirtListener, ISimulationTic
         {
             if(this.isActive() || this.height >= Configurator.VOLCANO.maxYLevel) return false;
             
-            int dormantTime = Simulator.instance().getTick() - this.lastActivationTick;
+            int dormantTime = Simulator.currentTick() - this.lastActivationTick;
             
             if(dormantTime < Configurator.VOLCANO.minDormantTicks) return false;
             
@@ -144,7 +144,7 @@ public class VolcanoNode implements IReadWriteNBT, IDirtListener, ISimulationTic
                 if(!this.isActive())
                 {
                     this.stage = VolcanoStage.FLOWING;
-                    this.lastActivationTick = Simulator.instance().getTick();
+                    this.lastActivationTick = Simulator.currentTick();
                     this.volcanoManager.activeNodes.put(this.packedChunkPos(), this);
                     this.loadChunks(true);
                     this.setDirty();

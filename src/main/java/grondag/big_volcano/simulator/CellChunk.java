@@ -170,7 +170,7 @@ public class CellChunk
      */
     public boolean validateMarkedCells()
     {
-        this.lastValidationTick = Simulator.instance().getTick();
+        this.lastValidationTick = Simulator.currentTick();
         
         if(this.isUnloaded || this.needsFullLoadOrValidation() || this.validationCount.get() == 0) return false;
 
@@ -242,7 +242,7 @@ public class CellChunk
             //  this.isLoaded = true;
             this.needsFullValidation = false;
             this.validationCount.set(0);
-            this.lastValidationTick = Simulator.instance().getTick();
+            this.lastValidationTick = Simulator.currentTick();
         }
     }
 
@@ -493,7 +493,7 @@ public class CellChunk
     {
         final LavaSimulator sim = this.cells.sim;
         
-        final int tick = Simulator.instance().getTick();
+        final int tick = Simulator.currentTick();
         
         for(LavaCell entryCell : this.entryCells)
         {
