@@ -9,6 +9,7 @@ import javax.annotation.Nullable;
 
 import grondag.big_volcano.Configurator;
 import grondag.big_volcano.init.ModBlocks;
+import grondag.big_volcano.simulator.LavaConnection.Flowable;
 import grondag.exotic_matter.model.TerrainBlockHelper;
 import grondag.exotic_matter.model.TerrainState;
 import grondag.exotic_matter.simulator.Simulator;
@@ -1993,7 +1994,8 @@ public class LavaCell extends AbstractLavaCell
      * list of those connections built as needed for flow processing. Null if
      * no lava or no connections can flow from this cell.
      */
-    public @Nullable LavaConnection getFlowChain()
+    @SuppressWarnings("null")
+    public @Nullable Flowable getFlowChain()
     {
         if(this.isDeleted) return null;
 
@@ -2010,7 +2012,7 @@ public class LavaCell extends AbstractLavaCell
         this.maxOutputPerStep = Math.max(LavaSimulator.MIN_FLOW_UNITS, available / LavaConnections.STEP_COUNT);
         
         
-        LavaConnection keeper = null;
+        Flowable keeper = null;
         
         final int conSize = this.connections.size();
         final SimpleUnorderedArrayList<LavaConnection> connections = this.connections;
@@ -2023,7 +2025,7 @@ public class LavaCell extends AbstractLavaCell
             {
                 if(keeper == null)
                 {
-                    keeper = connection;
+                    keeper = connection.flowable();
                     keeper.nextToFlow = null;
                     
                     // only necessary if we're going to flow
@@ -2031,7 +2033,7 @@ public class LavaCell extends AbstractLavaCell
                 }
                 else
                 {
-                    keeper = addToFlowChain(keeper, connection);
+                    keeper = addToFlowChain(keeper, connection.flowable());
                 }
             }
         }
@@ -2045,7 +2047,7 @@ public class LavaCell extends AbstractLavaCell
      * @return
      */
     @SuppressWarnings("null")
-    private LavaConnection addToFlowChain(LavaConnection start, LavaConnection toBeAdded)
+    private Flowable addToFlowChain(Flowable start, Flowable toBeAdded)
     {
         // if new node has the highest drop or the same drop, can 
         // simply make it the new head
@@ -2055,7 +2057,7 @@ public class LavaCell extends AbstractLavaCell
             return toBeAdded;
         }
         
-        LavaConnection current = start;
+        Flowable current = start;
         
         while(true)
         {

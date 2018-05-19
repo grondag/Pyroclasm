@@ -9,13 +9,14 @@ import javax.annotation.Nullable;
 
 import grondag.big_volcano.BigActiveVolcano;
 import grondag.big_volcano.Configurator;
+import grondag.big_volcano.simulator.LavaConnection.Flowable;
 import grondag.exotic_matter.concurrency.SimpleConcurrentList;
 import grondag.exotic_matter.simulator.Simulator;
 import grondag.exotic_matter.varia.SimpleUnorderedArrayList;
 
 public class LavaConnections extends AbstractLavaConnections
 {
-    final SimpleConcurrentList<LavaConnection> toProcess = SimpleConcurrentList.create(LavaConnection.class, Configurator.VOLCANO.enablePerformanceLogging, "Connection Processing", sim.perfCollectorOffTick);
+    final SimpleConcurrentList<Flowable> toProcess = SimpleConcurrentList.create(Flowable.class, Configurator.VOLCANO.enablePerformanceLogging, "Connection Processing", sim.perfCollectorOffTick);
     
     private LongAdder counter = new LongAdder();
     
@@ -67,7 +68,7 @@ public class LavaConnections extends AbstractLavaConnections
      */
     private void setupCell(LavaCell cell)
     {
-        LavaConnection keeper = cell.getFlowChain();
+        Flowable keeper = cell.getFlowChain();
         if(keeper != null) this.toProcess.add(keeper);
     }
     
@@ -136,7 +137,7 @@ public class LavaConnections extends AbstractLavaConnections
         
         private final SimpleUnorderedArrayList<RoundTask> tasks;
         
-        private FlowStepTask(SimpleConcurrentList<LavaConnection> inputs, final int step)
+        private FlowStepTask(SimpleConcurrentList<Flowable> inputs, final int step)
         {
             super();
             
@@ -201,7 +202,7 @@ public class LavaConnections extends AbstractLavaConnections
         {
             final RoundProcessor processor;
             
-            private RoundTask(LavaConnection[] mutableInputs, final int step)
+            private RoundTask(Flowable[] mutableInputs, final int step)
             {
                 this.processor = step == 1 
                         ? new RoundProcessor.Primary(mutableInputs, step)
@@ -270,11 +271,11 @@ public class LavaConnections extends AbstractLavaConnections
             @Override
             public void compute()
             {
-                SimpleUnorderedArrayList<LavaConnection> results = new SimpleUnorderedArrayList<>();
+                SimpleUnorderedArrayList<Flowable> results = new SimpleUnorderedArrayList<>();
                 
                 for(LavaCell cell : this.cells)
                 {
-                    LavaConnection keeper = cell.getFlowChain();
+                    Flowable keeper = cell.getFlowChain();
                     if(keeper != null) results.add(keeper);
                 }
                 
@@ -287,7 +288,7 @@ public class LavaConnections extends AbstractLavaConnections
     
     private abstract static class RoundProcessor
     {
-        private final LavaConnection[] connections;
+        private final Flowable[] connections;
         private int size;
         private int processCount = 0;
         
@@ -296,7 +297,7 @@ public class LavaConnections extends AbstractLavaConnections
          */
         private final int step;
         
-        protected RoundProcessor(LavaConnection[] inputsThatWillByMutatedYouWereWarned, int step)
+        protected RoundProcessor(Flowable[] inputsThatWillByMutatedYouWereWarned, int step)
         {
             this.connections = inputsThatWillByMutatedYouWereWarned;
             this.size = inputsThatWillByMutatedYouWereWarned.length;
@@ -325,7 +326,7 @@ public class LavaConnections extends AbstractLavaConnections
             return this.processCount();
         }
         
-        protected abstract void process(LavaConnection connection);
+        protected abstract void process(Flowable connection);
         
         protected final void doRound()
         {
@@ -334,9 +335,9 @@ public class LavaConnections extends AbstractLavaConnections
             
             for(int i = 0; i < this.size; i++)
             {
-                LavaConnection current = this.connections[i];
+                Flowable current = this.connections[i];
                 
-                final LavaCell source = current.fromCell();
+                final LavaCell source = current.fromCell;
                 
                 if(source.getAvailableFluidUnits() <= 0) continue;
                 
@@ -345,7 +346,7 @@ public class LavaConnections extends AbstractLavaConnections
                     this.process(current);
                     count++;
                     
-                    final LavaConnection next = current.nextToFlow;
+                    final Flowable next = current.nextToFlow;
                     
                     if(next == null) break;
                     
@@ -373,13 +374,13 @@ public class LavaConnections extends AbstractLavaConnections
         
         private final static class Primary extends RoundProcessor
         {
-            protected Primary(LavaConnection[] inputsThatWillByMutatedYouWereWarned, int step)
+            protected Primary(Flowable[] inputsThatWillByMutatedYouWereWarned, int step)
             {
                 super(inputsThatWillByMutatedYouWereWarned, step);
             }
 
             @Override
-            protected final void process(LavaConnection connection)
+            protected final void process(Flowable connection)
             {
                connection.doFirstStep(); 
             }
@@ -388,13 +389,13 @@ public class LavaConnections extends AbstractLavaConnections
         
         private final static class Secondary extends RoundProcessor
         {
-            protected Secondary(LavaConnection[] inputsThatWillByMutatedYouWereWarned, int step)
+            protected Secondary(Flowable[] inputsThatWillByMutatedYouWereWarned, int step)
             {
                 super(inputsThatWillByMutatedYouWereWarned, step);
             }
 
             @Override
-            protected final void process(LavaConnection connection)
+            protected final void process(Flowable connection)
             {
                connection.doStep(); 
             }
