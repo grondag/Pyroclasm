@@ -140,6 +140,7 @@ public class BasaltTracker
         }
         if(blocks.put(packedBlockPos, tick) == blocks.defaultReturnValue()) this.size++;
     }
+    
     public int size()
     {
         return this.size;
