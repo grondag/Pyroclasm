@@ -45,7 +45,10 @@ public abstract class AbstractLavaCell
     
     
     /** Floor of cell as Y level instead of levels - derived from floor each time floor is set. 
-     *  Is the lowest level of cell that can contain lava.
+     *  Is the lowest level of cell that can contain lava.<p>
+     *  
+     *  If the change is caused by lava cooling, will not affect the retention
+     *  level of neighboring cells that still contain lava.
      */
     private short floorY;
 

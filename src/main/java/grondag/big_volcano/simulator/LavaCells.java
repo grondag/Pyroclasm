@@ -282,11 +282,8 @@ public class LavaCells
                 // Raw retention should be mostly current, but compute for any cells
                 // that were awaiting computation at last world save.
                 // Depends on connections being formed
-                cell.updateRawRetentionIfNeeded();
+                cell.updateRetentionIfNeeded();
             });
-            
-            this.forEach(cell -> cell.updatedSmoothedRetentionIfNeeded());
-            
         }
     }
     

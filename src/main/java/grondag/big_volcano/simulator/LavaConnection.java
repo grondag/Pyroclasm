@@ -243,7 +243,7 @@ public class LavaConnection
             this.fromCell = fromCell;
             this.toCell = toCell;
             
-            this.fromRetained = fromCell.getSmoothedRetainedUnits();
+            this.fromRetained = fromCell.getRetainedUnits();
 
             final int fromFloor = fromCell.floorUnits();
             final int toFloor = toCell.floorUnits();

@@ -203,7 +203,7 @@ public class CellChunk
             
         }
         
-        this.forEach(cell -> cell.updateRawRetentionIfNeeded());
+        this.forEach(cell -> cell.updateRetentionIfNeeded());
         
         return true;
     }
@@ -248,7 +248,7 @@ public class CellChunk
             this.lastValidationTick = Simulator.currentTick();
         }
         
-        this.forEach(cell -> cell.updateRawRetentionIfNeeded());
+        this.forEach(cell -> cell.updateRetentionIfNeeded());
     }
 
     /**
@@ -539,7 +539,7 @@ public class CellChunk
             }
         }
         
-        this.forEach(cell -> cell.updateRawRetentionIfNeeded());
+        this.forEach(cell -> cell.updateRetentionIfNeeded());
     }
 
     /**
