@@ -495,8 +495,27 @@ public class CellChunk
         
         final int tick = Simulator.currentTick();
         
+        CellChunk c = sim.cells.getCellChunk(this.xStart - 16, this.zStart);
+        final boolean isLoadedLowX = c != null && !c.isNew();
+        
+        c = sim.cells.getCellChunk(this.xStart + 16, this.zStart);
+        final boolean isLoadedHighX = c != null && !c.isNew();
+        
+        c = sim.cells.getCellChunk(this.xStart , this.zStart - 16);
+        final boolean isLoadedLowZ = c != null && !c.isNew();
+        
+        c = sim.cells.getCellChunk(this.xStart , this.zStart + 16);
+        final boolean isLoadedHighZ = c != null && !c.isNew();
+        
         for(LavaCell entryCell : this.entryCells)
         {
+            // don't allow cooling on edge cells if neighbor chunk not loaded yet
+            // because won't have connection formed yet
+            if(entryCell.x() == this.xStart && !isLoadedLowX) continue;
+            if(entryCell.x() == this.xEnd && !isLoadedHighX) continue;
+            if(entryCell.z() == this.zStart && !isLoadedLowZ) continue;
+            if(entryCell.z() == this.zEnd && !isLoadedHighZ) continue;
+            
             LavaCell cell = entryCell.firstCell();
             
             while(cell != null)
