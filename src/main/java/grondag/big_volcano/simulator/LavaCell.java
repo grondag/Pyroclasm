@@ -1,7 +1,6 @@
 package grondag.big_volcano.simulator;
 
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 
 import javax.annotation.Nonnull;
@@ -141,7 +140,7 @@ public class LavaCell extends AbstractLavaCell
      * TODO: can be a normal int if all processing for the same output cell
      * happens on same thread.
      */
-    public final AtomicInteger flowThisTick = new AtomicInteger();
+    public int flowThisTick = 0;
     
     /**
      * Used in conneciton processing - if this is an output cell, set to amount of available
@@ -256,7 +255,7 @@ public class LavaCell extends AbstractLavaCell
      * If AND ONLY IF successful, caller MUST call {@link #unLock()}
      * @return true if cell was successfully locked. 
      */
-    public boolean tryLock()
+    public final boolean tryLock()
     {
         return this.isLocked.compareAndSet(false, true);
     }
@@ -268,7 +267,7 @@ public class LavaCell extends AbstractLavaCell
      * Does not track which thread owned the lock, so could be abused
      * to break a lock held by another thread. Don't do that. :-)
      */
-    public void unlock()
+    public final void unlock()
     {
         this.isLocked.set(false);
     }
@@ -276,7 +275,7 @@ public class LavaCell extends AbstractLavaCell
     /**
      * True if cells in this column have been marked for validation with world state.
      */
-    public boolean isValidationNeeded()
+    public final boolean isValidationNeeded()
     {
         return this.locator.isValidationNeeded();
     }
@@ -284,12 +283,12 @@ public class LavaCell extends AbstractLavaCell
     /** 
      * Marks cells in this column for validation with world state.
      */
-    public void setValidationNeeded(boolean isNeeded)
+    public final void setValidationNeeded(boolean isNeeded)
     {
         this.locator.setValidationNeeded(isNeeded);
     }    
     
-    public boolean isDeleted()
+    public final boolean isDeleted()
     {
 //        if(HardScience.DEBUG_MODE && !this.isDeleted && this.locator.cellChunk.isUnloaded())
 //        {
@@ -303,7 +302,7 @@ public class LavaCell extends AbstractLavaCell
      *  Also maintains above/below list references in remaining cells
      *  and removes references to/from this cell.
      */
-    public void setDeleted()
+    public final void setDeleted()
     {
         for(LavaConnection c : this.connections)
         {
@@ -496,7 +495,7 @@ public class LavaCell extends AbstractLavaCell
     * When two cells are equidistant, preference is given to the cell above y
     * because that is useful for inferring properties when y is a flow floor block. 
     */
-    public LavaCell findCellNearestY(int y)
+    public final LavaCell findCellNearestY(int y)
     {
         int myDist = this.distanceToY(y);
         
@@ -543,7 +542,7 @@ public class LavaCell extends AbstractLavaCell
      * Cells that are below and adjacent (cell ceiling = level) count as below.
      * If the lowest existing cell is above or intersecting with the level, returns null.
      */
-    public @Nullable LavaCell findNearestCellBelowLeve(int level)
+    public final @Nullable LavaCell findNearestCellBelowLeve(int level)
     {
         LavaCell candidate = this;
 
@@ -580,7 +579,7 @@ public class LavaCell extends AbstractLavaCell
     }
     
     /** Returns the lowest cell containing lava or the upper most cell if no cells contain lava */
-    public LavaCell selectStartingCell()
+    public final LavaCell selectStartingCell()
     {
         LavaCell candidate = this.firstCell();
         
@@ -701,13 +700,13 @@ public class LavaCell extends AbstractLavaCell
      * True if projections onto Y axis are adjacent. (Does not consider x,z).<br>
      * Ceiling is inclusive, floor is not. 
      */
-    public boolean isAdjacentOnYAxis(int floorIn, int ceilingIn)
+    public final boolean isAdjacentOnYAxis(int floorIn, int ceilingIn)
     {
         return this.floorLevel() == ceilingIn || this.ceilingLevel() == floorIn;
     }
     
     /** cells should not meet - use this to assert */
-    public boolean isVerticallyAdjacentTo(LavaCell other)
+    public final boolean isVerticallyAdjacentTo(LavaCell other)
     {
         return  this.locator.x == other.locator.x 
                 && this.locator.z == other.locator.z
@@ -719,7 +718,7 @@ public class LavaCell extends AbstractLavaCell
      * vertical open space of this cell, irrespective of x,z coordinates. <br>
      * Does not consider the presence or level of lava and does not consider if cell is deleted.
      */
-    public boolean intersectsOnYAxis(int floorIn, int ceilingIn)
+    public final boolean intersectsOnYAxis(int floorIn, int ceilingIn)
     {
         return //to overlap, top of cell must be above my floor
                 ceilingIn > this.floorLevel()
@@ -731,7 +730,7 @@ public class LavaCell extends AbstractLavaCell
      * True if block pos is in the same column and vertically overlaps with the cell.<br>
      * Does not consider if cell is deleted.
      */
-    public boolean intersectsWith(BlockPos pos)
+    public final boolean intersectsWith(BlockPos pos)
     {
         return this.locator.x == pos.getX() 
                 && this.locator.z == pos.getZ()
@@ -742,7 +741,7 @@ public class LavaCell extends AbstractLavaCell
      * True if cells are in the same space and have vertical overlap. 
      * Cells should not overlap - use this to assert.
      */
-    public boolean intersectsWith(LavaCell other)
+    public final boolean intersectsWith(LavaCell other)
     {
         return this.locator.x == other.locator.x 
                 && this.locator.z == other.locator.z
@@ -753,7 +752,7 @@ public class LavaCell extends AbstractLavaCell
      * Use to input lava into this cell (potentially) above the fluid surface.
      * Will spawn lava particle or simply add to cell depending on distance from the fluid surface.
      */
-    public void addLavaAtY(int y, int fluidUnits)
+    public final void addLavaAtY(int y, int fluidUnits)
     {
         if(y - this.worldSurfaceY() < 4)
         {
@@ -766,7 +765,7 @@ public class LavaCell extends AbstractLavaCell
     }
     
     @Override
-    public void changeFluidUnits(int deltaUnits)
+    public final void changeFluidUnits(int deltaUnits)
     {
         // Check for melting of shallow floor that might causing this cell to merge with the cell below
         if(this.isEmpty() && this.floorFlowHeight() > 0)
@@ -775,20 +774,8 @@ public class LavaCell extends AbstractLavaCell
         }
         super.changeFluidUnits(deltaUnits);
     }
-    
-    
-    @Override
-    public boolean changeFluidUnitsIfMatches(int deltaUnits, int expectedPriorUnits)
-    {
-        // Check for melting of shallow floor that might causing this cell to merge with the cell below
-        if(expectedPriorUnits == 0 && this.floorFlowHeight() > 0)
-        {
-            this.setValidationNeeded(true);
-        }
-        return super.changeFluidUnitsIfMatches(deltaUnits, expectedPriorUnits);
-    }
         
-    public void addLava(int fluidUnits)
+    public final void addLava(int fluidUnits)
     {
         if(fluidUnits == 0) return;
         this.changeFluidUnits(fluidUnits);
@@ -829,7 +816,7 @@ public class LavaCell extends AbstractLavaCell
      * @param floorHeight  If is a partial solid flow block, height of floor within this y block
      * @return Cell to which the space belongs
      */
-    public LavaCell addOrConfirmSpace(int y, int floorHeight, boolean isFlowFloor)
+    public final LavaCell addOrConfirmSpace(int y, int floorHeight, boolean isFlowFloor)
     {
         /**
          * Here are the possible scenarios:
@@ -1107,7 +1094,7 @@ public class LavaCell extends AbstractLavaCell
      * @param isFlowBlock  True if this barrier is a full-height flow block.
      * @return Cell nearest to the barrier location, or cell above it if two are equidistant. Null if no cells remain.
      */
-    public LavaCell addOrConfirmBarrier(int y, boolean isFlowBlock)
+    public final LavaCell addOrConfirmBarrier(int y, boolean isFlowBlock)
     {
         /**
          * Here are the possible scenarios:
@@ -1197,7 +1184,7 @@ public class LavaCell extends AbstractLavaCell
      * Used in NBT load.  Should only be used when know that cell does not overlap existing cells.
      */
     @SuppressWarnings("null")
-    public void addCellToColumn(LavaCell newCell)
+    public final void addCellToColumn(LavaCell newCell)
     {
         newCell.locator = this.locator;
         LavaCell firstCell = this.firstCell();
@@ -1249,7 +1236,7 @@ public class LavaCell extends AbstractLavaCell
         
     }
     
-    public void addConnection(LavaConnection connection)
+    public final void addConnection(LavaConnection connection)
     {
         synchronized(this.connections)
         {
@@ -1257,7 +1244,7 @@ public class LavaCell extends AbstractLavaCell
         }
     }
     
-    public void removeConnection(LavaConnection connection)
+    public final void removeConnection(LavaConnection connection)
     {
         synchronized(this.connections)
         {
@@ -1271,7 +1258,7 @@ public class LavaCell extends AbstractLavaCell
      * Also does not duplicate {@link #intersectsOnYAxis(int, int)}
      * but would seem to imply the vertical space in cells must also overlap.
      */
-    public  boolean canFluidConnect(LavaCell otherCell)
+    public final boolean canFluidConnect(LavaCell otherCell)
     {
         return // top of fluid  in other cell must be above my floor
                 otherCell.worldSurfaceLevel() > this.floorLevel()
@@ -1279,7 +1266,7 @@ public class LavaCell extends AbstractLavaCell
                 && otherCell.floorLevel() < this.worldSurfaceLevel();
     }
     
-    public boolean isConnectedTo(LavaCell otherCell)
+    public final boolean isConnectedTo(LavaCell otherCell)
     {
         for(int i = this.connections.size() -1; i >= 0; i--)
         {
@@ -1292,7 +1279,7 @@ public class LavaCell extends AbstractLavaCell
      * Forms new connections and removes invalid connections if necessary.
      * Also notifies remaining valid connections that cell shape has changed.
      */
-    private void updateConnectionsIfNeeded(LavaSimulator sim)
+    private final void updateConnectionsIfNeeded(LavaSimulator sim)
     {
         if(this.isDeleted) return;
         
@@ -1376,7 +1363,7 @@ public class LavaCell extends AbstractLavaCell
         }
     }
     
-    public void updateStuff(LavaSimulator sim)
+    public final void updateStuff(LavaSimulator sim)
     {
         this.updateActiveStatus();
         this.updateConnectionsIfNeeded(sim);
@@ -1387,7 +1374,7 @@ public class LavaCell extends AbstractLavaCell
      * Does not consider presence or amount of lava.<br>
      * ASSUMES cells are horizontally adjacent. Does not check this.
      */
-    public boolean canConnectWith(LavaCell other)
+    public final boolean canConnectWith(LavaCell other)
     {
         return this.intersectsOnYAxis(other.floorLevel(), other.ceilingLevel())
                 && !this.isDeleted() && !other.isDeleted();
@@ -1401,7 +1388,7 @@ public class LavaCell extends AbstractLavaCell
      * Note that we can't use the simple count of connections to test this,
      * because cells can have more than one connection per side.
      */
-    public boolean canCool(int simTickIndex)
+    public final boolean canCool(int simTickIndex)
     {
         if(this.isCoolingDisabled || this.isDeleted || this.fluidUnits() == 0 
                 || simTickIndex - this.lastFlowTick < Configurator.VOLCANO.lavaCoolingTicks) return false;
@@ -1450,7 +1437,7 @@ public class LavaCell extends AbstractLavaCell
      * had a recent flow and could cool.  1 means flowed this tick.
      */
     @SideOnly(Side.CLIENT)
-    public float activityLevel()
+    public final float activityLevel()
     {
         return Math.max(0, 1f - ((float) (Simulator.currentTick() - this.lastFlowTick)) / Configurator.VOLCANO.lavaCoolingTicks);
     }
@@ -1460,7 +1447,7 @@ public class LavaCell extends AbstractLavaCell
      * Does not perform any block updates to change lava to basalt in world. 
      * Caller is expected to do that after calling canCool and before calling this method.
      */
-    public void coolAndShrink()
+    public final void coolAndShrink()
     {
         if(this.isDeleted || this.fluidUnits() == 0) return;
         
@@ -1491,19 +1478,19 @@ public class LavaCell extends AbstractLavaCell
     /**
      * For use when updating from world and no need to re-update world.
      */
-    public void clearBlockUpdate()
+    public final void clearBlockUpdate()
     {
         this.setAverageFluidSurfaceLevel(this.worldSurfaceLevel());
         this.lastVisibleLevel = this.getCurrentVisibleLevel();
 //        this.updateActiveStatus();
     }
     
-    public int getAverageFluidSurfaceLevel()
+    public final int getAverageFluidSurfaceLevel()
     {
         return this.avgFluidSurfaceLevelWithPrecision >> 6;
     }
     
-    public void setAverageFluidSurfaceLevel(int newAverage)
+    public final void setAverageFluidSurfaceLevel(int newAverage)
     {
         this.avgFluidSurfaceLevelWithPrecision = newAverage << 6;
     }
@@ -1511,7 +1498,7 @@ public class LavaCell extends AbstractLavaCell
     /**
      * Just like fluidSurfaceLevel except based on exponential average.
      */
-    public int getCurrentVisibleLevel()
+    public final int getCurrentVisibleLevel()
     {
         return Math.min(this.ceilingLevel(), this.getAverageFluidSurfaceLevel());
     }
@@ -1519,7 +1506,7 @@ public class LavaCell extends AbstractLavaCell
     /**
      * Value that should be in the world. 
      */
-    public int getLastVisibleLevel()
+    public final int getLastVisibleLevel()
     {
         if(this.lastVisibleLevel == NEVER_REPORTED)
         {
@@ -1533,7 +1520,7 @@ public class LavaCell extends AbstractLavaCell
     }
     
     @Override
-    protected void invalidateLocalFloorDependencies()
+    protected final void invalidateLocalFloorDependencies()
     {
         // new floor means average surface level is invalid - reset to actual
         this.setAverageFluidSurfaceLevel(this.worldSurfaceLevel());
@@ -1566,20 +1553,20 @@ public class LavaCell extends AbstractLavaCell
     }
     
     /** see {@link #rawRetainedLevel} */
-    public int getRawRetainedUnits()
+    public final int getRawRetainedUnits()
     {
         // provide default value until retention can be updated
         return this.rawRetainedUnits;
     }
     
     /** {@link #rawRetainedLevel} + {@link #floorUnits()} */
-    public int getRawRetainedSurface()
+    public final int getRawRetainedSurface()
     {
         return this.getRawRetainedUnits() + this.floorUnits();
     }
     
     /** see {@link #rawRetainedLevel} */
-    public void updateRawRetentionIfNeeded()
+    public final void updateRawRetentionIfNeeded()
     {
         if(this.isDeleted) return;
         
@@ -1591,7 +1578,7 @@ public class LavaCell extends AbstractLavaCell
     }
     
     /** see {@link #rawRetainedLevel} */
-    private void updateRawRetention()
+    private final void updateRawRetention()
     {
         this.needsRawRetentionUpdate = false;
         
@@ -1696,13 +1683,13 @@ public class LavaCell extends AbstractLavaCell
      * can update if it depends on neighbor floors.
      * see {@link #smoothedRetainedUnits}
      */
-    public void invalidateNeighborFloorDependencies()
+    public final void invalidateNeighborFloorDependencies()
     {
         this.needsSmoothedRetentionUpdate = true;
     }
 
     /** see {@link #smoothedRetainedUnits} */
-    public void updatedSmoothedRetentionIfNeeded()
+    public final void updatedSmoothedRetentionIfNeeded()
     {
         if(this.isDeleted) return;
         
@@ -1766,38 +1753,38 @@ public class LavaCell extends AbstractLavaCell
         }
     }
     
-    public void clearRefreshRange()
+    public final void clearRefreshRange()
     {
         this.refreshBottomY = REFRESH_NONE;
         this.refreshTopY = REFRESH_NONE;
     }
     
-    public boolean hasRefreshRange()
+    public final boolean hasRefreshRange()
     {
         return this.refreshBottomY != REFRESH_NONE && this.refreshTopY != REFRESH_NONE;
     }
     
-    public boolean isCoolingDisabled()
+    public final boolean isCoolingDisabled()
     {
         return this.isCoolingDisabled;
     }
     
-    public void setCoolingDisabled(boolean isCoolingDisabled)
+    public final void setCoolingDisabled(boolean isCoolingDisabled)
     {
         if(this.isCoolingDisabled != isCoolingDisabled) this.isCoolingDisabled = isCoolingDisabled;
     }
     
-    public int x()
+    public final int x()
     {
         return this.locator.x;
     }
     
-    public int z()
+    public final int z()
     {
         return this.locator.z;
     }
     
-    public @Nullable LavaCell firstCell()
+    public final @Nullable LavaCell firstCell()
     {
         LavaCell result = this.locator.firstCell;
         if(result == null)
@@ -1818,7 +1805,7 @@ public class LavaCell extends AbstractLavaCell
         return result;
     }
     
-    public @Nullable LavaCell aboveCell()
+    public final @Nullable LavaCell aboveCell()
     {
         return this.above;
     }
@@ -1828,13 +1815,13 @@ public class LavaCell extends AbstractLavaCell
      * Link is both ways if the given cell is non-null. Thus no need for linkBelow method.
      * @param cellAbove  May be null - in which case simply sets above link to null if it was not already.
      */
-    public void linkAbove(@Nullable LavaCell cellAbove)
+    public final void linkAbove(@Nullable LavaCell cellAbove)
     {
         this.above = cellAbove;
         if(cellAbove != null) cellAbove.below = this;
     }
     
-    public @Nullable LavaCell belowCell()
+    public final @Nullable LavaCell belowCell()
     {
         return this.below;
     }
@@ -1844,7 +1831,7 @@ public class LavaCell extends AbstractLavaCell
      * Consistent with this expectations, it sets lastVisibleLevel = currentVisibleLevel.
      * Also refreshes world for any blocks reported as suspended or destroyed and calls {@link #clearRefreshRange()}
      */
-    public void provideBlockUpdateIfNeeded(LavaSimulator sim)
+    public final void provideBlockUpdateIfNeeded(LavaSimulator sim)
     {
         if(this.isDeleted) return;
         
@@ -1964,7 +1951,7 @@ public class LavaCell extends AbstractLavaCell
      * Makes the last flow tick for this cell equal the current simulator tick.
      * Should be called whenever lava is added to this cell or flows in or out.
      */
-    public void updateLastFlowTick()
+    public final void updateLastFlowTick()
     {
         this.lastFlowTick = Simulator.currentTick();
     }
@@ -1981,7 +1968,7 @@ public class LavaCell extends AbstractLavaCell
      * would all cool together.  This means that they will cool more gradually,
      * and somewhat randomly, from the outside in.
      */
-    public void delayCooling()
+    public final void delayCooling()
     {
         if(this.fluidUnits() == 0) return;
         this.lastFlowTick = Math.min(Simulator.currentTick(), 
@@ -1995,7 +1982,7 @@ public class LavaCell extends AbstractLavaCell
      * no lava or no connections can flow from this cell.
      */
     @SuppressWarnings("null")
-    public @Nullable Flowable getFlowChain()
+    public final @Nullable Flowable getFlowChain()
     {
         if(this.isDeleted) return null;
 
@@ -2029,7 +2016,7 @@ public class LavaCell extends AbstractLavaCell
                     keeper.nextToFlow = null;
                     
                     // only necessary if we're going to flow
-                    this.flowThisTick.set(0);
+                    this.flowThisTick = 0;
                 }
                 else
                 {

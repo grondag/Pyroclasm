@@ -1,9 +1,7 @@
 package grondag.big_volcano.simulator;
 
-import grondag.exotic_matter.concurrency.Danger;
 import grondag.exotic_matter.model.TerrainState;
 
-@SuppressWarnings("restriction")
 public abstract class AbstractLavaCell
 {
     /** 
@@ -25,9 +23,9 @@ public abstract class AbstractLavaCell
      */
     private boolean isConnectionUpdateNeeded = true;
     
-    public void invalidateConnections() { if(!this.isConnectionUpdateNeeded) this.isConnectionUpdateNeeded = true; }
-    public boolean isConnectionUpdateNeeded() { return this.isConnectionUpdateNeeded; }
-    public void clearConnectionUpdate() { if(this.isConnectionUpdateNeeded) this.isConnectionUpdateNeeded = false; }
+    public final void invalidateConnections() { if(!this.isConnectionUpdateNeeded) this.isConnectionUpdateNeeded = true; }
+    public final boolean isConnectionUpdateNeeded() { return this.isConnectionUpdateNeeded; }
+    public final void clearConnectionUpdate() { if(this.isConnectionUpdateNeeded) this.isConnectionUpdateNeeded = false; }
     
     /******************************************************
     * FLOOR STUFF
@@ -52,7 +50,7 @@ public abstract class AbstractLavaCell
     private short floorY;
 
     /** See {@link #floorLevel()} */
-    public void setFloorLevel(int newFloorLevel, boolean isFlowFloor)
+    public final void setFloorLevel(int newFloorLevel, boolean isFlowFloor)
     {
         if(newFloorLevel != this.floorLevel || isFlowFloor != this.isBottomFlow)
         {
@@ -103,16 +101,16 @@ public abstract class AbstractLavaCell
      * True if the solid block under this columns is a flow block.
      * Note that it must be true if bottomFlowHeight > 0;
      */
-    public boolean isBottomFlow() { return this.isBottomFlow; }
+    public final boolean isBottomFlow() { return this.isBottomFlow; }
     
     /** calculates the block y from a bottom bound (exclusive) given as a fluid level */
-    private static int getYFromFloor(int floorIn)
+    private static final int getYFromFloor(int floorIn)
     {
         return floorIn / LavaSimulator.LEVELS_PER_BLOCK;
     }
 
     /** returns floor level (exclusive) of the block position at level y */
-    protected static int blockFloorFromY(int y)
+    protected static final int blockFloorFromY(int y)
     {
         return y * LavaSimulator.LEVELS_PER_BLOCK;
     }
@@ -132,7 +130,7 @@ public abstract class AbstractLavaCell
     
 
     /** See {@link #ceilingLevel()} */
-    public void setCeilingLevel(int newCeilingLevel)
+    public final void setCeilingLevel(int newCeilingLevel)
     {
         if(newCeilingLevel != this.ceilingLevel) 
         {
@@ -149,16 +147,16 @@ public abstract class AbstractLavaCell
      * Levels in Y=0, for example are 1 thru 12.
      * ALWAYS USE setCeiling() to maintain topY.
      */
-    public int ceilingLevel() { return this.ceilingLevel; }
+    public final int ceilingLevel() { return this.ceilingLevel; }
 
     /* Ceiling as fluid units */
-    public int ceilingUnits() { return this.ceilingUnits; }    
+    public final int ceilingUnits() { return this.ceilingUnits; }    
 
     /** Y of last (top) block that could contain lava */
-    public int ceilingY() { return this.ceilingY; }
+    public final int ceilingY() { return this.ceilingY; }
 
     /** calculates the block y from a top bound (inclusive) given as a fluid level */
-    protected static int getYFromCeilingLevel(int ceilingLevelIn)
+    protected static final int getYFromCeilingLevel(int ceilingLevelIn)
     {
         // examples of input -> output
         // 24 -> 1  top level of block at Y = 1
@@ -167,7 +165,7 @@ public abstract class AbstractLavaCell
     }
     
     /** returns ceiling level (inclusive) of the block position at level y */
-    protected static int blockCeilingFromY(int y)
+    protected static final int blockCeilingFromY(int y)
     {
         return (y + 1) * LavaSimulator.LEVELS_PER_BLOCK;
     }
@@ -177,13 +175,13 @@ public abstract class AbstractLavaCell
     ******************************************************/
     
     /** volume of space in this cell, in block levels (currently 12 per block) */
-    public int volumeLevels()
+    public final int volumeLevels()
     {
         return this.ceilingLevel() - this.floorLevel();
     }
 
     /** volume of space in this cell, in fluid units */
-    public int volumeUnits()
+    public final int volumeUnits()
     {
         return this.ceilingUnits - this.floorUnits;
     }
@@ -195,20 +193,12 @@ public abstract class AbstractLavaCell
     /**
      * Amount of fluid currently in the cell as measured in fluid units.  
      */
-    private volatile int fluidUnits;
-    
-    private static final long fluidUnitsOffset;
-
-    static {
-        try {
-            fluidUnitsOffset = Danger.UNSAFE.objectFieldOffset
-                (AbstractLavaCell.class.getDeclaredField("fluidUnits"));
-        } catch (Exception ex) { throw new Error(ex); }
-    }
+    private int fluidUnits;
     
     public void changeFluidUnits(int deltaUnits)
     {
-        if(Danger.UNSAFE.getAndAddInt(this, fluidUnitsOffset, deltaUnits) + deltaUnits < 0) 
+        this.fluidUnits += deltaUnits;
+        if(this.fluidUnits  < 0) 
         {
             this.fluidUnits = 0;
 //            assert false : String.format("Negative fluid units detected.  NewAmount=%1$d Delta=%2$d cellID=%3$d", this.fluidUnits.get(), deltaUnits, this.id);
@@ -216,7 +206,7 @@ public abstract class AbstractLavaCell
         
     }
     
-    public void setFluidUnits(int newUnits)
+    public final void setFluidUnits(int newUnits)
     {
         if(newUnits < 0)
         {
@@ -226,18 +216,13 @@ public abstract class AbstractLavaCell
         this.fluidUnits = newUnits;
     }
     
-    public boolean changeFluidUnitsIfMatches(int deltaUnits, int expectedPriorUnits)
-    {
-        return Danger.UNSAFE.compareAndSwapInt(this, fluidUnitsOffset, expectedPriorUnits, expectedPriorUnits + deltaUnits);
-    }
-    
     /**
      * Called when the floor of this cell is changed to force recalc
      * of anything in this cells or neighbor cells that depend on the floor.
      */
     protected abstract void invalidateLocalFloorDependencies();
     
-    public int fluidUnits()
+    public final int fluidUnits()
     {
         return this.fluidUnits;
     }
@@ -245,18 +230,18 @@ public abstract class AbstractLavaCell
     /**
      * Returns at least 1 if cell has any fluid, even if less than one full level.
      */
-    public int fluidLevels()
+    public final int fluidLevels()
     {
         int units = this.fluidUnits;
         return units == 0 ? 0 : Math.max(1, units / LavaSimulator.FLUID_UNITS_PER_LEVEL);
     }
 
-    public boolean isEmpty()
+    public final boolean isEmpty()
     {
         return this.fluidUnits == 0;
     }
 
-    protected void emptyCell()
+    protected final void emptyCell()
     {
         this.fluidUnits = 0;
     }
@@ -270,7 +255,7 @@ public abstract class AbstractLavaCell
      * as if they contained fluid.  Does not reflect excess fluid for cells under pressure.
      * If cell has no fluid, is the level of the cell floor, as if it were fluid.
      */
-    public int worldSurfaceUnits()
+    public final int worldSurfaceUnits()
     {
         return Math.min(this.ceilingUnits(), this.floorUnits() + this.fluidUnits()); 
     }
@@ -281,7 +266,7 @@ public abstract class AbstractLavaCell
      * Will return cell floor if there is no fluid in the cell.
      * If cell has any fluid at all, will be at least one level above floor.
      */
-    public int worldSurfaceLevel()
+    public final int worldSurfaceLevel()
     {
         //fluidLevels() handles case of showing level = 1 when fluid units are less than a full level
         return Math.min(this.ceilingLevel(), this.floorLevel() + this.fluidLevels()); 
@@ -291,7 +276,7 @@ public abstract class AbstractLavaCell
      * Returns the world Y-level of the uppermost block containing lava.
      * Returns {@link #floorY()} if the cell does not contain fluid.
      */
-    public int worldSurfaceY()
+    public final int worldSurfaceY()
     {
         if(this.isEmpty()) return this.floorY();
         
@@ -302,7 +287,7 @@ public abstract class AbstractLavaCell
      * Returns the flow height (1 - 12) of lava in the lava block at worldSurfaceY 
      * Returns 0 if this cell does not contain lava.
      */
-    public int worldSurfaceFlowHeight()
+    public final int worldSurfaceFlowHeight()
     {
         if(this.isEmpty()) return 0;
         
@@ -318,7 +303,7 @@ public abstract class AbstractLavaCell
      * PRESSURE SURFACE STUFF
      ******************************************************/
     
-    public int pressureSurfaceUnits()
+    public final int pressureSurfaceUnits()
     {
         int floorUnits = this.floorUnits();
         int volumeUnits = this.ceilingUnits() - floorUnits;
@@ -327,13 +312,13 @@ public abstract class AbstractLavaCell
         return pressureSurface(floorUnits, volumeUnits, fluidUnits);
     }
     
-    public int pressureSurfaceLevel()
+    public final int pressureSurfaceLevel()
     {
         int units = this.pressureSurfaceUnits();
         return units == 0 ? 0 : Math.max(1, units / LavaSimulator.FLUID_UNITS_PER_LEVEL);
     }
     
-    public static int pressureSurface(int floorUnitsIn, int volumeUnitsIn, int fluidUnitsIn)
+    public static final int pressureSurface(int floorUnitsIn, int volumeUnitsIn, int fluidUnitsIn)
     {
         return fluidUnitsIn > volumeUnitsIn
             ? floorUnitsIn + volumeUnitsIn + (fluidUnitsIn - volumeUnitsIn) * PRESSURE_FACTOR
@@ -370,7 +355,7 @@ public abstract class AbstractLavaCell
      *     
      *     "High" cell should be cell with the highest ceiling
      */
-    public static int dualPressureThreshold(int floorHigh, int volumeHigh, int floorLow, int volumeLow )
+    public static final int dualPressureThreshold(int floorHigh, int volumeHigh, int floorLow, int volumeLow )
     {
         return (floorHigh + PRESSURE_FACTOR_PLUS * volumeHigh - floorLow + PRESSURE_FACTOR_MINUS * volumeLow) / PRESSURE_FACTOR;
     }
@@ -380,7 +365,7 @@ public abstract class AbstractLavaCell
      * at least one cell will be under pressure at equilibrium.
      * Floor order does not matter but ceiling must be min of both cells. 
      */
-    public static int singlePressureThreshold(int floor1, int floor2, int ceilingMin)
+    public static final int singlePressureThreshold(int floor1, int floor2, int ceilingMin)
     {
         return ceilingMin - floor1 + ceilingMin - floor2;
     }

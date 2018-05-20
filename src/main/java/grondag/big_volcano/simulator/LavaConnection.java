@@ -4,7 +4,6 @@ import java.util.concurrent.atomic.LongAdder;
 
 import javax.annotation.Nullable;
 
-import grondag.big_volcano.BigActiveVolcano;
 import grondag.big_volcano.Configurator;
 
 public class LavaConnection
@@ -33,20 +32,20 @@ public class LavaConnection
         connectionCount.increment();
     }
     
-    public  @Nullable Flowable flowable()
+    public final @Nullable Flowable flowable()
     {
         return this.flowable;
     }
     
     @Override
-    protected void finalize() throws Throwable
+    protected final void finalize() throws Throwable
     {
         super.finalize();
         connectionCount.decrement();
     }
 
 
-    public LavaCell getOther(LavaCell cellIAlreadyHave)
+    public final LavaCell getOther(LavaCell cellIAlreadyHave)
     {
         return cellIAlreadyHave == this.firstCell ? this.secondCell : this.firstCell;
     }
@@ -55,18 +54,18 @@ public class LavaConnection
      * Must be called by child cells when ceiling or floor changes to force
      * recompute of direction / shape dependent flow attributes.
      */
-    public void setCellShapeDirty()
+    public final void setCellShapeDirty()
     {
         this.flowable = null;
     }
     
-    public boolean isValid()
+    public final boolean isValid()
     {
         return this.firstCell.canConnectWith(this.secondCell);
     }
     
     /** true if either cell has fluid */
-    public boolean isActive()
+    public final boolean isActive()
     {
         return this.firstCell.fluidUnits() > 0 || this.secondCell.fluidUnits() > 0;
     }
@@ -76,7 +75,7 @@ public class LavaConnection
      * If flowed last tick, then direction cannot reverse - must start go to none and then to opposite direction.
      * returns true if can flow from the calling cell.
      */
-    public boolean setupTick(LavaCell sourceCell)
+    public final boolean setupTick(LavaCell sourceCell)
     {
         int surface1 = this.firstCell.pressureSurfaceUnits();
         int surface2 = this.secondCell.pressureSurfaceUnits();
@@ -329,7 +328,8 @@ public class LavaConnection
                 }
                 else 
                 {
-                    return executeFlow(fromFluid, toFluid, flow);
+                    executeFlow(flow);
+                    return flow;
                 }
             }
             else
@@ -338,31 +338,12 @@ public class LavaConnection
             }
         }
         
-        private int executeFlow(int expectedFromUnits, int expectedToUnits, int flow)
+        private void executeFlow(int flow)
         {
-          if(fromCell.changeFluidUnitsIfMatches(-flow, expectedFromUnits))
-          {
-              if(toCell.changeFluidUnitsIfMatches(flow, expectedToUnits))
-              {                        
-                  if(Configurator.VOLCANO.enableFlowTracking) totalFlow.add(flow);
-                  fromCell.flowThisTick.addAndGet(flow);
-                  return flow;
-              }
-              else
-              {
-                  //undo start change if second isn't successful
-                  fromCell.changeFluidUnits(flow);
-                  //TODO: remove
-                  BigActiveVolcano.INSTANCE.info("late failure");
-                  return 0;
-              }
-          }
-          else
-          {
-              //TODO: remove
-              BigActiveVolcano.INSTANCE.info("early failure");
-              return 0;
-          }
+          fromCell.changeFluidUnits(-flow);
+          toCell.changeFluidUnits(flow);
+          fromCell.flowThisTick += flow;
+          if(Configurator.VOLCANO.enableFlowTracking) totalFlow.add(flow);
         }
         
         /** 

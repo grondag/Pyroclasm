@@ -56,12 +56,15 @@ public class BlockEventList
     {
         synchronized(this)
         {
-            Simulator.runTaskAppropriately(
-                    this.eventList, 
-                    e -> { if(!(e == null || e.isDeleted())) e.process(maxRetries); }, 
-                    Configurator.VOLCANO.concurrencyThreshold, 
-                    perfCounter);
-            this.eventList.removeSomeDeletedItems(EVENT_REMOVAL_PREDICATE);
+            if(!this.eventList.isEmpty())
+            {
+                Simulator.runTaskAppropriately(
+                        this.eventList, 
+                        e -> { if(!(e == null || e.isDeleted())) e.process(maxRetries); }, 
+                        Configurator.VOLCANO.concurrencyThreshold, 
+                        perfCounter);
+                this.eventList.removeSomeDeletedItems(EVENT_REMOVAL_PREDICATE);
+            }
         }
     }
     
