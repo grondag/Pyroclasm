@@ -1,9 +1,9 @@
 package grondag.big_volcano.simulator;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.function.Consumer;
 
 import javax.annotation.Nullable;
 
@@ -12,22 +12,19 @@ import com.google.common.collect.ComparisonChain;
 import grondag.big_volcano.BigActiveVolcano;
 import grondag.big_volcano.Configurator;
 import grondag.exotic_matter.concurrency.PerformanceCounter;
-import grondag.exotic_matter.concurrency.SimpleConcurrentList;
 import grondag.exotic_matter.serialization.NBTDictionary;
-import grondag.exotic_matter.simulator.Simulator;
 import grondag.exotic_matter.varia.PackedChunkPos;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap.Entry;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.math.BlockPos;
 
 
-public class LavaCells implements Iterable<LavaCell>
+public class LavaCells
 {
     private final static String NBT_LAVA_CELLS = NBTDictionary.claim("lavaCells");
     private final static int CAPACITY_INCREMENT = 0x10000;
-
-    public final SimpleConcurrentList<LavaCell> cellList;
     
     private final Long2ObjectOpenHashMap<CellChunk> cellChunks = new Long2ObjectOpenHashMap<CellChunk>();
     
@@ -40,21 +37,14 @@ public class LavaCells implements Iterable<LavaCell>
    private static final int MAX_CHUNKS_PER_TICK = 4;
     
    private final PerformanceCounter perfCounterValidation;
-   private final PerformanceCounter perfCounterUpdateStuff;
-   private final PerformanceCounter perfCounterUpdateRetention;
    
     public LavaCells(LavaSimulator sim)
     {
         this.sim = sim;
         this.chunkTracker = sim.chunkTracker;
-        cellList = SimpleConcurrentList.create(LavaCell.class , Configurator.VOLCANO.enablePerformanceLogging, "Lava Cells", sim.perfCollectorOffTick);
 
         // on tick
         perfCounterValidation = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Chunk validation", sim.perfCollectorOnTick);
-        perfCounterUpdateRetention = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Raw Retention Update", sim.perfCollectorOnTick);
-        
-        // off tick
-        perfCounterUpdateStuff = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Cell Upkeep", sim.perfCollectorOffTick);
    }
 
    public void validateChunks()
@@ -114,27 +104,6 @@ public class LavaCells implements Iterable<LavaCell>
         
         this.perfCounterValidation.endRun();
     }
-    
-//    /** checks for chunk being loaded using packed block coordinates */
-//    public boolean isChunkLoaded(long packedBlockPos)
-//    {
-//        CellChunk cellChunk = this.cellChunks.get(PackedBlockPos.getPackedChunkPos(packedBlockPos));
-//        return cellChunk == null ? false : cellChunk.isLoaded();
-//    }
-//    
-//    /** checks for chunk being loaded using BlockPos coordinates*/
-//    public boolean isChunkLoaded(BlockPos pos)
-//    {
-//        CellChunk cellChunk = this.cellChunks.get(PackedBlockPos.getPackedChunkPos(pos));
-//        return cellChunk == null ? false : cellChunk.isLoaded();
-//    }
-//
-//    /** checks for chunk being loaded using x, z block coordinates*/
-//    public boolean isChunkLoaded(int x, int z)
-//    {
-//        CellChunk cellChunk = this.cellChunks.get(PackedBlockPos.getPackedChunkPos(x, z));
-//        return cellChunk == null ? false : cellChunk.isLoaded();
-//    }
     
     public @Nullable LavaCell getCellIfExists(BlockPos pos)
     {
@@ -213,31 +182,9 @@ public class LavaCells implements Iterable<LavaCell>
         return cellChunks.get(PackedChunkPos.getPackedChunkPosFromBlockXZ(xBlock, zBlock));
     }
     
-    /** 
-     * Adds cell to the storage array. 
-     * Does not add to locator list.
-     * Thread-safe if mode = ListMode.ADD. Disallowed otherwise.
-     */
-    public void add(LavaCell cell)
+    public int chunkCount()
     {
-        this.cellList.add(cell);
-    }
-    
-    public int size()
-    {
-        return this.cellList.size();
-    }
-    
-    /** 
-     * Removes deleted cells from the storage array. 
-     * Does not remove them from cell stacks in locator.
-     * Call after already cell has been unlinked from other 
-     * cells in column and removed (and if necessary replaced) in locator.
-     * NOT Thread-safe and not intended for concurrency.
-     */
-    public void removeDeletedItems()
-    {
-        this.cellList.removeSomeDeletedItems(LavaCell.REMOVAL_PREDICATE);
+        return this.cellChunks.size();
     }
     
     /**
@@ -266,24 +213,14 @@ public class LavaCells implements Iterable<LavaCell>
     public void writeNBT(NBTTagCompound nbt)
     {
       
-        int[] saveData = new int[this.cellList.size() * LavaCell.LAVA_CELL_NBT_WIDTH];
-        int i = 0;
+        IntArrayList  saveData = new IntArrayList(this.chunkCount() * 64 * LavaCell.LAVA_CELL_NBT_WIDTH);
 
-        for(LavaCell cell : this.cellList)
-        {
-            if(!cell.isDeleted())
-            {
-                cell.writeNBT(saveData, i);
-                
-                // Java parameters are always pass by value, so have to advance index here
-                i += LavaCell.LAVA_CELL_NBT_WIDTH;
-            }
-        }
+        this.forEach(cell -> cell.writeNBT(saveData));
         
         if(Configurator.VOLCANO.enablePerformanceLogging)
-            BigActiveVolcano.INSTANCE.info("Saving " + i / LavaCell.LAVA_CELL_NBT_WIDTH + " lava cells.");
+            BigActiveVolcano.INSTANCE.info("Saving " + saveData.size() / LavaCell.LAVA_CELL_NBT_WIDTH + " lava cells.");
         
-        nbt.setIntArray(NBT_LAVA_CELLS, Arrays.copyOfRange(saveData, 0, i));
+        nbt.setIntArray(NBT_LAVA_CELLS, saveData.toIntArray());
     }
     
     public void readNBT(LavaSimulator sim, NBTTagCompound nbt)
@@ -303,8 +240,6 @@ public class LavaCells implements Iterable<LavaCell>
             int count = saveData.length / LavaCell.LAVA_CELL_NBT_WIDTH;
             int newCapacity = (count / CAPACITY_INCREMENT + 1) * CAPACITY_INCREMENT;
             if(newCapacity < CAPACITY_INCREMENT / 2) newCapacity += CAPACITY_INCREMENT;
-            
-            this.cellList.clear();
             
             int i = 0;
             
@@ -337,33 +272,23 @@ public class LavaCells implements Iterable<LavaCell>
                 i += LavaCell.LAVA_CELL_NBT_WIDTH - 2;
             }
          
-            // Prevent massive retention update from occurring during start world tick
+            this.forEach(cell -> 
+            {
+                cell.updateActiveStatus();
+                
+                //TODO: need to synchronize world access or make sure chunks are loaded?
+                cell.updateConnectionsIfNeeded(sim);
+                
+                // Raw retention should be mostly current, but compute for any cells
+                // that were awaiting computation at last world save.
+                // Depends on connections being formed
+                cell.updateRawRetentionIfNeeded();
+            });
             
-            // Raw retention should be mostly current, but compute for any cells
-            // that were awaiting computation at last world save.
+            this.forEach(cell -> cell.updatedSmoothedRetentionIfNeeded());
             
-            //TODO: need to synchronize world access or make sure chunks are loaded?
-            this.updateRawRetention();
-            
-            // Make sure other stuff is up to date
-            this.updateStuff();
         }
     }
-    
-    public void updateStuff()
-    {
-        Simulator.runTaskAppropriately(this.cellList, operand -> operand.updateStuff(sim), Configurator.VOLCANO.concurrencyThreshold, perfCounterUpdateStuff);
-    }
-    
-    public void updateRawRetention()
-    {
-        Simulator.runTaskAppropriately(this.cellList, operand -> operand.updateRawRetentionIfNeeded(), Configurator.VOLCANO.concurrencyThreshold, this.perfCounterUpdateRetention);
-    }
-    
-//    public void updateSmoothedRetention()
-//    {
-//        Simulator.runTaskAppropriately(this.cellList, operand -> operand.updatedSmoothedRetentionIfNeeded(), Configurator.VOLCANO.concurrencyThreshold, this.perfCounterUpdateSmoothedRetention);
-//    }
     
     public void logDebugInfo()
     {
@@ -377,12 +302,6 @@ public class LavaCells implements Iterable<LavaCell>
         }
     }
 
-    @Override
-    public Iterator<LavaCell> iterator()
-    {
-        return this.cellList.iterator();
-    }
-    
     public void provideBlockUpdatesAndDoCooling(long packedChunkPos)
     {
         CellChunk chunk = this.cellChunks.get(packedChunkPos);
@@ -390,5 +309,19 @@ public class LavaCells implements Iterable<LavaCell>
         if(chunk == null || chunk.canUnload() || chunk.isNew()) return;
         
         chunk.provideBlockUpdatesAndDoCooling();
+    }
+    
+    /**
+     * Applies the given operation to all cells.<p>
+     * 
+     * Do not use for operations that may add or remove cells.
+     */
+    public void forEach(Consumer<LavaCell> consumer)
+    {
+        for(CellChunk c : this.cellChunks.values())
+        {
+            if(c.isNew() || c.isDeleted() || c.isUnloaded()) continue;
+            c.forEach(consumer);
+        }
     }
 }

@@ -18,6 +18,12 @@ public class ChunkTracker
         this.list.clear();
         this.map.clear();
     }
+    
+    public int size()
+    {
+        return this.list.size();
+    }
+    
     public void trackChunk(World world, long packedChunkPos)
     {
         if(map.addTo(packedChunkPos, 1) == 0)

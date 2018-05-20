@@ -15,6 +15,7 @@ import grondag.exotic_matter.simulator.Simulator;
 import grondag.exotic_matter.varia.PackedBlockPos;
 import grondag.exotic_matter.varia.SimpleUnorderedArrayList;
 import io.netty.util.internal.ThreadLocalRandom;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.init.Blocks;
 import net.minecraft.util.math.BlockPos;
@@ -169,7 +170,6 @@ public class LavaCell extends AbstractLavaCell
         this.setCeilingLevel(ceiling);
         this.emptyCell();
         this.clearBlockUpdate();
-        this.locator.cellChunk.cells.add(this);
     }
     
     /**
@@ -196,7 +196,6 @@ public class LavaCell extends AbstractLavaCell
         this.setCeilingLevel(ceiling);
         this.emptyCell();
         this.clearBlockUpdate();
-        cells.add(this);
         this.updateActiveStatus();
     }
     
@@ -373,24 +372,24 @@ public class LavaCell extends AbstractLavaCell
     /** 
      * Writes data to array starting at location i.
      */
-    void writeNBT(int[] saveData, int i)
+    void writeNBT(IntArrayList list)
     {
-        saveData[i++] = this.locator.x;
-        saveData[i++] = this.locator.z;
-        saveData[i++] = (this.fluidUnits() & FLUID_UNITS_MASK) | (((this.refreshTopY + 1) & BLOCK_LEVELS_MASK) << FLUID_UNITS_BITS);
-        saveData[i++] = ((this.rawRetainedUnits + 1) & FLUID_LEVELS_MASK) | (((this.refreshBottomY + 1) & BLOCK_LEVELS_MASK) << FLUID_LEVELS_BITS);
+        list.add(this.locator.x);
+        list.add(this.locator.z);
+        list.add((this.fluidUnits() & FLUID_UNITS_MASK) | (((this.refreshTopY + 1) & BLOCK_LEVELS_MASK) << FLUID_UNITS_BITS));
+        list.add(((this.rawRetainedUnits + 1) & FLUID_LEVELS_MASK) | (((this.refreshBottomY + 1) & BLOCK_LEVELS_MASK) << FLUID_LEVELS_BITS));
         
 
         // to save space, pack bounds into single int and save flow floor as sign bit
         int combinedBounds = this.ceilingLevel() << 12 | this.floorLevel();
         if(this.isBottomFlow()) combinedBounds = -combinedBounds;
-        saveData[i++] = combinedBounds;
+        list.add(combinedBounds);
         
         // save never cools as sign bit on last tick index
-        saveData[i++] = this.isCoolingDisabled ? -this.lastFlowTick : this.lastFlowTick;
+        list.add(this.isCoolingDisabled ? -this.lastFlowTick : this.lastFlowTick);
         
         // need to persist lastVisibleLevel or will not refresh world properly in some scenarios on restart
-        saveData[i++] = this.lastVisibleLevel;
+        list.add(this.lastVisibleLevel);
         
         // also persist lastFluidSurfaceUnits to avoid block updates for every cell on reload
 //        saveData[i++] = this.lastSurfaceLevel;

@@ -172,12 +172,12 @@ public class Configurator
         @RangeInt(min = 5, max = 60)
         public int totalProcessingBudget = 10;
 
-        @Comment({"Maximum number of lava cells to be tracked by lava simulator.",
+        @Comment({"Maximum number of chunks containing lava to be targeted by lava simulator.",
             "Lava flow will be throttled when in excess of this number.",
             "While it can affect CPU consumption, CPU usage is controlled more directly via tick budgets.",
-            "Smaller numbers will mean smaller lava flows, lower memory consumption, and shorter/smaller world saves."})
-        @RangeInt(min = 10000, max = 20000000)
-        public int cellBudget = 100000;
+            "Small numbers will mean smaller lava flows, lower memory consumption, and shorter/smaller world saves."})
+        @RangeInt(min = 50, max = 400)
+        public int chunkBudget = 100;
         
         @Comment({"Maximum number of cooling basalt blocks to be tracked by lava simulator.",
             "Lava flow will be throttled when in excess of this number.",

@@ -54,12 +54,6 @@ public abstract class AbstractLavaConnections
         } while(isIncomplete);
     }
 
-    public final int size()
-    {
-        return LavaConnection.connectionCount.intValue();
-    }
-
-
     public final void reportFlowTrackingIfEnabled()
     {
         if(Configurator.VOLCANO.enableFlowTracking)

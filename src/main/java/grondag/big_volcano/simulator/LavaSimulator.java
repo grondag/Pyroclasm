@@ -384,16 +384,6 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
         this.basaltTracker.deserializeNBT(nbt);
         this.lavaTreeCutter.deserializeNBT(nbt);
     }
-    
-    public int getCellCount()
-    {
-        return this.cells.size();
-    }
-
-    public int getConnectionCount()
-    {
-        return this.connections.size();
-    }
 
     public void saveLavaNBT(NBTTagCompound nbt)
     {
@@ -443,12 +433,6 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
         
         this.cells.validateChunks();
         
-        
-        // needs to happen after lava cooling because cooled cell have new floors
-        
-        //TODO: move to single thread and limit to chunks that just cooled or revalidated
-        this.cells.updateRawRetention();
-        
         this.setDirty();
 
         perfOnTick.endRun();
@@ -485,11 +469,6 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
         // important that this run right after cell update so that
         // chunk active/inactive accounting is accurate and we don't have improper unloading
         this.cells.unloadInactiveCellChunks();
-
-        
-        // clear out cells no longer needed
-        // validates that chunk cell is in has been unloaded, so should happen after chunk unload
-        this.cells.removeDeletedItems();
         
         this.setDirty();
         
@@ -554,10 +533,10 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
 
             float onTickLoad = (float)this.perfOnTick.runTime() / Configurator.Volcano.performanceBudgetOnTickNanos;
             float totalTickLoad = ((float)this.perfOnTick.runTime() + this.perfOffTick.runTime()) / Configurator.Volcano.performanceBudgetTotalNanos;
-            float cellLoad = this.getCellCount() / (float) Configurator.VOLCANO.cellBudget;
+            float chunkLoad = this.cells.chunkCount() / (float) Configurator.VOLCANO.chunkBudget;
             float coolingLoad = this.basaltTracker.size() / (float) Configurator.VOLCANO.coolingBlockBudget;
             
-            this.loadFactor = Math.max(Math.max(onTickLoad, totalTickLoad), Math.max(cellLoad, coolingLoad));
+            this.loadFactor = Math.max(Math.max(onTickLoad, totalTickLoad), Math.max(chunkLoad, coolingLoad));
             
             if(Configurator.VOLCANO.enablePerformanceLogging) 
             {
@@ -575,8 +554,8 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
 
             if(Configurator.VOLCANO.enablePerformanceLogging) 
             {
-                BigActiveVolcano.INSTANCE.info("totalCells = %d (%f load)  connections = %d  basaltBlocks = %d (%f load)", 
-                        this.getCellCount(), cellLoad, this.getConnectionCount(), this.basaltTracker.size(), coolingLoad);
+                BigActiveVolcano.INSTANCE.info("Lava chunks = %d (%f load)  basaltBlocks = %d (%f load)", 
+                        this.cells.chunkCount(), chunkLoad, this.basaltTracker.size(), coolingLoad);
                 
                 BigActiveVolcano.INSTANCE.info("Effective load factor is %f.  (onTick = %f, totalTick = %f)", this.loadFactor, onTickLoad, totalTickLoad);
                 

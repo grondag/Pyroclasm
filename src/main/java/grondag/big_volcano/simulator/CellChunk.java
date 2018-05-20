@@ -1,6 +1,7 @@
 package grondag.big_volcano.simulator;
 
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 import javax.annotation.Nullable;
 
@@ -202,6 +203,8 @@ public class CellChunk
             
         }
         
+        this.forEach(cell -> cell.updateRawRetentionIfNeeded());
+        
         return true;
     }
 
@@ -244,6 +247,8 @@ public class CellChunk
             this.validationCount.set(0);
             this.lastValidationTick = Simulator.currentTick();
         }
+        
+        this.forEach(cell -> cell.updateRawRetentionIfNeeded());
     }
 
     /**
@@ -532,6 +537,29 @@ public class CellChunk
                 }
                 cell = nextCell;
             }
+        }
+        
+        this.forEach(cell -> cell.updateRawRetentionIfNeeded());
+    }
+
+    /**
+     * Applies the given operation to all cells in the chunk.<p>
+     * 
+     * Do not use for operations that may add or remove cells.
+     */
+    public void forEach(Consumer<LavaCell> consumer)
+    {
+        for(int i = 0; i < 256; i++)
+        {
+            LavaCell c = this.entryCells[i];
+            if(c == null) continue;
+            c = c.firstCell();
+            
+            do
+            {
+                consumer.accept(c);
+                c = c.aboveCell();
+            } while(c != null);
         }
     }
 

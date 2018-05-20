@@ -1,8 +1,11 @@
 package grondag.big_volcano.simulator;
 
 
+import java.util.Iterator;
 import java.util.concurrent.CountedCompleter;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import javax.annotation.Nullable;
 
@@ -29,29 +32,30 @@ public class LavaConnections extends AbstractLavaConnections
     public final void doCellSetup()
     {
         this.toProcess.clear();
-        final int cellCount = this.sim.cells.cellList.size();
+        
+        final int chunkCount = this.sim.cells.chunkCount();
         
         
-        if(cellCount < Configurator.VOLCANO.concurrencyThreshold)
+        if(chunkCount < 16)
         {
             this.setupCounter.startRun();
-            this.sim.cells.cellList.forEach(c -> setupCell(c));
+            this.sim.cells.forEach(c -> setupCell(c));
             this.setupCounter.endRun();
-            this.setupCounter.addCount(cellCount);
+            this.setupCounter.addCount(chunkCount);
         }
         else
         {
             this.parallelSetupCounter.startRun();
             try
             {
-                Simulator.SIMULATION_POOL.submit(new CellSetupTask(this.sim.cells.cellList)).get();
+                Simulator.SIMULATION_POOL.submit(new CellSetupTask()).get(1, TimeUnit.SECONDS);
             }
-            catch (InterruptedException | ExecutionException e)
+            catch (InterruptedException | ExecutionException | TimeoutException e)
             {
                 BigActiveVolcano.INSTANCE.error("Unexpected error during lava cell setup", e);
             }
             this.parallelSetupCounter.endRun();
-            this.parallelSetupCounter.addCount(cellCount);
+            this.parallelSetupCounter.addCount(chunkCount);
         }
         
 
@@ -90,9 +94,9 @@ public class LavaConnections extends AbstractLavaConnections
             this.parallelFirstStepCounter.startRun();
             try
             {
-                this.parallelFirstStepCounter.addCount(Simulator.SIMULATION_POOL.submit(new FlowStepTask(this.toProcess, this.step)).get());
+                this.parallelFirstStepCounter.addCount(Simulator.SIMULATION_POOL.submit(new FlowStepTask(this.toProcess, this.step)).get(1, TimeUnit.SECONDS));
             }
-            catch (InterruptedException | ExecutionException e)
+            catch (InterruptedException | ExecutionException | TimeoutException e)
             {
                 BigActiveVolcano.INSTANCE.error("Unexpected error during lava connection processing", e);
             }
@@ -117,9 +121,9 @@ public class LavaConnections extends AbstractLavaConnections
             this.parallelStepCounter.startRun();
             try
             {
-                this.parallelStepCounter.addCount(Simulator.SIMULATION_POOL.submit(new FlowStepTask(this.toProcess, this.step)).get());
+                this.parallelStepCounter.addCount(Simulator.SIMULATION_POOL.submit(new FlowStepTask(this.toProcess, this.step)).get(1, TimeUnit.SECONDS));
             }
-            catch (InterruptedException | ExecutionException e)
+            catch (InterruptedException | ExecutionException | TimeoutException e)
             {
                 BigActiveVolcano.INSTANCE.error("Unexpected error during lava connection processing", e);
             }
@@ -131,54 +135,46 @@ public class LavaConnections extends AbstractLavaConnections
     @SuppressWarnings("serial")
     protected class CellSetupTask extends CountedCompleter<Void>
     {
-        private final SimpleConcurrentList<LavaCell> cellList;
-        
-        private CellSetupTask(SimpleConcurrentList<LavaCell> cellList)
-        {
-            super();
-            this.cellList = cellList;
-        }
         
         @Override
         public void compute()
         {
-            final int size = cellList.size();
-            final int batchSize = size / Simulator.SIMULATION_POOL.getParallelism() / 2 + 1;
-            int endExclusive = batchSize;
+            Iterator<CellChunk> it = sim.cells.allChunks().iterator();
             
-            for(; endExclusive < size; endExclusive += batchSize)
+            SetupTask myTask = new SetupTask(it.next());
+            
+            while(it.hasNext())
             {
                 this.addToPendingCount(1);
-                new SetupTask(this.cellList.toArray(endExclusive - batchSize, endExclusive)).fork();
+                new SetupTask(it.next()).fork();
             }
             
-            new SetupTask(this.cellList.toArray(
-                    endExclusive - batchSize,
-                    Math.min(endExclusive, size))).compute(); // invokes tryComplete for us
+            // invokes tryComplete for us
+            myTask.compute(); 
             
         }
 
         private class SetupTask extends CountedCompleter<Void>
         {
-            private final LavaCell[] cells;
+            private final CellChunk chunk;
             
-            private SetupTask(LavaCell[] cells)
+            private SetupTask(CellChunk chunk)
             {
                 super();
-                this.cells = cells;
+                this.chunk = chunk;
             }
             
             @Override
             public void compute()
             {
-                SimpleUnorderedArrayList<Flowable> results = new SimpleUnorderedArrayList<>(cells.length / 8);
+                SimpleUnorderedArrayList<Flowable> results = new SimpleUnorderedArrayList<>(chunk.getActiveCount());
                 
-                for(LavaCell cell : this.cells)
+                chunk.forEach(cell ->
                 {
                     cell.updateStuff(sim);
                     Flowable keeper = cell.getFlowChain();
                     if(keeper != null) results.add(keeper);
-                }
+                });
                 
                 if(!results.isEmpty()) toProcess.addAll(results);
                 

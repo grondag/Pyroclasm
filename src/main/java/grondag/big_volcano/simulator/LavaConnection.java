@@ -13,8 +13,6 @@ public class LavaConnection
      */
     public static LongAdder totalFlow = new LongAdder();
     
-    public static final LongAdder connectionCount = new LongAdder();
-    
     public final LavaCell firstCell;
     
     public final LavaCell secondCell;
@@ -29,21 +27,12 @@ public class LavaConnection
         this.secondCell = secondCell;
         firstCell.addConnection(this);
         secondCell.addConnection(this);
-        connectionCount.increment();
     }
     
     public final @Nullable Flowable flowable()
     {
         return this.flowable;
     }
-    
-    @Override
-    protected final void finalize() throws Throwable
-    {
-        super.finalize();
-        connectionCount.decrement();
-    }
-
 
     public final LavaCell getOther(LavaCell cellIAlreadyHave)
     {
