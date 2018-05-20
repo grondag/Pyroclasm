@@ -1552,8 +1552,6 @@ public class LavaCell extends AbstractLavaCell
      */
     private int getFlowFloorRawRetentionDepth()
     {
-        assert this.isBottomFlow() : "Flow floor retention depth computed for non-flow-floor cell.";
-        
         int myFloor = this.floorUnits();
         
         int lowestFloor = myFloor;
@@ -1684,7 +1682,7 @@ public class LavaCell extends AbstractLavaCell
         
         if(this.isBottomFlow())
         {
-            this.smoothedRetainedUnits = Math.min(this.volumeUnits(), Math.max(0, smoothedRentionUnits));
+            this.smoothedRetainedUnits = Math.min(this.volumeUnits(), Math.max(LavaSimulator.FLUID_UNITS_PER_LEVEL, smoothedRentionUnits));
         }
         else
         {

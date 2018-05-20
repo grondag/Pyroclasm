@@ -61,6 +61,8 @@ public class ClientEventHandler
             lavaSim.cells.forEach(c -> renderCell(tessellator, bufferBuilder, c));
         }
         
+        GlStateManager.enableDepth();
+        
         if(Configurator.VOLCANO.enableLavaChunkDebugRender)
         {
             for(Object c : lavaSim.cells.allChunks().toArray()) { renderCellChunk(tessellator, bufferBuilder, (CellChunk)c); }
@@ -69,7 +71,7 @@ public class ClientEventHandler
         bufferBuilder.setTranslation(0, 0, 0);
         
         GlStateManager.disablePolygonOffset();
-        GlStateManager.enableDepth();
+        
         GlStateManager.depthMask(true);
         GlStateManager.enableTexture2D();
         GlStateManager.disableBlend();
