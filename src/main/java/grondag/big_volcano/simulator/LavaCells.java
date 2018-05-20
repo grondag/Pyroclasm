@@ -42,7 +42,6 @@ public class LavaCells implements Iterable<LavaCell>
    private final PerformanceCounter perfCounterValidation;
    private final PerformanceCounter perfCounterUpdateStuff;
    private final PerformanceCounter perfCounterUpdateRetention;
-   private final PerformanceCounter perfCounterUpdateSmoothedRetention;
    
     public LavaCells(LavaSimulator sim)
     {
@@ -56,7 +55,6 @@ public class LavaCells implements Iterable<LavaCell>
         
         // off tick
         perfCounterUpdateStuff = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Cell Upkeep", sim.perfCollectorOffTick);
-        perfCounterUpdateSmoothedRetention = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Smoothed Retention Update", sim.perfCollectorOffTick);
    }
 
    public void validateChunks()
@@ -347,9 +345,6 @@ public class LavaCells implements Iterable<LavaCell>
             //TODO: need to synchronize world access or make sure chunks are loaded?
             this.updateRawRetention();
             
-            // Smoothed retention will need to be computed for all cells, but can be parallel.
-            this.updateSmoothedRetention();
-            
             // Make sure other stuff is up to date
             this.updateStuff();
         }
@@ -365,10 +360,10 @@ public class LavaCells implements Iterable<LavaCell>
         Simulator.runTaskAppropriately(this.cellList, operand -> operand.updateRawRetentionIfNeeded(), Configurator.VOLCANO.concurrencyThreshold, this.perfCounterUpdateRetention);
     }
     
-    public void updateSmoothedRetention()
-    {
-        Simulator.runTaskAppropriately(this.cellList, operand -> operand.updatedSmoothedRetentionIfNeeded(), Configurator.VOLCANO.concurrencyThreshold, this.perfCounterUpdateSmoothedRetention);
-    }
+//    public void updateSmoothedRetention()
+//    {
+//        Simulator.runTaskAppropriately(this.cellList, operand -> operand.updatedSmoothedRetentionIfNeeded(), Configurator.VOLCANO.concurrencyThreshold, this.perfCounterUpdateSmoothedRetention);
+//    }
     
     public void logDebugInfo()
     {

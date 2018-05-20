@@ -47,22 +47,22 @@ public class LavaCell extends AbstractLavaCell
      * The start cell in this x, z column will create this instance. 
      * All subsequent additions to the column must obtain the same instance.
      */
-    volatile @Nonnull CellLocator locator;
+    @Nonnull CellLocator locator;
     
     /** 
      * Used to implement a doubly-linked list of all cells within an x,z coordinate.
      * Maintained by collection.
      */
-    volatile @Nullable LavaCell above;
+    @Nullable LavaCell above;
     
     /** 
      * Used to implement a doubly-linked list of all cells within an x,z coordinate.
      * Maintained by collection.
      */
-    volatile @Nullable LavaCell below;
+    @Nullable LavaCell below;
     
     /** set true when cell should no longer be processed and can be removed from storage */
-    private volatile boolean isDeleted;
+    private boolean isDeleted;
     
     /** holds all connections with other cells */
     public final SimpleUnorderedArrayList<LavaConnection> connections = new SimpleUnorderedArrayList<LavaConnection>();
@@ -81,7 +81,7 @@ public class LavaCell extends AbstractLavaCell
 
     
     /** true if this cell should remain loaded */
-    private volatile boolean isActive = false;
+    private boolean isActive = false;
     
     
     public static final short REFRESH_NONE = -1;
@@ -217,38 +217,6 @@ public class LavaCell extends AbstractLavaCell
         
     }
     
-//    protected boolean hasSurfaceChanged()
-//    {
-//        return this.worldSurfaceLevel() != this.lastSurfaceLevel;
-//    }
-//    
-//    @Override
-//    protected void clearHasSurfaceChanged()
-//    {
-//        this.lastSurfaceLevel = this.worldSurfaceLevel();
-//    }
-    
-    /**
-     * True if this cell contains lava (or may have) and world should be updated to match.
-     * If true, cell will be marked as active for purpose of cell chunk loading.
-     * @return
-     */
-    private boolean shouldBeActive()
-    {
-        if(this.isDeleted) return false;
-        
-        if(this.isEmpty())
-        {
-            return this.worldSurfaceLevel() != this.getAverageFluidSurfaceLevel();
-        }
-        else
-        {
-            // not empty
-            return true;
-        }
-        
-    }
-    
     /** 
      * Attempts to lock this cell for update.
      * Returns true if lock was successful.
@@ -330,7 +298,7 @@ public class LavaCell extends AbstractLavaCell
         this.clearBlockUpdate();
         this.isDeleted = true;
         
-        this.updateActiveStatus();
+        this.setActiveStatus(false);
     }
     
     /** 
@@ -1279,10 +1247,8 @@ public class LavaCell extends AbstractLavaCell
      * Forms new connections and removes invalid connections if necessary.
      * Also notifies remaining valid connections that cell shape has changed.
      */
-    private final void updateConnectionsIfNeeded(LavaSimulator sim)
+    final void updateConnectionsIfNeeded(LavaSimulator sim)
     {
-        if(this.isDeleted) return;
-        
         if(this.isConnectionUpdateNeeded())
         {
             for(Object o : this.connections.toArray())
@@ -1340,22 +1306,43 @@ public class LavaCell extends AbstractLavaCell
         }
     }
     
-    /** maintains indication of whether or not this cell must remain loaded */
-    private void updateActiveStatus()
+    /**
+     * True if this cell contains lava (or may have) and world should be updated to match.
+     * If true, cell will be marked as active for purpose of cell chunk loading.
+     * @return
+     */
+    private boolean shouldBeActive()
     {
-        boolean shouldBeActive = this.shouldBeActive();
-        
-        if(this.isActive)
+        if(this.isEmpty())
         {
-            if(!shouldBeActive) 
+            return this.worldSurfaceLevel() != this.getAverageFluidSurfaceLevel();
+        }
+        else
+        {
+            // not empty
+            return true;
+        }
+    }
+    
+    /** maintains indication of whether or not this cell must remain loaded */
+    final void updateActiveStatus()
+    {
+        this.setActiveStatus(this.shouldBeActive());
+    }
+    
+    private final void setActiveStatus(boolean isActive)
+    {
+        if(!isActive)
+        {
+            if(this.isActive) 
             {
                 this.locator.cellChunk.decrementActiveCount(this.x(), this.z());
                 this.isActive = false;
             }
         }
-        else // cell is not active
+        else
         {
-            if(shouldBeActive) 
+            if(!this.isActive) 
             {
                 this.locator.cellChunk.incrementActiveCount(this.x(), this.z());
                 this.isActive = true;
@@ -1367,6 +1354,7 @@ public class LavaCell extends AbstractLavaCell
     {
         this.updateActiveStatus();
         this.updateConnectionsIfNeeded(sim);
+        this.updatedSmoothedRetentionIfNeeded();
     }
 
     /**
@@ -1496,11 +1484,14 @@ public class LavaCell extends AbstractLavaCell
     }
     
     /**
-     * Just like fluidSurfaceLevel except based on exponential average.
+     * Just like fluidSurfaceLevel except based on exponential average.  
+     * If cell has any fluid then will be at least one above the floor.
      */
     public final int getCurrentVisibleLevel()
     {
-        return Math.min(this.ceilingLevel(), this.getAverageFluidSurfaceLevel());
+        return this.isEmpty() 
+                ? this.floorLevel()
+                : Math.max(this.floorLevel() + 1, Math.min(this.ceilingLevel(), this.getAverageFluidSurfaceLevel()));
     }
 
     /**
@@ -1691,8 +1682,6 @@ public class LavaCell extends AbstractLavaCell
     /** see {@link #smoothedRetainedUnits} */
     public final void updatedSmoothedRetentionIfNeeded()
     {
-        if(this.isDeleted) return;
-        
         // calculation relies on having current connections
         if(this.needsSmoothedRetentionUpdate && !this.isConnectionUpdateNeeded())
         {
@@ -1984,8 +1973,6 @@ public class LavaCell extends AbstractLavaCell
     @SuppressWarnings("null")
     public final @Nullable Flowable getFlowChain()
     {
-        if(this.isDeleted) return null;
-
         // duplicating logic of getAvailableFluidUnits here as a performance optimizaiton.
         final int fluid = this.fluidUnits();
         

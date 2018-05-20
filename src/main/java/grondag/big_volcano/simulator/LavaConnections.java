@@ -63,6 +63,8 @@ public class LavaConnections extends AbstractLavaConnections
      */
     private void setupCell(LavaCell cell)
     {
+        if(cell.isDeleted()) return;
+        cell.updateStuff(sim);
         Flowable keeper = cell.getFlowChain();
         if(keeper != null) this.toProcess.add(keeper);
     }
@@ -137,6 +139,7 @@ public class LavaConnections extends AbstractLavaConnections
                 
                 for(LavaCell cell : this.cells)
                 {
+                    cell.updateStuff(sim);
                     Flowable keeper = cell.getFlowChain();
                     if(keeper != null) results.add(keeper);
                 }
