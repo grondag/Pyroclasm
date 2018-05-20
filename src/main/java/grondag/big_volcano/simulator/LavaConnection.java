@@ -557,8 +557,13 @@ public class LavaConnection
          */
         private boolean setFlowLimitsThisTick(int surfaceFrom, int surfaceTo)
         {
-            int diff = surfaceFrom - surfaceTo;
-            if(diff < 2 || this.fromCell.isEmpty())
+            final int diff = surfaceFrom - surfaceTo;
+            
+            // don't flow into empty cells unless we have at least a full level of lava
+            // prevents flowing back onto basalt that has just cooled; sort of emulates surface tension
+            final int threshold = toCell.isEmpty() ? LavaSimulator.FLUID_UNITS_PER_LEVEL : LavaSimulator.MIN_FLOW_UNITS;
+            
+            if(diff <  threshold)
             {
                 //not enough lava to flow
                 return false;

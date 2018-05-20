@@ -116,13 +116,6 @@ public class LavaCell extends AbstractLavaCell
     
     private boolean needsSmoothedRetentionUpdate = true;
     
-    /** 
-     * Exponential average of current level - used for computing visible level.
-     * Holds 6 bits of integer precision.  Needs >> 6 to get usable value.
-     * Maintained by provideBlockUpdate.
-     */
-    public int avgFluidSurfaceLevelWithPrecision = 0;
-    
     /**
      * The simulation tick when lava was lasted added or flowed in/out of this cell.<br>
      * Used to know when lava in a cell can be cooled.<br>
@@ -1312,7 +1305,7 @@ public class LavaCell extends AbstractLavaCell
     {
         if(this.isEmpty())
         {
-            return this.worldSurfaceLevel() != this.getAverageFluidSurfaceLevel();
+            return this.worldSurfaceLevel() != this.getLastVisibleLevel();
         }
         else
         {
@@ -1465,29 +1458,9 @@ public class LavaCell extends AbstractLavaCell
      */
     public final void clearBlockUpdate()
     {
-        this.setAverageFluidSurfaceLevel(this.worldSurfaceLevel());
-        this.lastVisibleLevel = this.getCurrentVisibleLevel();
-//        this.updateActiveStatus();
+        this.lastVisibleLevel = this.worldSurfaceLevel();
     }
     
-    public final int getAverageFluidSurfaceLevel()
-    {
-        return this.avgFluidSurfaceLevelWithPrecision >> 6;
-    }
-    
-    public final void setAverageFluidSurfaceLevel(int newAverage)
-    {
-        this.avgFluidSurfaceLevelWithPrecision = newAverage << 6;
-    }
-    
-    /**
-     * Just like fluidSurfaceLevel except based on exponential average.  
-     */
-    public final int getCurrentVisibleLevel()
-    {
-        return Math.min(this.ceilingLevel(), this.getAverageFluidSurfaceLevel());
-    }
-
     /**
      * Value that should be in the world. 
      */
@@ -1507,9 +1480,6 @@ public class LavaCell extends AbstractLavaCell
     @Override
     protected final void invalidateLocalFloorDependencies()
     {
-        // new floor means average surface level is invalid - reset to actual
-        this.setAverageFluidSurfaceLevel(this.worldSurfaceLevel());
-        
         this.needsRawRetentionUpdate = true;
         this.needsSmoothedRetentionUpdate = true;
         this.invalidateNeighborFloorDependencies();
@@ -1820,36 +1790,8 @@ public class LavaCell extends AbstractLavaCell
         
         // has to be captured here before it is possibly changed by routine below
         final int lastVisible = this.getLastVisibleLevel();
+        final int currentVisible = this.worldSurfaceLevel();
         
-
-        final int avgLevel = this.getAverageFluidSurfaceLevel();
-        final int surfaceLevel = this.worldSurfaceLevel();
-        
-        if(avgLevel != surfaceLevel) 
-        {
-            // if we are empty always reflect that immediately - otherwise have ghosting in world as lava drains from drop cells
-            if(this.isEmpty())
-            {
-                // same logic as clearPendingLevel updates, done locally because in a hot loop
-                this.avgFluidSurfaceLevelWithPrecision = surfaceLevel << 6;
-            }
-            else
-            {
-                int diff = surfaceLevel - avgLevel;
-                // don't average big changes
-                if(Math.abs(diff) > 4)
-                {
-                    // same logic as clearPendingLevel updates, done locally because in a hot loop
-                    this.avgFluidSurfaceLevelWithPrecision = surfaceLevel << 6;
-                }
-                else
-                {
-                    this.avgFluidSurfaceLevelWithPrecision += (diff);
-                }
-            }
-        }
-   
-        final int currentVisible = this.getCurrentVisibleLevel();
         // Need to constrain to bottomY() because getYFromCeiling will return block below our floor if
         // we are empty and floor is at a block boundary.
         final int currentSurfaceY = Math.max(this.floorY(), getYFromCeilingLevel(currentVisible));
