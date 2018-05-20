@@ -1482,13 +1482,10 @@ public class LavaCell extends AbstractLavaCell
     
     /**
      * Just like fluidSurfaceLevel except based on exponential average.  
-     * If cell has any fluid then will be at least one above the floor.
      */
     public final int getCurrentVisibleLevel()
     {
-        return this.isEmpty() 
-                ? this.floorLevel()
-                : Math.max(this.floorLevel() + 1, Math.min(this.ceilingLevel(), this.getAverageFluidSurfaceLevel()));
+        return Math.min(this.ceilingLevel(), this.getAverageFluidSurfaceLevel());
     }
 
     /**
