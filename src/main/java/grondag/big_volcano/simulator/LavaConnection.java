@@ -502,6 +502,24 @@ public class LavaConnection
             else this.didUpdateCellTicks = false;
         }
         
+        public void doFirstStepParallel()
+        {
+            boolean isIncomplete = true;
+            do
+            {
+                if(fromCell.tryLock())
+                {
+                    if(toCell.tryLock())
+                    {
+                        this.doFirstStep();
+                        isIncomplete = false;
+                        toCell.unlock();
+                    }
+                    fromCell.unlock();
+                }
+            } while(isIncomplete);
+        }
+        
         /**
          * Like {@link #doFirstStep()} but doesn't do per-tick setup or accounting.
          */
@@ -513,6 +531,24 @@ public class LavaConnection
                 this.toCell.updateLastFlowTick();
                 this.didUpdateCellTicks = true;
             }
+        }
+        
+        public void doStepParallel()
+        {
+            boolean isIncomplete = true;
+            do
+            {
+                if(fromCell.tryLock())
+                {
+                    if(toCell.tryLock())
+                    {
+                        this.doStep();
+                        isIncomplete = false;
+                        toCell.unlock();
+                    }
+                    fromCell.unlock();
+                }
+            } while(isIncomplete);
         }
         
         /**

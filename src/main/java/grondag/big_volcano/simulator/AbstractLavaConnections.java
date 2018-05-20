@@ -15,7 +15,9 @@ public abstract class AbstractLavaConnections
     public final PerformanceCounter firstStepCounter;
     public final PerformanceCounter stepCounter;
     public final PerformanceCounter parallelSetupCounter;
-
+    public final PerformanceCounter parallelFirstStepCounter;
+    public final PerformanceCounter parallelStepCounter;
+    
     protected AbstractLavaConnections(LavaSimulator sim)
     {
         super();
@@ -25,6 +27,8 @@ public abstract class AbstractLavaConnections
         stepCounter = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Flow Step - Server Thread", sim.perfCollectorOffTick);
         
         parallelSetupCounter = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Connection Setup -  Multi-threaded", sim.perfCollectorOffTick);
+        parallelFirstStepCounter = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "First Flow Step - Multi-threaded", sim.perfCollectorOffTick);
+        parallelStepCounter = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Flow Step - Multi-threaded", sim.perfCollectorOffTick);
     }
 
 
