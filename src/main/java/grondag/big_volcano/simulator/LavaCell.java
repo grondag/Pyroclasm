@@ -136,9 +136,6 @@ public class LavaCell extends AbstractLavaCell
     /**
      * Used in conneciton processing - if this is an output cell, set to zero before flow
      * starts and incremented every time lava flows out of this cell.
-     * 
-     * TODO: can be a normal int if all processing for the same output cell
-     * happens on same thread.
      */
     public int flowThisTick = 0;
     

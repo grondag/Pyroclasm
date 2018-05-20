@@ -462,10 +462,11 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
         if(Configurator.VOLCANO.enablePerformanceLogging) perfOffTick.startRun();
        
         // update connections as needed, handle other housekeeping, identify flowable connections
-       //TODO: move to a cell-specific method or class
+        this.connections.doCellSetup();
+        
+        // lava flow
         this.connections.processConnections();
         
-
         // Apply world events that may depend on new chunks that were just loaded
         this.lavaAddEvents.processAllEvents();
 

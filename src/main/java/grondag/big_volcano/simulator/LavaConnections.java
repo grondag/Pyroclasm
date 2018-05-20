@@ -26,7 +26,7 @@ public class LavaConnections extends AbstractLavaConnections
     }
     
     @Override
-    protected final void doSetup()
+    public final void doCellSetup()
     {
         this.toProcess.clear();
         final int cellCount = this.sim.cells.cellList.size();
@@ -79,8 +79,7 @@ public class LavaConnections extends AbstractLavaConnections
         if(this.toProcess.isEmpty()) return;
         this.step = 1;
         
-        //FIXME: put back
-        if(this.toProcess.size() < 128) //Configurator.VOLCANO.concurrencyThreshold)
+        if(this.toProcess.size() < Configurator.VOLCANO.concurrencyThreshold / 2)
         {
             this.firstStepCounter.startRun();
             this.firstStepCounter.addCount(RoundProcessor.PRIMARY.processStepToCompletion(toProcess.toArray(), step));
@@ -107,8 +106,7 @@ public class LavaConnections extends AbstractLavaConnections
         if(this.toProcess.isEmpty()) return;
         this.step++;
         
-        //FIXME: put back
-        if(this.toProcess.size() < 128) //Configurator.VOLCANO.concurrencyThreshold)
+        if(this.toProcess.size() < Configurator.VOLCANO.concurrencyThreshold / 2)
         {
             this.stepCounter.startRun();
             this.stepCounter.addCount(RoundProcessor.SECONDARY.processStepToCompletion(toProcess.toArray(), step));
@@ -173,7 +171,7 @@ public class LavaConnections extends AbstractLavaConnections
             @Override
             public void compute()
             {
-                SimpleUnorderedArrayList<Flowable> results = new SimpleUnorderedArrayList<>();
+                SimpleUnorderedArrayList<Flowable> results = new SimpleUnorderedArrayList<>(cells.length / 8);
                 
                 for(LavaCell cell : this.cells)
                 {

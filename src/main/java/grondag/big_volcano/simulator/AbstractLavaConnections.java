@@ -72,17 +72,22 @@ public abstract class AbstractLavaConnections
             }
         }        
     }
-
-    protected abstract void doSetup();
+    
+    /**
+     * Does housekeeping on all cells and builds list of flowable connections 
+     * that will be used in {@link #processConnections()}
+     */
+    public abstract void doCellSetup();
+    
     protected abstract void doFirstStepInner();
     protected abstract void doStepInner();
     
-    public void processConnections()
+    /**
+     * Causes all connections to flow (if they can)
+     */
+    public final void processConnections()
     {
-        this.doSetup();
-        
         this.doFirstStep();
-        
         this.doStep();
         this.doStep();
         this.doStep();
