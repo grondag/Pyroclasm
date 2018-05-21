@@ -19,6 +19,7 @@ import it.unimi.dsi.fastutil.ints.IntArrayList;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.init.Blocks;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.IBlockAccess;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
@@ -1581,60 +1582,19 @@ public class LavaCell extends AbstractLavaCell
      */
     private int getFlowFloorRetentionDepth()
     {
-        int myFloor = this.floorUnits();
+        final int y = this.floorBlockY();
         
-        int lowestFloor = myFloor;
+        if(y <= 0) return LavaSimulator.FLUID_UNITS_PER_BLOCK;
         
-        int neighborFloor = getFloorUnitsForNeighbor(-1,  0, myFloor);
-        if(neighborFloor < lowestFloor) lowestFloor = neighborFloor;
+        IBlockAccess world = this.locator.cellChunk.cells.sim.world;
+        BlockPos pos = new BlockPos(this.x(), y, this.z());
+        IBlockState blockState = world.getBlockState(pos);
+        TerrainState tState = TerrainBlockHelper.getTerrainState(blockState, world, pos);
         
-        neighborFloor = getFloorUnitsForNeighbor( 1,  0, myFloor);
-        if(neighborFloor < lowestFloor) lowestFloor = neighborFloor;
-        neighborFloor = getFloorUnitsForNeighbor( 0, -1, myFloor);
-        if(neighborFloor < lowestFloor) lowestFloor = neighborFloor;
-        neighborFloor = getFloorUnitsForNeighbor( 0,  1, myFloor);
-        if(neighborFloor < lowestFloor) lowestFloor = neighborFloor;
-        
-        return Math.max(LavaSimulator.FLUID_UNITS_PER_QUARTER_BLOCK, 
-                LavaSimulator.FLUID_UNITS_PER_BLOCK - (myFloor - lowestFloor) / 2);
-        
-//        int floorMin = Math.max(0, (this.bottomY() - 2) * LavaSimulator.FLUID_UNITS_PER_BLOCK);
-//        int floorMax = Math.min(MAX_UNITS, (this.bottomY() + 3) * LavaSimulator.FLUID_UNITS_PER_BLOCK);
-        
-
-        
-//        int negX = Useful.clamp(getFloorUnitsForNeighbor(-1,  0, myFloor ), floorMin, floorMax);
-//        int posX = Useful.clamp(getFloorUnitsForNeighbor( 1,  0, myFloor ), floorMin, floorMax);
-//        int negZ = Useful.clamp(getFloorUnitsForNeighbor( 0, -1, myFloor ), floorMin, floorMax);
-//        int posZ = Useful.clamp(getFloorUnitsForNeighbor( 0,  1, myFloor ), floorMin, floorMax);
-//        
-//        int negXnegZ = Useful.clamp(getFloorUnitsForNeighbor(-1, -1, myFloor ), floorMin, floorMax);
-//        int negXposZ = Useful.clamp(getFloorUnitsForNeighbor(-1,  1, myFloor ), floorMin, floorMax);
-//        int posXnegZ = Useful.clamp(getFloorUnitsForNeighbor( 1, -1, myFloor ), floorMin, floorMax);
-//        int posXposZ = Useful.clamp(getFloorUnitsForNeighbor( 1,  1, myFloor ), floorMin, floorMax);
-//
-//        // Normalize the resulting delta values to the approximate range -1 to 1
-//        float deltaX = (posXnegZ + posX + posXposZ - negXnegZ - negX - negXposZ) / 6F / LavaSimulator.FLUID_UNITS_PER_TWO_BLOCKS;
-//        float deltaZ = (negXposZ + posZ + posXposZ - negXnegZ - negZ - negXnegZ) / 6F / LavaSimulator.FLUID_UNITS_PER_TWO_BLOCKS;
-//        double slope = Useful.clamp(Math.sqrt(deltaX * deltaX + deltaZ * deltaZ), 0.0, 1.0);
-//      
-//        int depth = (int) (LavaSimulator.FLUID_UNITS_PER_BLOCK * (1.0 - slope));
-//        
-//        // Abandoned experiment...
-//        // this function gives a value of 1 for slope = 0 then drops steeply 
-//        // as slope increases and then levels off to 1/4 height as slope approaches 1.
-//        // Function is only well-behaved for our purpose within the range 0 to 1.
-//        // More concisely, function is (1-sqrt(x)) ^ 2, applied to the top 3/4 of a full block height.
-//        // int depth = (int) (0.25 + 0.75 * Math.pow(1 - Math.sqrt(slope), 2));
-//        
-//        //clamp to at least 1/4 of a block and no more than 1.25 block
-//        depth = Useful.clamp(depth, LavaSimulator.FLUID_UNITS_PER_QUARTER_BLOCK, LavaSimulator.FLUID_UNITS_PER_BLOCK_AND_A_QUARTER);
-      
-//        return depth;
+        return tState.retentionLevels() * LavaSimulator.FLUID_UNITS_PER_LEVEL;
     }
     
     /** 
-     * For use by getFlowFloorRawRetentionDepth.
      * Returns default value if neighbor is null.
      */
     private int getFloorUnitsForNeighbor(int xOffset, int zOffset, int defaultValue)
@@ -1660,45 +1620,6 @@ public class LavaCell extends AbstractLavaCell
     public final int getAvailableFluidUnits()
     {
         return this.fluidUnits() - this.getRetainedUnits();
-    }
-    
-
-    private void updateSmoothedRetention()
-    {
-
-        int count = 1;
-        int total = this.getRetainedSurface();
-        
-        LavaCell neighbor = this.getFloorNeighbor(-1, 0, true);
-        if(neighbor != null) { count++; total += neighbor.getRetainedSurface(); }
-        
-        neighbor = this.getFloorNeighbor( 1,  0, true);
-        if(neighbor != null) { count++; total += neighbor.getRetainedSurface(); }
-        neighbor = this.getFloorNeighbor( 0, -1, true);
-        if(neighbor != null) { count++; total += neighbor.getRetainedSurface(); }
-        neighbor = this.getFloorNeighbor( 0,  1, true);
-        if(neighbor != null) { count++; total += neighbor.getRetainedSurface(); }
-        
-        neighbor = this.getFloorNeighbor(-1, -1, true);
-        if(neighbor != null) { count++; total += neighbor.getRetainedSurface(); }
-        neighbor = this.getFloorNeighbor(-1,  1, true);
-        if(neighbor != null) { count++; total += neighbor.getRetainedSurface(); }
-        neighbor = this.getFloorNeighbor( 1, -1, true);
-        if(neighbor != null) { count++; total += neighbor.getRetainedSurface(); }
-        neighbor = this.getFloorNeighbor( 1,  1, true);
-        if(neighbor != null) { count++; total += neighbor.getRetainedSurface(); }        
-        
-        final int smoothedRentionUnits = (total / count) - this.floorUnits();
-        
-        if(this.isBottomFlow())
-        {
-//            this.smoothedRetainedUnits = Math.min(this.volumeUnits(), Math.max(LavaSimulator.FLUID_UNITS_PER_LEVEL, smoothedRentionUnits));
-        }
-        else
-        {
-//            this.smoothedRetainedUnits = Math.min(this.volumeUnits(), Math.max(LavaSimulator.FLUID_UNITS_PER_HALF_BLOCK, smoothedRentionUnits));
-        }
-       
     }
     
     public void setRefreshRange(int yLow, int yHigh)

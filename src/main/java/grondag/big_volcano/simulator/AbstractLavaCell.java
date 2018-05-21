@@ -75,14 +75,24 @@ public abstract class AbstractLavaCell
      * Levels in Y=0 for example, are 0 thru 11.
      * ALWAYS USE setFloor() instead of floor to maintain bottomY.
      */
-    public int floorLevel() { return this.floorLevel; }
+    public final int floorLevel() { return this.floorLevel; }
 
     /** floor as units instead of block levels */
-    public int floorUnits() { return this.floorUnits; }
+    public final int floorUnits() { return this.floorUnits; }
 
     /** Y of start (lowest) block that could contain lava */
-    public int floorY() { return this.floorY; }
+    public final int floorY() { return this.floorY; }
 
+    /** 
+     * Y of the block that forms the floor of this cell. 
+     * Will be same as {@link #floorY()} unless the floor is
+     * at a block boundary. In that case, the block Y will be one below.
+     */
+    public final int floorBlockY()
+    {
+        return this.floorFlowHeight() == 0 ? this.floorY() - 1 : this.floorY();
+    }
+    
     /** Flow height of solid portion of block at {@link #floorY()}
      *  Will be 0 if floor is not a flow block.
      *  Will also be 0 if floor is a full-height flow block at Y-1.
@@ -90,7 +100,7 @@ public abstract class AbstractLavaCell
      *  Note that 12 is not a valid result because that would mean 
      *  block at Y is not the floor because it could not contain lava.
      */
-    public int floorFlowHeight()
+    public final int floorFlowHeight()
     {
         //Examples of this.floorLevel -> output
         // 12 -> 0
