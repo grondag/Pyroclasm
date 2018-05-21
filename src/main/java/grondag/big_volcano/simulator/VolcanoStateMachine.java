@@ -642,7 +642,7 @@ public class VolcanoStateMachine implements ISimulationTickable
             toState = fromState;
         }
         
-        this.lavaSim.world.setBlockState(fromPos, Blocks.AIR.getDefaultState());
+        this.world.setBlockState(fromPos, Blocks.AIR.getDefaultState());
         
         if(toState != null)
         {
@@ -667,6 +667,8 @@ public class VolcanoStateMachine implements ISimulationTickable
         int bestX = 0;
         int bestZ = 0;
         
+        final World world = this.lavaSim.world;
+        
         // find lowest point at the given distance
         // intended to fill in low areas before high areas but still keep normal mound shape
         for(int i = 0; i <= 20; i++)
@@ -677,7 +679,7 @@ public class VolcanoStateMachine implements ISimulationTickable
             int y = this.world.getHeight(x, z);
             
             //TODO: consider mutable block pos here?
-            while(y > 0 && LavaTerrainHelper.canLavaDisplace(this.lavaSim.world.getBlockState(new BlockPos(x, y - 1, z))))
+            while(y > 0 && LavaTerrainHelper.canLavaDisplace(world.getBlockState(new BlockPos(x, y - 1, z))))
             {
                 y--;
             }
@@ -700,7 +702,7 @@ public class VolcanoStateMachine implements ISimulationTickable
             int y = this.world.getHeight(x, z);
             
             //TODO: consider mutable block pos?
-            while(y > 0 && LavaTerrainHelper.canLavaDisplace(this.lavaSim.world.getBlockState(new BlockPos(x, y - 1, z))))
+            while(y > 0 && LavaTerrainHelper.canLavaDisplace(world.getBlockState(new BlockPos(x, y - 1, z))))
             {
                 y--;
             }

@@ -14,13 +14,13 @@ import grondag.exotic_matter.model.TerrainState;
 import grondag.exotic_matter.simulator.Simulator;
 import grondag.exotic_matter.varia.PackedBlockPos;
 import grondag.exotic_matter.varia.SimpleUnorderedArrayList;
-import grondag.exotic_matter.varia.Useful;
 import io.netty.util.internal.ThreadLocalRandom;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.init.Blocks;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.IBlockAccess;
+import net.minecraft.world.World;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
@@ -1572,8 +1572,8 @@ public class LavaCell extends AbstractLavaCell
      * Returns retained depth of lava on the given flow block in fluid units.<p>
      * 
      * Some approaches to this could exploit the information in connections to be
-     * more efficient, but don't want the constraint that all connections must be
-     * formed and valid before this runs. This is especially important for edge
+     * more efficient, but impose the constraint that all connections must be
+     * formed and valid before this runs. This is especially limiting for edge
      * cells that may not have formed connections with adjacent chunks not yet loaded.
      * For this reason, relies entirely on current world state.<p>
      * 
@@ -1764,6 +1764,8 @@ public class LavaCell extends AbstractLavaCell
             this.clearRefreshRange();
         }
         
+        final World world = sim.world;
+        
         if(shouldGenerate)
         {
             final boolean hasLava = !this.isEmpty();
@@ -1776,18 +1778,18 @@ public class LavaCell extends AbstractLavaCell
             for(int y = bottomY; y <= topY; y++)
             {
                 BlockPos pos = new BlockPos(x, y, z);
-                IBlockState priorState = sim.world.getBlockState(pos);
+                IBlockState priorState = world.getBlockState(pos);
                 
                 if(hasLava && y == currentSurfaceY)
                 {
                     // partial or full lava block
-                    sim.world.setBlockState(pos, 
+                    world.setBlockState(pos, 
                             TerrainBlockHelper.stateWithDiscreteFlowHeight(ModBlocks.lava_dynamic_height.getDefaultState(), currentVisible - currentSurfaceY * TerrainState.BLOCK_LEVELS_INT));
                 
                     tracker.setAdjustmentNeededAround(x, y, z);
                     tracker.excludeAdjustmentNeededAt(x, y, z);
                     
-                    if(priorState.getBlock().isWood(sim.world, pos))
+                    if(priorState.getBlock().isWood(world, pos))
                     {
                         sim.lavaTreeCutter.queueTreeCheck(pos.up());
                     }
@@ -1795,7 +1797,7 @@ public class LavaCell extends AbstractLavaCell
                 else if(hasLava && y < currentSurfaceY)
                 {
                     // full lava block
-                    sim.world.setBlockState(pos, 
+                    world.setBlockState(pos, 
                             TerrainBlockHelper.stateWithDiscreteFlowHeight(ModBlocks.lava_dynamic_height.getDefaultState(), TerrainState.BLOCK_LEVELS_INT));
                     
                     tracker.setAdjustmentNeededAround(x, y, z);
@@ -1806,7 +1808,7 @@ public class LavaCell extends AbstractLavaCell
                     // don't want to clear non-air blocks if they did not contain lava - let falling particles do that
                     if(priorState.getBlock() == ModBlocks.lava_dynamic_height)
                     {
-                        sim.world.setBlockState(pos, Blocks.AIR.getDefaultState());
+                        world.setBlockState(pos, Blocks.AIR.getDefaultState());
                         
                         // difference here is that we allow fillers in the block being set
                         tracker.setAdjustmentNeededAround(x, y, z);

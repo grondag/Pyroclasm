@@ -273,33 +273,35 @@ public class EntityLavaBlob extends Entity
             if(sim == null) return;
             
             BlockPos where = this.getPosition();
-            if(!LavaTerrainHelper.canLavaDisplace(sim.world.getBlockState(where)))
+            final World world = sim.world;
+            
+            if(!LavaTerrainHelper.canLavaDisplace(world.getBlockState(where)))
             {
-                if(LavaTerrainHelper.canLavaDisplace(sim.world.getBlockState(where.up())))
+                if(LavaTerrainHelper.canLavaDisplace(world.getBlockState(where.up())))
                 {
                     where = where.up();
                 }
-                else if(LavaTerrainHelper.canLavaDisplace(sim.world.getBlockState(where.east())))
+                else if(LavaTerrainHelper.canLavaDisplace(world.getBlockState(where.east())))
                 {
                     where = where.east();
                 }
-                else if(LavaTerrainHelper.canLavaDisplace(sim.world.getBlockState(where.north())))
+                else if(LavaTerrainHelper.canLavaDisplace(world.getBlockState(where.north())))
                 {
                     where = where.north();
                 }
-                else if(LavaTerrainHelper.canLavaDisplace(sim.world.getBlockState(where.west())))
+                else if(LavaTerrainHelper.canLavaDisplace(world.getBlockState(where.west())))
                 {
                     where = where.west();
                 }
-                else if(LavaTerrainHelper.canLavaDisplace(sim.world.getBlockState(where.south())))
+                else if(LavaTerrainHelper.canLavaDisplace(world.getBlockState(where.south())))
                 {
                     where = where.south();
                 }
-                else if(LavaTerrainHelper.canLavaDisplace(sim.world.getBlockState(where.up(2))))
+                else if(LavaTerrainHelper.canLavaDisplace(world.getBlockState(where.up(2))))
                 {
                     where = where.up(2);
                 }
-                else if(LavaTerrainHelper.canLavaDisplace(sim.world.getBlockState(where.up(3))))
+                else if(LavaTerrainHelper.canLavaDisplace(world.getBlockState(where.up(3))))
                 {
                     where = where.up(3);
                 }

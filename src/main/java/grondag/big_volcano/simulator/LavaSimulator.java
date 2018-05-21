@@ -548,7 +548,7 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
         // turn vanilla lava underneath into basalt
         while(lavaCheckY > 0 && world.getBlockState(pos).getBlock() == Blocks.LAVA)
         {
-            this.world.setBlockState(pos, ModBlocks.basalt_cut.getDefaultState());
+            world.setBlockState(pos, ModBlocks.basalt_cut.getDefaultState());
         }
     }
 
