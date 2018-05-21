@@ -1357,53 +1357,75 @@ public class LavaCell extends AbstractLavaCell
     
     /**
      * True if this cell has not had a flow in a configured number of ticks
-     * and it has connections to cells with interconnecting lava on fewer
-     * than four sides. (Is on an edge.) </p>
+     * and no more than two directly adjacent cells sharing a floor contain lava.
+     * Can also cool if one directly adjacent floor is empty and both corner
+     * adjacent to that cell are also empty.
      * 
-     * Note that we can't use the simple count of connections to test this,
-     * because cells can have more than one connection per side.
      */
     public final boolean canCool(int simTickIndex)
     {
-        if(this.isCoolingDisabled || this.isDeleted || this.fluidUnits() == 0 
-                || simTickIndex - this.lastFlowTick < Configurator.VOLCANO.lavaCoolingTicks) return false;
+        if( this.fluidUnits() == 0 
+                || this.isCoolingDisabled 
+                || this.isDeleted 
+                || this.isValidationNeeded()
+                || simTickIndex - this.lastFlowTick < Configurator.VOLCANO.lavaCoolingTicks) 
+            return false;
         
-        if(this.connections.size() < 4) return true;
+        int adjacentHotCount = 0;
         
-        int sideFlags = 0;
+        int sideFlag = 0;
         
-        for(int i = this.connections.size() - 1; i >= 0; i--)
+        if(getFluidUnitsForNeighbor(1, 0) > 0)
         {
-            final LavaCell other = this.connections.get(i).getOther(this);
-            if(other.fluidUnits() > 0 && this.canFluidConnect(other))
-            {
-                if(other.x() == this.x())
-                {
-                    if(other.z() > this.z())
-                    {
-                        sideFlags |= 1;
-                    }
-                    else
-                    {
-                        sideFlags |= 2;
-                    }
-                }
-                else
-                {
-                    if(other.x() > this.x())
-                    {
-                        sideFlags |= 4;
-                    }
-                    else
-                    {
-                        sideFlags |= 8;
-                    }
-                }
-            }
-            if(sideFlags == 15) return false;
+            adjacentHotCount++;
+            sideFlag |= 1;
         }
         
-        return true;
+        if(getFluidUnitsForNeighbor(-1, 0) > 0)
+        {
+            adjacentHotCount++;
+            sideFlag |= 2;
+        }
+        
+        if(adjacentHotCount == 0) return true;
+        
+        if(getFluidUnitsForNeighbor(0, 1) > 0)
+        {
+            adjacentHotCount++;
+            sideFlag |= 4;
+        }
+        
+        if(adjacentHotCount == 1) return true;
+        
+        if(getFluidUnitsForNeighbor(0, -1) > 0) 
+        {
+            adjacentHotCount++;
+            sideFlag |= 8;
+        }
+        
+        if(adjacentHotCount == 2) return true;
+        
+        if(adjacentHotCount == 3)
+        {
+            switch(sideFlag)
+            {
+            case 1:
+                return getFluidUnitsForNeighbor(1, -1) == 0 && getFluidUnitsForNeighbor(1, 1) == 0;
+                
+            case 2:
+                return getFluidUnitsForNeighbor(-1, -1) == 0 && getFluidUnitsForNeighbor(-1, 1) == 0;
+                
+            case 4:
+                return getFluidUnitsForNeighbor(1, 1) == 0 && getFluidUnitsForNeighbor(-1, 1) == 0;
+
+            case 8:
+                return getFluidUnitsForNeighbor(1, -1) == 0 && getFluidUnitsForNeighbor(-1, -1) == 0;
+                
+            default:
+                return false;
+            }
+        }
+        return false;
     }
     
     /**
@@ -1619,6 +1641,15 @@ public class LavaCell extends AbstractLavaCell
     {
         LavaCell neighbor = this.getFloorNeighbor(xOffset, zOffset, true);
         return neighbor == null ? defaultValue : neighbor.floorUnits();
+    }
+    
+    /**
+     * Returns zero if no floor neighbor cell at that side/corner.
+     */
+    private int getFluidUnitsForNeighbor(int xOffset, int zOffset)
+    {
+        LavaCell neighbor = this.getFloorNeighbor(xOffset, zOffset, true);
+        return neighbor == null ? 0 : neighbor.fluidUnits();
     }
     
     /**

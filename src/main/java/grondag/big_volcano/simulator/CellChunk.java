@@ -9,6 +9,7 @@ import grondag.big_volcano.BigActiveVolcano;
 import grondag.big_volcano.Configurator;
 import grondag.exotic_matter.simulator.Simulator;
 import grondag.exotic_matter.varia.PackedChunkPos;
+import grondag.exotic_matter.varia.SimpleUnorderedArrayList;
 import net.minecraft.world.chunk.Chunk;
 /**
  * Container for all cells in a world chunk.
@@ -501,25 +502,31 @@ public class CellChunk
         final int tick = Simulator.currentTick();
         
         CellChunk c = sim.cells.getCellChunk(this.xStart - 16, this.zStart);
-        final boolean isLoadedLowX = c != null && !c.isNew();
+        final boolean isUnavailableLowX = c == null || c.isNew();
         
         c = sim.cells.getCellChunk(this.xStart + 16, this.zStart);
-        final boolean isLoadedHighX = c != null && !c.isNew();
+        final boolean isUnavailableHighX = c == null || c.isNew();
         
         c = sim.cells.getCellChunk(this.xStart , this.zStart - 16);
-        final boolean isLoadedLowZ = c != null && !c.isNew();
+        final boolean isUnavailableLowZ = c == null || c.isNew();
         
         c = sim.cells.getCellChunk(this.xStart , this.zStart + 16);
-        final boolean isLoadedHighZ = c != null && !c.isNew();
+        final boolean isUnavailableHighZ = c == null || c.isNew();
+        
+        // don't want to cool the cells as we go - would potentially cause unpleasing cascade 
+        SimpleUnorderedArrayList<LavaCell> coolTargets = new SimpleUnorderedArrayList<>(16);
         
         for(LavaCell entryCell : this.entryCells)
         {
+            if(entryCell == null) continue;
+            
             // don't allow cooling on edge cells if neighbor chunk not loaded yet
             // because won't have connection formed yet
-            if(entryCell.x() == this.xStart && !isLoadedLowX) continue;
-            if(entryCell.x() == this.xEnd && !isLoadedHighX) continue;
-            if(entryCell.z() == this.zStart && !isLoadedLowZ) continue;
-            if(entryCell.z() == this.zEnd && !isLoadedHighZ) continue;
+            final boolean enableCooling = 
+                !( (isUnavailableLowX && entryCell.x() == this.xStart) 
+                || (isUnavailableHighX && entryCell.x() == this.xEnd) 
+                || (isUnavailableLowZ && entryCell.z() == this.zStart) 
+                || (isUnavailableHighZ && entryCell.z() == this.zEnd));
             
             LavaCell cell = entryCell.firstCell();
             
@@ -531,13 +538,15 @@ public class CellChunk
                 // and would no longer have a reference to the next cell
                 LavaCell nextCell = cell.aboveCell();
                 
-                if(cell.canCool(tick))
+                if(enableCooling &&  cell.canCool(tick))
                 {
-                    sim.coolCell(cell);
+                    coolTargets.add(cell);
                 }
                 cell = nextCell;
             }
         }
+        
+        if(!coolTargets.isEmpty()) coolTargets.forEach(cell -> sim.coolCell(cell));
         
         this.forEach(cell -> cell.updateRetentionIfNeeded());
     }
