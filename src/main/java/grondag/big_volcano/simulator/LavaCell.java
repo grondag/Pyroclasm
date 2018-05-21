@@ -1594,13 +1594,30 @@ public class LavaCell extends AbstractLavaCell
         return tState.retentionLevels() * LavaSimulator.FLUID_UNITS_PER_LEVEL;
     }
     
-    /** 
-     * Returns default value if neighbor is null.
+    /**
+     * Return lowest floor monotonically (downward) reachable from fromCell via this cell.<p>
+     * 
+     * Does not consider the floor of the fromCell. <p>
+     * 
+     * IOW, is the min of this cell and any directly adjacent floor neighbor except the "from" cell.
      */
-    private int getFloorUnitsForNeighbor(int xOffset, int zOffset, int defaultValue)
+    public final int getMinFloorUnitsFrom(LavaCell fromCell)
     {
-        LavaCell neighbor = this.getFloorNeighbor(xOffset, zOffset, true);
-        return neighbor == null ? defaultValue : neighbor.floorUnits();
+        int result = this.floorUnits();
+        
+        LavaCell neighbor = this.getFloorNeighbor(1, 0, true);
+        if(neighbor != null && neighbor != fromCell) result = Math.min(result, neighbor.floorUnits());
+        
+        neighbor = this.getFloorNeighbor(-1, 0, true);
+        if(neighbor != null && neighbor != fromCell) result = Math.min(result, neighbor.floorUnits());
+        
+        neighbor = this.getFloorNeighbor(0, 1, true);
+        if(neighbor != null && neighbor != fromCell) result = Math.min(result, neighbor.floorUnits());
+        
+        neighbor = this.getFloorNeighbor(0, -1, true);
+        if(neighbor != null && neighbor != fromCell) result = Math.min(result, neighbor.floorUnits());
+        
+        return result;
     }
     
     /**

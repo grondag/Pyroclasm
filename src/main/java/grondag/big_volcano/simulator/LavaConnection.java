@@ -258,7 +258,7 @@ public class LavaConnection
             this.fromVolume = fromVolume;
             this.toVolume = toVolume;
             
-            this.drop = Math.min(fromFloor - toFloor, LavaSimulator.FLUID_UNITS_PER_TWO_BLOCKS);
+            this.drop = Math.min(fromFloor - toCell.getMinFloorUnitsFrom(fromCell), LavaSimulator.FLUID_UNITS_PER_TWO_BLOCKS);
             
             if(fromCeiling > toCeiling)
             {
