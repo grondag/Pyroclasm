@@ -14,6 +14,7 @@ import grondag.exotic_matter.varia.PackedBlockPos;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
 
 public class AdjustmentTracker
 {
@@ -113,12 +114,14 @@ public class AdjustmentTracker
     /** returns true an update occured */
     private boolean adjustFillIfNeeded(BlockPos pos, LavaSimulator sim)
     {
-        IBlockState baseState = sim.world.getBlockState(pos);
+        final World world = sim.world;
+        
+        IBlockState baseState = world.getBlockState(pos);
         if(baseState.getBlock() == ModBlocks.basalt_cut)
         {
-            if( !TerrainBlockHelper.shouldBeFullCube(baseState, sim.world, pos))
+            if( !TerrainBlockHelper.shouldBeFullCube(baseState, world, pos))
             {
-                sim.world.setBlockState(pos, ModBlocks.basalt_cool_dynamic_height.getDefaultState().withProperty(ISuperBlock.META, baseState.getValue(ISuperBlock.META)));
+                world.setBlockState(pos, ModBlocks.basalt_cool_dynamic_height.getDefaultState().withProperty(ISuperBlock.META, baseState.getValue(ISuperBlock.META)));
                 return true;
             }
             else
@@ -128,9 +131,9 @@ public class AdjustmentTracker
         }
         else if(baseState.getBlock() == ModBlocks.basalt_cool_dynamic_height)
         {
-            if(TerrainBlockHelper.shouldBeFullCube(baseState, sim.world, pos))
+            if(TerrainBlockHelper.shouldBeFullCube(baseState, world, pos))
             {
-                sim.world.setBlockState(pos, ModBlocks.basalt_cut.getDefaultState().withProperty(ISuperBlock.META, baseState.getValue(ISuperBlock.META)));
+                world.setBlockState(pos, ModBlocks.basalt_cut.getDefaultState().withProperty(ISuperBlock.META, baseState.getValue(ISuperBlock.META)));
                 return true;
             }
             else
@@ -139,14 +142,14 @@ public class AdjustmentTracker
             }
         }
         
-        IBlockState newState = TerrainBlockHelper.adjustFillIfNeeded(sim.world, pos, ADJUSTMENT_PREDICATE);
+        IBlockState newState = TerrainBlockHelper.adjustFillIfNeeded(world, pos, ADJUSTMENT_PREDICATE);
         
         if(newState == null)
         {
             // replace static flow height blocks with dynamic version
             if(baseState.getBlock() instanceof TerrainStaticBlock)
             {
-                ((TerrainStaticBlock)baseState.getBlock()).makeDynamic(baseState, sim.world, pos);
+                ((TerrainStaticBlock)baseState.getBlock()).makeDynamic(baseState, world, pos);
                 return true;
             }
             else
@@ -155,7 +158,7 @@ public class AdjustmentTracker
             }
         }
         
-        if(baseState.getBlock().isWood(sim.world, pos))
+        if(baseState.getBlock().isWood(world, pos))
         {
             sim.lavaTreeCutter.queueTreeCheck(pos.up());
         }

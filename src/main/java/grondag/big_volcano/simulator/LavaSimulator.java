@@ -33,12 +33,10 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.util.EnumFacing;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvent;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.math.Vec3i;
 import net.minecraft.world.IWorldEventListener;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.common.FMLCommonHandler;
@@ -299,45 +297,6 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
     {
         if(!itMe) trackCoolingBlock(pos);
     }
-
-    
-    /**
-     * Returns value to show if lava can cool based on world state alone. Does not consider age.
-     */
-    protected boolean canLavaCool(long packedBlockPos)
-    {
-        BlockPos pos = PackedBlockPos.unpack(packedBlockPos);
-        
-        Block block = this.world.getBlockState(pos).getBlock();
-        
-        if(block == ModBlocks.lava_dynamic_height || block == ModBlocks.lava_dynamic_filler)
-        {
-            int hotNeighborCount = 0;
-            BlockPos.MutableBlockPos nPos = new BlockPos.MutableBlockPos();
-            
-            for(EnumFacing face : EnumFacing.VALUES)
-            {
-                Vec3i vec = face.getDirectionVec();
-                nPos.setPos(pos.getX() + vec.getX(), pos.getY() + vec.getY(), pos.getZ() + vec.getZ());
-                
-                block = this.world.getBlockState(nPos).getBlock();
-                if(block == ModBlocks.lava_dynamic_height || block == ModBlocks.lava_dynamic_filler)
-                {
-                    // don't allow top to cool until bottom does
-                    if(face == EnumFacing.DOWN) return false;
-                    
-                    hotNeighborCount++;
-                }
-            }
-            
-            return hotNeighborCount < 4;
-        }
-        else
-        {
-            // Might be invisible lava (not big enough to be visible in world)
-            return true;
-        }
-    }
     
     protected void coolLava(BlockPos pos)
     {
@@ -355,11 +314,7 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
 
         if(newBlock != null)
         {
-//            HardScience.log.info("Cooling lava @" + pos.toString());
-            //should not need these any more due to world buffer
-//            this.itMe = true;
             this.world.setBlockState(pos, newBlock.getDefaultState().withProperty(ISuperBlock.META, priorState.getValue(ISuperBlock.META)));
-//            this.itMe = false;
             this.basaltTracker.trackCoolingBlock(PackedBlockPos.pack(pos));
         }
     }
@@ -483,7 +438,8 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
     {
         perfParticles.startRun();
         
-        final MinecraftServer server = this.world.getMinecraftServer();
+        final World world = this.world;
+        final MinecraftServer server = world.getMinecraftServer();
         int capacity =  server == null ? 0 : Configurator.VOLCANO.maxLavaEntities - EntityLavaBlob.getLiveParticleCount(server);
         
         if(capacity <= 0) return;
@@ -504,7 +460,7 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
                     // Spawn in world, discarding particles that have aged out and aren't big enough to form a visible lava block
                     if(p.getFluidUnits() >= FLUID_UNITS_PER_LEVEL)
                     {
-                        EntityLavaBlob elp = new EntityLavaBlob(this.world, p.getFluidUnits(), 
+                        EntityLavaBlob elp = new EntityLavaBlob(world, p.getFluidUnits(), 
                               new Vec3d(
                                       PackedBlockPos.getX(p.packedBlockPos) + 0.5, 
                                       PackedBlockPos.getY(p.packedBlockPos) + 0.4, 
@@ -512,7 +468,7 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
                                   ),
                               Vec3d.ZERO);
                         
-                        this.world.spawnEntity(elp);
+                        world.spawnEntity(elp);
                     }
                 }
                 else 
@@ -574,8 +530,8 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
 
     public void coolCell(LavaCell cell)
     {
-        int x = cell.x();
-        int z = cell.z();
+        final int x = cell.x();
+        final int z = cell.z();
         
         int lavaCheckY = cell.floorY() - 1;
         
@@ -586,9 +542,11 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
         }
         cell.coolAndShrink();
         
+        final World world = this.world;
+        
         BlockPos pos = new BlockPos(x, lavaCheckY, z);
         // turn vanilla lava underneath into basalt
-        while(lavaCheckY > 0 && this.world.getBlockState(pos).getBlock() == Blocks.LAVA)
+        while(lavaCheckY > 0 && world.getBlockState(pos).getBlock() == Blocks.LAVA)
         {
             this.world.setBlockState(pos, ModBlocks.basalt_cut.getDefaultState());
         }
