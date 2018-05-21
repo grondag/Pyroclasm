@@ -71,7 +71,6 @@ public class LavaConnection
         
         if(surface1 == surface2)
         {
-            this.direction = FlowDirection.NONE;
             return false;
         }
         
@@ -80,9 +79,12 @@ public class LavaConnection
             // Will be set up from other cell
             if(this.secondCell == sourceCell) return false; 
             
-            // don't allow switch of direction in same tick
             if(this.direction == FlowDirection.TWO_TO_ONE) 
             {
+                // don't allow switch of direction unless something substantial to flow
+                if(surface1 - surface2 < LavaSimulator.FLUID_UNITS_PER_LEVEL / 4) return false;
+                
+                // don't allow switch of direction in same tick
                 this.direction = FlowDirection.NONE;
                 return false;
             }
@@ -101,7 +103,6 @@ public class LavaConnection
             }
             else
             {
-                this.direction = FlowDirection.NONE;
                 return false;
             }
         }
@@ -111,9 +112,12 @@ public class LavaConnection
             // Will be set up from other cell
             if(this.firstCell == sourceCell) return false; 
             
-            // don't allow switch of direction in same tick
             if(this.direction == FlowDirection.ONE_TO_TWO) 
             {
+                // don't allow switch of direction unless something substantial to flow
+                if(surface2 - surface1 < LavaSimulator.FLUID_UNITS_PER_LEVEL / 4) return false;
+                
+                // don't allow switch of direction in same tick
                 this.direction = FlowDirection.NONE;
                 return false;
             }
@@ -132,7 +136,6 @@ public class LavaConnection
             }
             else
             {
-                this.direction = FlowDirection.NONE;
                 return false;
             }
         }
