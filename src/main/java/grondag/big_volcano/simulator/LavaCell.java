@@ -14,6 +14,7 @@ import grondag.exotic_matter.model.TerrainState;
 import grondag.exotic_matter.simulator.Simulator;
 import grondag.exotic_matter.varia.PackedBlockPos;
 import grondag.exotic_matter.varia.SimpleUnorderedArrayList;
+import grondag.exotic_matter.varia.Useful;
 import io.netty.util.internal.ThreadLocalRandom;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import net.minecraft.block.state.IBlockState;
@@ -1359,7 +1360,7 @@ public class LavaCell extends AbstractLavaCell
     /**
      * True if this cell has not had a flow in a configured number of ticks
      * and no more than two directly adjacent cells sharing a floor contain lava.
-     * Can also cool if one directly adjacent floor is empty and both corner
+     * May (50% chance) also cool if one directly adjacent floor is empty and both corner
      * adjacent to that cell are also empty.
      * 
      */
@@ -1406,20 +1407,20 @@ public class LavaCell extends AbstractLavaCell
         
         if(adjacentHotCount == 2) return true;
         
-        if(adjacentHotCount == 3)
+        if(adjacentHotCount == 3 && ThreadLocalRandom.current().nextBoolean())
         {
             switch(sideFlag)
             {
-            case 1:
+            case 14:
                 return getFluidUnitsForNeighbor(1, -1) == 0 && getFluidUnitsForNeighbor(1, 1) == 0;
                 
-            case 2:
+            case 13:
                 return getFluidUnitsForNeighbor(-1, -1) == 0 && getFluidUnitsForNeighbor(-1, 1) == 0;
                 
-            case 4:
+            case 11:
                 return getFluidUnitsForNeighbor(1, 1) == 0 && getFluidUnitsForNeighbor(-1, 1) == 0;
 
-            case 8:
+            case 7:
                 return getFluidUnitsForNeighbor(1, -1) == 0 && getFluidUnitsForNeighbor(-1, -1) == 0;
                 
             default:
