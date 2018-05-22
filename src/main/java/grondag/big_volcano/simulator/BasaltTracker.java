@@ -11,6 +11,7 @@ import grondag.exotic_matter.serialization.NBTDictionary;
 import grondag.exotic_matter.simulator.Simulator;
 import grondag.exotic_matter.varia.PackedBlockPos;
 import grondag.exotic_matter.varia.PackedChunkPos;
+import grondag.exotic_matter.varia.Useful;
 import it.unimi.dsi.fastutil.longs.Long2IntMap.Entry;
 import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
@@ -158,8 +159,8 @@ public class BasaltTracker
         {
             for(Entry e : blocks.long2IntEntrySet())
             {
-                saveData[i++] = (int) ((e.getLongKey() >> 32) & 0xFFFFFFFF);
-                saveData[i++] = (int) (e.getLongKey() & 0xFFFFFFFF);
+                saveData[i++] = Useful.longToIntHigh(e.getLongKey());
+                saveData[i++] = Useful.longToIntLow(e.getLongKey());
                 saveData[i++] = e.getIntValue();
             }
         }       
@@ -183,7 +184,7 @@ public class BasaltTracker
             int i = 0;
             while(i < saveData.length)
             {
-                this.trackCoolingBlock(((long)saveData[i++] << 32) | (long)saveData[i++], saveData[i++]);
+                this.trackCoolingBlock(Useful.longFromInts(saveData[i++], saveData[i++]), saveData[i++]);
             }
             BigActiveVolcano.INSTANCE.info("Loaded " + this.size + " cooling basalt blocks.");
         }

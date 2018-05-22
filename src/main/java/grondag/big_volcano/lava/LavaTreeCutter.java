@@ -1,9 +1,8 @@
 package grondag.big_volcano.lava;
 
-import java.util.ArrayDeque;
 import java.util.Comparator;
 import java.util.PriorityQueue;
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 import javax.annotation.Nullable;
 
@@ -11,6 +10,9 @@ import grondag.big_volcano.init.ModBlocks;
 import grondag.exotic_matter.serialization.IReadWriteNBT;
 import grondag.exotic_matter.serialization.NBTDictionary;
 import grondag.exotic_matter.simulator.ISimulationTickable;
+import grondag.exotic_matter.varia.LongQueue;
+import grondag.exotic_matter.varia.PackedBlockPos;
+import grondag.exotic_matter.varia.Useful;
 import it.unimi.dsi.fastutil.longs.Long2ByteMap;
 import it.unimi.dsi.fastutil.longs.Long2ByteMap.Entry;
 import it.unimi.dsi.fastutil.longs.Long2ByteOpenHashMap;
@@ -43,7 +45,7 @@ public class LavaTreeCutter implements ISimulationTickable, IReadWriteNBT
     
     private final World world;
     
-    private final ArrayDeque<BlockPos> queue = new ArrayDeque<>();
+    private final LongQueue queue = new LongQueue();
 
     private Operation operation = Operation.IDLE;
     
@@ -52,7 +54,7 @@ public class LavaTreeCutter implements ISimulationTickable, IReadWriteNBT
     
     /** If search in progress, starting point of search 
      *  Not used during search, but is serialized if saved while search in progress. */
-    @Nullable private BlockPos startPos;
+    private long startPosPacked = PackedBlockPos.NULL_POS;
     
     private final PriorityQueue<Visit> toVisit = new PriorityQueue<>(
         new Comparator<Visit>() 
@@ -67,9 +69,7 @@ public class LavaTreeCutter implements ISimulationTickable, IReadWriteNBT
     
     private final Long2ByteOpenHashMap visited = new Long2ByteOpenHashMap();
     
-    private final ArrayDeque<BlockPos> toClear = new ArrayDeque<>();
-    
-    private final Random random = new Random();
+    private final LongQueue toClear = new LongQueue();
     
     private static final byte POS_TYPE_LOG_FROM_ABOVE = 0;
     private static final byte POS_TYPE_LOG = 1;
@@ -84,13 +84,13 @@ public class LavaTreeCutter implements ISimulationTickable, IReadWriteNBT
     {
         private final byte type;
         private final byte depth;
-        private final BlockPos pos;
+        private final long packedBlockPos;
         
-        private Visit(BlockPos pos, byte type, byte depth)
+        private Visit(long packedBlockPos, byte type, byte depth)
         {
             this.type = type;
             this.depth = depth;
-            this.pos = pos;
+            this.packedBlockPos = packedBlockPos;
         }
     }
     
@@ -101,7 +101,7 @@ public class LavaTreeCutter implements ISimulationTickable, IReadWriteNBT
     
     public void queueTreeCheck(BlockPos pos)
     {
-        queue.offer(pos);
+        queue.enqueue(PackedBlockPos.pack(pos));
     }
 
     private void reset()
@@ -110,7 +110,7 @@ public class LavaTreeCutter implements ISimulationTickable, IReadWriteNBT
         this.toVisit.clear();
         this.toClear.clear();
         this.startState = null;
-        this.startPos = null;
+        this.startPosPacked = PackedBlockPos.NULL_POS;
     }
     
     @Override
@@ -143,42 +143,48 @@ public class LavaTreeCutter implements ISimulationTickable, IReadWriteNBT
 
     }
     
+    private final BlockPos.MutableBlockPos searchPos = new BlockPos.MutableBlockPos();
+    
     private Operation startSearch()
     {
         if(this.queue.isEmpty()) return Operation.IDLE;
         
-        BlockPos pos = this.queue.poll();
-        IBlockState state = this.world.getBlockState(pos);
+        final long packedPos = this.queue.dequeueLong();
+        PackedBlockPos.unpackTo(packedPos, searchPos);
         
-        if(state.getBlock().isWood(this.world, pos))
+        IBlockState state = this.world.getBlockState(searchPos);
+        
+        if(state.getBlock().isWood(this.world, searchPos))
         {
-            this.visited.put(pos.toLong(), POS_TYPE_LOG);
+            this.visited.put(packedPos, POS_TYPE_LOG);
+            
             // shoudln't really be necessary, but reflect the
             // reason we are doing this is the block below is (or was) hot lava
-            this.visited.put(pos.down().toLong(), POS_TYPE_IGNORE);
+            this.visited.put(PackedBlockPos.down(packedPos), POS_TYPE_IGNORE);
+            
             this.startState = state;
-            this.startPos = pos;
+            this.startPosPacked = packedPos;
             
-            enqueIfViable(pos.east(), POS_TYPE_LOG, ZERO_BYTE);
-            enqueIfViable(pos.west(), POS_TYPE_LOG, ZERO_BYTE);
-            enqueIfViable(pos.north(), POS_TYPE_LOG, ZERO_BYTE);
-            enqueIfViable(pos.south(), POS_TYPE_LOG, ZERO_BYTE);
-            enqueIfViable(pos.up(), POS_TYPE_LOG, ZERO_BYTE);
+            enqueIfViable(PackedBlockPos.east(packedPos), POS_TYPE_LOG, ZERO_BYTE);
+            enqueIfViable(PackedBlockPos.west(packedPos), POS_TYPE_LOG, ZERO_BYTE);
+            enqueIfViable(PackedBlockPos.north(packedPos), POS_TYPE_LOG, ZERO_BYTE);
+            enqueIfViable(PackedBlockPos.south(packedPos), POS_TYPE_LOG, ZERO_BYTE);
+            enqueIfViable(PackedBlockPos.up(packedPos), POS_TYPE_LOG, ZERO_BYTE);
             
-            enqueIfViable(pos.add(-1, 0, -1), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
-            enqueIfViable(pos.add(-1, 0, 1), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
-            enqueIfViable(pos.add(1, 0, -1), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
-            enqueIfViable(pos.add(1, 0, 1), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
+            enqueIfViable(PackedBlockPos.add(packedPos, -1, 0, -1), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
+            enqueIfViable(PackedBlockPos.add(packedPos, -1, 0, 1), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
+            enqueIfViable(PackedBlockPos.add(packedPos, 1, 0, -1), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
+            enqueIfViable(PackedBlockPos.add(packedPos, 1, 0, 1), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
             
-            enqueIfViable(pos.add(-1, 1, 0), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
-            enqueIfViable(pos.add(-1, 1, 0), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
-            enqueIfViable(pos.add(0, 1, -1), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
-            enqueIfViable(pos.add(0, 1, 1), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
+            enqueIfViable(PackedBlockPos.add(packedPos, -1, 1, 0), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
+            enqueIfViable(PackedBlockPos.add(packedPos, -1, 1, 0), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
+            enqueIfViable(PackedBlockPos.add(packedPos, 0, 1, -1), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
+            enqueIfViable(PackedBlockPos.add(packedPos, 0, 1, 1), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
             
-            enqueIfViable(pos.add(-1, 1, -1), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
-            enqueIfViable(pos.add(-1, 1, 1), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
-            enqueIfViable(pos.add(1, 1, -1), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
-            enqueIfViable(pos.add(1, 1, 1), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
+            enqueIfViable(PackedBlockPos.add(packedPos, -1, 1, -1), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
+            enqueIfViable(PackedBlockPos.add(packedPos, -1, 1, 1), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
+            enqueIfViable(PackedBlockPos.add(packedPos, 1, 1, -1), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
+            enqueIfViable(PackedBlockPos.add(packedPos, 1, 1, 1), POS_TYPE_LOG_FROM_DIAGONAL, ZERO_BYTE);
             return Operation.SEARCHING;
             
         }
@@ -191,88 +197,89 @@ public class LavaTreeCutter implements ISimulationTickable, IReadWriteNBT
     {
         final Visit toVisit = this.toVisit.poll();
         
-        final BlockPos pos = toVisit.pos;
+        final long packedPos = toVisit.packedBlockPos;
+        
+        PackedBlockPos.unpackTo(packedPos, searchPos);
         
         final byte fromType = toVisit.type;
         
         byte newDepth = (byte) (toVisit.depth + 1);
         
-        final long longPos = pos.toLong();
         
-        if(!this.visited.containsKey(longPos))
+        if(!this.visited.containsKey(packedPos))
         {
-            IBlockState state = this.world.getBlockState(pos);
+            IBlockState state = this.world.getBlockState(searchPos);
             
             Block block = state.getBlock();
             
-            if(block.isLeaves(state, this.world, pos))
+            if(block.isLeaves(state, this.world, searchPos))
             {
                 // leaves are always valid to visit, even from other leaves
-                this.visited.put(longPos, POS_TYPE_LEAF);
+                this.visited.put(packedPos, POS_TYPE_LEAF);
                 
                 // restart depth of search when transition from log to leaf
                 if(fromType != POS_TYPE_LEAF) newDepth = 0;
                 
-                enqueIfViable(pos.up(), POS_TYPE_LEAF, newDepth);
-                enqueIfViable(pos.east(), POS_TYPE_LEAF, newDepth);
-                enqueIfViable(pos.west(), POS_TYPE_LEAF, newDepth);
-                enqueIfViable(pos.north(), POS_TYPE_LEAF, newDepth);
-                enqueIfViable(pos.south(), POS_TYPE_LEAF, newDepth);
-                enqueIfViable(pos.down(), POS_TYPE_LEAF, newDepth);
+                enqueIfViable(PackedBlockPos.up(packedPos), POS_TYPE_LEAF, newDepth);
+                enqueIfViable(PackedBlockPos.east(packedPos), POS_TYPE_LEAF, newDepth);
+                enqueIfViable(PackedBlockPos.west(packedPos), POS_TYPE_LEAF, newDepth);
+                enqueIfViable(PackedBlockPos.north(packedPos), POS_TYPE_LEAF, newDepth);
+                enqueIfViable(PackedBlockPos.south(packedPos), POS_TYPE_LEAF, newDepth);
+                enqueIfViable(PackedBlockPos.down(packedPos), POS_TYPE_LEAF, newDepth);
                 
-                enqueIfViable(pos.add(-1, 0, -1), POS_TYPE_LEAF, newDepth);
-                enqueIfViable(pos.add(-1, 0, 1), POS_TYPE_LEAF, newDepth);
-                enqueIfViable(pos.add(1, 0, -1), POS_TYPE_LEAF, newDepth);
-                enqueIfViable(pos.add(1, 0, 1), POS_TYPE_LEAF, newDepth);
+                enqueIfViable(PackedBlockPos.add(packedPos, -1, 0, -1), POS_TYPE_LEAF, newDepth);
+                enqueIfViable(PackedBlockPos.add(packedPos, -1, 0, 1), POS_TYPE_LEAF, newDepth);
+                enqueIfViable(PackedBlockPos.add(packedPos, 1, 0, -1), POS_TYPE_LEAF, newDepth);
+                enqueIfViable(PackedBlockPos.add(packedPos, 1, 0, 1), POS_TYPE_LEAF, newDepth);
                 
-                enqueIfViable(pos.add(-1, 1, 0), POS_TYPE_LEAF, newDepth);
-                enqueIfViable(pos.add(-1, 1, 0), POS_TYPE_LEAF, newDepth);
-                enqueIfViable(pos.add(0, 1, -1), POS_TYPE_LEAF, newDepth);
-                enqueIfViable(pos.add(0, 1, 1), POS_TYPE_LEAF, newDepth);
+                enqueIfViable(PackedBlockPos.add(packedPos, -1, 1, 0), POS_TYPE_LEAF, newDepth);
+                enqueIfViable(PackedBlockPos.add(packedPos, -1, 1, 0), POS_TYPE_LEAF, newDepth);
+                enqueIfViable(PackedBlockPos.add(packedPos, 0, 1, -1), POS_TYPE_LEAF, newDepth);
+                enqueIfViable(PackedBlockPos.add(packedPos, 0, 1, 1), POS_TYPE_LEAF, newDepth);
                 
-                enqueIfViable(pos.add(-1, 1, -1), POS_TYPE_LEAF, newDepth);
-                enqueIfViable(pos.add(-1, 1, 1), POS_TYPE_LEAF, newDepth);
-                enqueIfViable(pos.add(1, 1, -1), POS_TYPE_LEAF, newDepth);
-                enqueIfViable(pos.add(1, 1, 1), POS_TYPE_LEAF, newDepth);
+                enqueIfViable(PackedBlockPos.add(packedPos, -1, 1, -1), POS_TYPE_LEAF, newDepth);
+                enqueIfViable(PackedBlockPos.add(packedPos, -1, 1, 1), POS_TYPE_LEAF, newDepth);
+                enqueIfViable(PackedBlockPos.add(packedPos, 1, 1, -1), POS_TYPE_LEAF, newDepth);
+                enqueIfViable(PackedBlockPos.add(packedPos, 1, 1, 1), POS_TYPE_LEAF, newDepth);
                 
-                enqueIfViable(pos.add(-1, -1, 0), POS_TYPE_LEAF, newDepth);
-                enqueIfViable(pos.add(-1, -1, 0), POS_TYPE_LEAF, newDepth);
-                enqueIfViable(pos.add(0, -1, -1), POS_TYPE_LEAF, newDepth);
-                enqueIfViable(pos.add(0, -1, 1), POS_TYPE_LEAF, newDepth);
+                enqueIfViable(PackedBlockPos.add(packedPos, -1, -1, 0), POS_TYPE_LEAF, newDepth);
+                enqueIfViable(PackedBlockPos.add(packedPos, -1, -1, 0), POS_TYPE_LEAF, newDepth);
+                enqueIfViable(PackedBlockPos.add(packedPos, 0, -1, -1), POS_TYPE_LEAF, newDepth);
+                enqueIfViable(PackedBlockPos.add(packedPos, 0, -1, 1), POS_TYPE_LEAF, newDepth);
                 
-                enqueIfViable(pos.add(-1, -1, -1), POS_TYPE_LEAF, newDepth);
-                enqueIfViable(pos.add(-1, -1, 1), POS_TYPE_LEAF, newDepth);
-                enqueIfViable(pos.add(1, -1, -1), POS_TYPE_LEAF, newDepth);
-                enqueIfViable(pos.add(1, -1, 1), POS_TYPE_LEAF, newDepth);
+                enqueIfViable(PackedBlockPos.add(packedPos, -1, -1, -1), POS_TYPE_LEAF, newDepth);
+                enqueIfViable(PackedBlockPos.add(packedPos, -1, -1, 1), POS_TYPE_LEAF, newDepth);
+                enqueIfViable(PackedBlockPos.add(packedPos, 1, -1, -1), POS_TYPE_LEAF, newDepth);
+                enqueIfViable(PackedBlockPos.add(packedPos, 1, -1, 1), POS_TYPE_LEAF, newDepth);
             }
             else if(fromType != POS_TYPE_LEAF)
             {
                 // visiting from wood (ignore type never added to queue)
                 if(block == this.startState.getBlock())
                 {
-                    this.visited.put(longPos, POS_TYPE_LOG);
+                    this.visited.put(packedPos, POS_TYPE_LOG);
                     
-                    enqueIfViable(pos.down(), POS_TYPE_LOG_FROM_ABOVE, newDepth);
-                    enqueIfViable(pos.east(), POS_TYPE_LOG, newDepth);
-                    enqueIfViable(pos.west(), POS_TYPE_LOG, newDepth);
-                    enqueIfViable(pos.north(), POS_TYPE_LOG, newDepth);
-                    enqueIfViable(pos.south(), POS_TYPE_LOG, newDepth);
-                    enqueIfViable(pos.up(), POS_TYPE_LOG, newDepth);
+                    enqueIfViable(PackedBlockPos.down(packedPos), POS_TYPE_LOG_FROM_ABOVE, newDepth);
+                    enqueIfViable(PackedBlockPos.east(packedPos), POS_TYPE_LOG, newDepth);
+                    enqueIfViable(PackedBlockPos.west(packedPos), POS_TYPE_LOG, newDepth);
+                    enqueIfViable(PackedBlockPos.north(packedPos), POS_TYPE_LOG, newDepth);
+                    enqueIfViable(PackedBlockPos.south(packedPos), POS_TYPE_LOG, newDepth);
+                    enqueIfViable(PackedBlockPos.up(packedPos), POS_TYPE_LOG, newDepth);
                     
-                    enqueIfViable(pos.add(-1, 0, -1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
-                    enqueIfViable(pos.add(-1, 0, 1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
-                    enqueIfViable(pos.add(1, 0, -1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
-                    enqueIfViable(pos.add(1, 0, 1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
+                    enqueIfViable(PackedBlockPos.add(packedPos, -1, 0, -1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
+                    enqueIfViable(PackedBlockPos.add(packedPos, -1, 0, 1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
+                    enqueIfViable(PackedBlockPos.add(packedPos, 1, 0, -1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
+                    enqueIfViable(PackedBlockPos.add(packedPos, 1, 0, 1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
                     
-                    enqueIfViable(pos.add(-1, 1, 0), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
-                    enqueIfViable(pos.add(-1, 1, 0), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
-                    enqueIfViable(pos.add(0, 1, -1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
-                    enqueIfViable(pos.add(0, 1, 1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
+                    enqueIfViable(PackedBlockPos.add(packedPos, -1, 1, 0), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
+                    enqueIfViable(PackedBlockPos.add(packedPos, -1, 1, 0), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
+                    enqueIfViable(PackedBlockPos.add(packedPos, 0, 1, -1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
+                    enqueIfViable(PackedBlockPos.add(packedPos, 0, 1, 1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
                     
-                    enqueIfViable(pos.add(-1, 1, -1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
-                    enqueIfViable(pos.add(-1, 1, 1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
-                    enqueIfViable(pos.add(1, 1, -1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
-                    enqueIfViable(pos.add(1, 1, 1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
+                    enqueIfViable(PackedBlockPos.add(packedPos, -1, 1, -1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
+                    enqueIfViable(PackedBlockPos.add(packedPos, -1, 1, 1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
+                    enqueIfViable(PackedBlockPos.add(packedPos, 1, 1, -1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
+                    enqueIfViable(PackedBlockPos.add(packedPos, 1, 1, 1), POS_TYPE_LOG_FROM_DIAGONAL, newDepth);
                 }
                 else
                 {
@@ -286,7 +293,7 @@ public class LavaTreeCutter implements ISimulationTickable, IReadWriteNBT
                             return Operation.IDLE;
                         }
                     }
-                    this.visited.put(longPos, POS_TYPE_IGNORE);
+                    this.visited.put(packedPos, POS_TYPE_IGNORE);
                 }
                 
             }
@@ -307,7 +314,7 @@ public class LavaTreeCutter implements ISimulationTickable, IReadWriteNBT
                     }
 
                    })
-                .forEach(e -> this.toClear.offer(BlockPos.fromLong(e.getLongKey())));
+                .forEach(e -> this.toClear.enqueue(e.getLongKey()));
             
             if(this.toClear.isEmpty())
             {
@@ -320,9 +327,9 @@ public class LavaTreeCutter implements ISimulationTickable, IReadWriteNBT
         
     }
     
-    private void enqueIfViable(BlockPos pos, byte type, byte depth)
+    private void enqueIfViable(long packedPos, byte type, byte depth)
     {
-        if(this.visited.containsKey(pos.toLong())) return;
+        if(this.visited.containsKey(packedPos)) return;
         
         if(depth == Byte.MAX_VALUE || depth < 0) return;
         
@@ -331,13 +338,12 @@ public class LavaTreeCutter implements ISimulationTickable, IReadWriteNBT
         // don't count blocks under logs as supporting if more than 5 from search start
         if(type == POS_TYPE_LOG_FROM_ABOVE && depth > 5) type = POS_TYPE_LOG;
 
-        this.toVisit.offer(new Visit(pos, type, depth));
+        this.toVisit.offer(new Visit(packedPos, type, depth));
     }
     
     private Operation doClearing()
     {
-        
-        BlockPos pos = this.toClear.poll();
+        BlockPos pos = PackedBlockPos.unpack(this.toClear.dequeueLong());
         IBlockState state = this.world.getBlockState(pos);
         Block block = state.getBlock();
         
@@ -351,7 +357,7 @@ public class LavaTreeCutter implements ISimulationTickable, IReadWriteNBT
             
 //            if (!(this.worldBuffer.realWorld.isBlockTickPending(pos, state.getBlock()) || this.worldBuffer.realWorld.isUpdateScheduled(pos, state.getBlock())))
 //            {
-                block.updateTick(world, pos, state, this.random);
+                block.updateTick(world, pos, state, ThreadLocalRandom.current());
 //            }
         }
         
@@ -375,7 +381,7 @@ public class LavaTreeCutter implements ISimulationTickable, IReadWriteNBT
             int[] saveData = tag.getIntArray(NBT_LAVA_TREE_CUTTER_QUEUE);
             while(i < saveData.length)
             {
-                this.queue.offer(new BlockPos(saveData[i++], saveData[i++], saveData[i++]));
+                this.queue.enqueue(Useful.longFromInts(saveData[i++], saveData[i++]));
             }
         }
      
@@ -385,49 +391,47 @@ public class LavaTreeCutter implements ISimulationTickable, IReadWriteNBT
             int[] saveData = tag.getIntArray(NBT_LAVA_TREE_CUTTER_CUTS);
             while(i < saveData.length)
             {
-                this.toClear.offer(new BlockPos(saveData[i++], saveData[i++], saveData[i++]));
+                this.toClear.enqueue(Useful.longFromInts(saveData[i++], saveData[i++]));
             }
             
             if(i > 0) this.operation = Operation.CLEARING;
         }
     }
 
-    @SuppressWarnings("null")
     @Override
     public void serializeNBT(NBTTagCompound tag)
     {
-        final int queueDepth = this.queue.size() + (this.startPos == null ? 0 : 1);
+        final int queueDepth = this.queue.size() + (this.startPosPacked == PackedBlockPos.NULL_POS ? 0 : 1);
         
         if(queueDepth > 0)
         {
-            int[] saveData = new int[queueDepth * 3];
+            int[] saveData = new int[queueDepth * 2];
             int i = 0;
             
-            if(this.startPos != null)
+            if(this.startPosPacked != PackedBlockPos.NULL_POS)
             {
-                saveData[i++] = startPos.getX();
-                saveData[i++] = startPos.getY();
-                saveData[i++] = startPos.getZ();
+                saveData[i++] = Useful.longToIntHigh(startPosPacked);
+                saveData[i++] = Useful.longToIntLow(startPosPacked);
             }
-            for(BlockPos pos: this.queue)
+            
+            for(long packedPos : this.queue.toArray())
             {
-                saveData[i++] = pos.getX();
-                saveData[i++] = pos.getY();
-                saveData[i++] = pos.getZ();
-            }       
+                saveData[i++] = Useful.longToIntHigh(packedPos);
+                saveData[i++] = Useful.longToIntLow(packedPos);
+            }
+            
             tag.setIntArray(NBT_LAVA_TREE_CUTTER_QUEUE, saveData);
         }
         
         if(this.operation == Operation.CLEARING && !this.toClear.isEmpty())
         {
-            int[] saveData = new int[this.toClear.size() * 3];
+            int[] saveData = new int[this.toClear.size() * 2];
             int i = 0;
             
-            for(BlockPos pos: this.toClear)
+            for(long packedPos : this.toClear.toArray())
             {
-                saveData[i++] = pos.getX();
-                saveData[i++] = pos.getY();
-                saveData[i++] = pos.getZ();
+                saveData[i++] = Useful.longToIntHigh(packedPos);
+                saveData[i++] = Useful.longToIntLow(packedPos);
             }       
             tag.setIntArray(NBT_LAVA_TREE_CUTTER_CUTS, saveData);
         }
