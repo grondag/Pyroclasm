@@ -27,6 +27,8 @@ import net.minecraft.world.World;
  * starting at the point and if it is not resting on other non-volcanic blocks
  * will destroy the tree. <p>
  * 
+ * Not thread-safe.  Meant to be called from server thread.<p>
+ * 
  * Current implementation is a bit sloppy and seems to miss some leaves/logs
  * and leaf decay isn't immediate as desired / expected.  
  *
@@ -71,6 +73,12 @@ public class LavaTreeCutter implements ISimulationTickable, IReadWriteNBT
     
     private final LongQueue toClear = new LongQueue();
     
+    /**
+     * Used in all cases when mutable is appropriate. This class is not intended
+     * to be threadsafe and avoids recursion, so re-entrancy should not be a problem.
+     */
+    private final BlockPos.MutableBlockPos searchPos = new BlockPos.MutableBlockPos();
+
     private static final byte POS_TYPE_LOG_FROM_ABOVE = 0;
     private static final byte POS_TYPE_LOG = 1;
     private static final byte POS_TYPE_LOG_FROM_DIAGONAL = 2;
@@ -142,8 +150,6 @@ public class LavaTreeCutter implements ISimulationTickable, IReadWriteNBT
         }
 
     }
-    
-    private final BlockPos.MutableBlockPos searchPos = new BlockPos.MutableBlockPos();
     
     private Operation startSearch()
     {
