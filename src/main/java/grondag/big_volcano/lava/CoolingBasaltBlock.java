@@ -18,6 +18,8 @@ import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.BlockPos.MutableBlockPos;
+import net.minecraft.util.math.Vec3i;
 import net.minecraft.world.World;
 
 public class CoolingBasaltBlock extends TerrainDynamicBlock
@@ -87,6 +89,16 @@ public class CoolingBasaltBlock extends TerrainDynamicBlock
         
     }
     
+    ThreadLocal<BlockPos.MutableBlockPos> canCoolPos = new ThreadLocal<BlockPos.MutableBlockPos>()
+    {
+
+        @Override
+        protected MutableBlockPos initialValue()
+        {
+            return new BlockPos.MutableBlockPos();
+        }
+    };
+    
     /** True if no adjacent blocks are hotter than me and at least four adjacent blocks are cooler.
      * Occasionally can cool if only three are cooler. */
     public boolean canCool(World worldIn, BlockPos pos, IBlockState state)
@@ -94,9 +106,16 @@ public class CoolingBasaltBlock extends TerrainDynamicBlock
         if(TerrainBlockHelper.shouldBeFullCube(state, worldIn, pos)) return true;
         
         int chances = 0;
+        
+        BlockPos.MutableBlockPos mutablePos = canCoolPos.get();
+        
         for(EnumFacing face : EnumFacing.VALUES)
         {
-            IBlockState testState = worldIn.getBlockState(pos.add(face.getDirectionVec()));
+            final Vec3i dVec = face.getDirectionVec();
+            
+            mutablePos.setPos(pos.getX() + dVec.getX(), pos.getY() + dVec.getY(), pos.getZ() + dVec.getZ());
+            
+            IBlockState testState = worldIn.getBlockState(mutablePos);
             Block neighbor = testState.getBlock();
             
             if(neighbor == ModBlocks.lava_dynamic_height || neighbor == ModBlocks.lava_dynamic_filler) return false;

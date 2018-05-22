@@ -17,7 +17,9 @@ import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.init.Blocks;
+import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.BlockPos.MutableBlockPos;
 import net.minecraft.world.World;
 
 public class LavaTerrainHelper
@@ -131,7 +133,19 @@ public class LavaTerrainHelper
                 || LavaTerrainHelper.canLavaDisplace(state);
     }
 
+    /**
+     * Want to avoid the synchronization penalty of pooled block pos.
+     */
+    private ThreadLocal<BlockPos.MutableBlockPos> baseFlowPos = new ThreadLocal<BlockPos.MutableBlockPos>()
+    {
 
+        @Override
+        protected MutableBlockPos initialValue()
+        {
+            return new BlockPos.MutableBlockPos();
+        }
+    };
+    
     /**
      * Ideal height of flowing lava retained on base (non-flow) terrain at the given location.  
      * Returned as fraction of 1 block.
@@ -147,9 +161,10 @@ public class LavaTerrainHelper
 
         BitSet blockedPositions = new BitSet(MASK_SIZE);
 
+        BlockPos.MutableBlockPos targetPos = baseFlowPos.get();
+        
         for(VisibilityNode node : VISIBILITY_NODES)
         {
-            BlockPos targetPos = PackedBlockPos.unpack(PackedBlockPos.add(originPackedPos, node.packedBlockPos));
 
             boolean isVisible = !node.visibilityMask.intersects(blockedPositions);
 
@@ -163,6 +178,7 @@ public class LavaTerrainHelper
                 maxVisibleDistance = node.distance;
             }
 
+            PackedBlockPos.unpackTo(PackedBlockPos.add(originPackedPos, node.packedBlockPos), targetPos);
             boolean isOpen = isOpenTerrainSpace(world.getBlockState(targetPos));
 
             if(!isOpen)
@@ -179,7 +195,7 @@ public class LavaTerrainHelper
                 // space is open, check for nearest drop if not already checked and position is visible from origin
                 if(nearestFallDistance == NOT_FOUND
                         && isVisible 
-                        && isOpenTerrainSpace(world.getBlockState(targetPos.down())))
+                        && isOpenTerrainSpace(world.getBlockState(targetPos.move(EnumFacing.DOWN))))
                 {
                     nearestFallDistance = node.distance;
 
