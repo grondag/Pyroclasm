@@ -137,7 +137,7 @@ public class LavaBlock extends TerrainDynamicBlock
                     .text("RetainedUnits=" + cell.getRetainedUnits() + "  Retained Depth=" + (cell.getRetainedUnits() / LavaSimulator.FLUID_UNITS_PER_LEVEL))
                     .text("floor=" + cell.floorLevel() + "  ceiling=" + cell.ceilingLevel() + " isFlowFloor=" + cell.isBottomFlow() + " floorFlowHeight=" + cell.floorFlowHeight())
                     .text("Visible Level = " + cell.worldSurfaceLevel() + "  Last Visible Level = " + cell.getLastVisibleLevel())
-                    .text("Connection Count = " + cell.connections.size());
+                    .text("Connection Count = " + cell.connections.size() + "   Last flow tick = " + cell.lastFlowTick);
             }
         }
     }

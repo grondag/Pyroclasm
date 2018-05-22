@@ -12,10 +12,8 @@ public abstract class AbstractLavaConnections
     protected int[] flowTotals = new int[5];
     protected int[] flowCounts = new int[5];
     public final PerformanceCounter setupCounter;
-    public final PerformanceCounter firstStepCounter;
     public final PerformanceCounter stepCounter;
     public final PerformanceCounter parallelSetupCounter;
-    public final PerformanceCounter parallelFirstStepCounter;
     public final PerformanceCounter parallelStepCounter;
     
     protected AbstractLavaConnections(LavaSimulator sim)
@@ -23,11 +21,9 @@ public abstract class AbstractLavaConnections
         super();
         this.sim = sim;
         setupCounter = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Connection Setup -  Server Thread", sim.perfCollectorOffTick);
-        firstStepCounter = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "First Flow Step - Server Thread", sim.perfCollectorOffTick);
         stepCounter = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Flow Step - Server Thread", sim.perfCollectorOffTick);
         
-        parallelSetupCounter = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Connection Setup -  Multi-threaded", sim.perfCollectorOffTick);
-        parallelFirstStepCounter = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "First Flow Step - Multi-threaded", sim.perfCollectorOffTick);
+        parallelSetupCounter = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Connection Setup - Multi-threaded", sim.perfCollectorOffTick);
         parallelStepCounter = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Flow Step - Multi-threaded", sim.perfCollectorOffTick);
     }
 
@@ -73,7 +69,6 @@ public abstract class AbstractLavaConnections
      */
     public abstract void doCellSetup();
     
-    protected abstract void doFirstStepInner();
     protected abstract void doStepInner();
     
     /**
@@ -81,37 +76,16 @@ public abstract class AbstractLavaConnections
      */
     public final void processConnections()
     {
-        this.doFirstStep();
-        this.doStep();
-        this.doStep();
-        this.doStep();
-        this.doStep();
-    }
-    
-    protected void doFirstStep()
-    {
         this.stepIndex = 0;
-        
-        int startingCount = 0;
-        if(Configurator.VOLCANO.enableFlowTracking)
-        {  
-            startingCount = this.firstStepCounter.runCount();
-        }
-        
-        this.doFirstStepInner();
-       
-        
-        if(Configurator.VOLCANO.enableFlowTracking)
-        { 
-            this.flowCounts[0] += (this.firstStepCounter.runCount() - startingCount);
-            this.flowTotals[0] += LavaConnection.totalFlow.sumThenReset();
-        }
+        this.doStep();
+        this.doStep();
+        this.doStep();
+        this.doStep();
+        this.doStep();
     }
 
     protected void doStep()
     {
-        this.stepIndex++;
-        
         int startingCount = 0;
         if(Configurator.VOLCANO.enableFlowTracking)
         {    
@@ -125,5 +99,7 @@ public abstract class AbstractLavaConnections
             this.flowCounts[stepIndex] += (this.stepCounter.runCount() - startingCount);
             this.flowTotals[stepIndex] += LavaConnection.totalFlow.sumThenReset();
         }
+        
+        this.stepIndex++;
     }
 }

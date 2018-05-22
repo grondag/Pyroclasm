@@ -115,7 +115,7 @@ public class LavaConnection
             if(this.direction == FlowDirection.ONE_TO_TWO) 
             {
                 // don't allow switch of direction unless something substantial to flow
-                if(surface2 - surface1 < LavaSimulator.FLUID_UNITS_PER_LEVEL / 4) return false;
+                if(surface2 - surface1 < Configurator.VOLCANO.lavaFlowReversalThreshold) return false;
                 
                 // don't allow switch of direction in same tick
                 this.direction = FlowDirection.NONE;
@@ -231,16 +231,6 @@ public class LavaConnection
          */
         public @Nullable Flowable nextToFlow;
         
-        /**
-         * True if updated the last tick for cells in this connection because we
-         * had a flow this tick.  If false, has been no flow, or we haven't updated yet.
-         * Set to false during {@link #doFirstStep()} unless there was a flow on the first step.
-         * Subsequent calls to {@link #doStep()} will set to true if there is a flow
-         * (and will also update the cell ticks.)
-         */
-        private boolean didUpdateCellTicks = false;
-        
-        
         private Flowable(LavaCell fromCell, LavaCell toCell)
         {
             this.fromCell = fromCell;
@@ -278,18 +268,20 @@ public class LavaConnection
             
         }
         
-        /** 
-         * Returns absolute value of units that flowed, if any.
-         * Also updates per-tick tracking total for from cell.
+        
+        /**
+         *  Does a step - flowing across the connection if possible. <p>
+         *  
+         *  Note there is no checking for deleted or non-flowing connections here.
+         *  Assumes any deleted or non-flowing connections were excluded during setup.
          */
-        private int tryFlow()
+        public void doStep()
         {
-            
             final int fromFluid = fromCell.fluidUnits();
             final int toFluid = toCell.fluidUnits();
             
             int availableFluidUnits = fromFluid - this.fromRetained;
-            if(availableFluidUnits < LavaSimulator.MIN_FLOW_UNITS) return 0;
+            if(availableFluidUnits < LavaSimulator.MIN_FLOW_UNITS) return;
             if(availableFluidUnits > this.maxFlowPerStep) availableFluidUnits = this.maxFlowPerStep;
             
             final int toSurface = AbstractLavaCell.pressureSurface(toFloor, toVolume, toFluid);
@@ -316,17 +308,16 @@ public class LavaConnection
 
                 if(flow < LavaSimulator.MIN_FLOW_UNITS)
                 {
-                    return 0;
+                    return;
                 }
                 else 
                 {
                     executeFlow(flow);
-                    return flow;
                 }
             }
             else
             {
-                return 0;
+                return;
             }
         }
         
@@ -334,7 +325,7 @@ public class LavaConnection
         {
           fromCell.changeFluidUnits(-flow);
           toCell.changeFluidUnits(flow);
-          fromCell.flowThisTick += flow;
+          fromCell.outputThisTick += flow;
           if(Configurator.VOLCANO.enableFlowTracking) totalFlow.add(flow);
         }
         
@@ -472,59 +463,7 @@ public class LavaConnection
             // This ensure "from" cell does not flow to level below "to" cell.
             return fluidFrom - (toFloor - fromFloor + fluidTotal + 1) / 2;
         }
-        
-        /**
-         *  Does a step and if there was a flow on this connection 
-         *  will update the tick index of both cells.  Also is a hook for
-         *  any internal setup or accounting the connection needs to do at
-         *  the start of each tick. <p>
-         *  
-         *  Note there is no checking for deleted or non-flowing connections here
-         *  or forward. Assumes any deleted or non-flowing connections were excluded
-         *  during setup.
-         */
-        public void doFirstStep()
-        {
-            if(this.tryFlow() != 0)
-            {
-                this.fromCell.updateLastFlowTick();
-                this.toCell.updateLastFlowTick();
-                this.didUpdateCellTicks = true;
-            }
-            else this.didUpdateCellTicks = false;
-        }
-        
-        public void doFirstStepParallel()
-        {
-            boolean isIncomplete = true;
-            do
-            {
-                if(fromCell.tryLock())
-                {
-                    if(toCell.tryLock())
-                    {
-                        this.doFirstStep();
-                        isIncomplete = false;
-                        toCell.unlock();
-                    }
-                    fromCell.unlock();
-                }
-            } while(isIncomplete);
-        }
-        
-        /**
-         * Like {@link #doFirstStep()} but doesn't do per-tick setup or accounting.
-         */
-        public void doStep()
-        {
-            if(this.tryFlow() != 0 && !this.didUpdateCellTicks)
-            {
-                this.fromCell.updateLastFlowTick();
-                this.toCell.updateLastFlowTick();
-                this.didUpdateCellTicks = true;
-            }
-        }
-        
+       
         public void doStepParallel()
         {
             boolean isIncomplete = true;

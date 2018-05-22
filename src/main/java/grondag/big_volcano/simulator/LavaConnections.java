@@ -20,8 +20,6 @@ public class LavaConnections extends AbstractLavaConnections
 {
     final SimpleConcurrentList<Flowable> toProcess = SimpleConcurrentList.create(Flowable.class, Configurator.VOLCANO.enablePerformanceLogging, "Connection Processing", sim.perfCollectorOffTick);
     
-    private int step = 1;
-    
     public LavaConnections(LavaSimulator sim)
     {
         super(sim);
@@ -34,7 +32,6 @@ public class LavaConnections extends AbstractLavaConnections
         this.toProcess.clear();
         
         final int chunkCount = this.sim.cells.chunkCount();
-        
         
         if(chunkCount < 16)
         {
@@ -77,43 +74,16 @@ public class LavaConnections extends AbstractLavaConnections
     
     public static final int STEP_COUNT = 4;
             
-    @Override
-    protected final void doFirstStepInner()
-    {
-        if(this.toProcess.isEmpty()) return;
-        this.step = 1;
-        
-        if(this.toProcess.size() < Configurator.VOLCANO.concurrencyThreshold / 2)
-        {
-            this.firstStepCounter.startRun();
-            this.firstStepCounter.addCount(RoundProcessor.PRIMARY.processStepToCompletion(toProcess.toArray(), step));
-            this.firstStepCounter.endRun();
-        }
-        else
-        {
-            this.parallelFirstStepCounter.startRun();
-            try
-            {
-                this.parallelFirstStepCounter.addCount(Simulator.SIMULATION_POOL.submit(new FlowStepTask(this.toProcess, this.step)).get(1, TimeUnit.SECONDS));
-            }
-            catch (InterruptedException | ExecutionException | TimeoutException e)
-            {
-                BigActiveVolcano.INSTANCE.error("Unexpected error during lava connection processing", e);
-            }
-            this.parallelFirstStepCounter.endRun();
-        }
-    }
     
     @Override
     protected final void doStepInner()
     {
         if(this.toProcess.isEmpty()) return;
-        this.step++;
         
         if(this.toProcess.size() < Configurator.VOLCANO.concurrencyThreshold / 2)
         {
             this.stepCounter.startRun();
-            this.stepCounter.addCount(RoundProcessor.SECONDARY.processStepToCompletion(toProcess.toArray(), step));
+            this.stepCounter.addCount(RoundProcessor.SEQUENTIAL.processStepToCompletion(toProcess.toArray(), this.stepIndex));
             this.stepCounter.endRun();
         }
         else
@@ -121,7 +91,7 @@ public class LavaConnections extends AbstractLavaConnections
             this.parallelStepCounter.startRun();
             try
             {
-                this.parallelStepCounter.addCount(Simulator.SIMULATION_POOL.submit(new FlowStepTask(this.toProcess, this.step)).get(1, TimeUnit.SECONDS));
+                this.parallelStepCounter.addCount(Simulator.SIMULATION_POOL.submit(new FlowStepTask(this.toProcess, this.stepIndex)).get(1, TimeUnit.SECONDS));
             }
             catch (InterruptedException | ExecutionException | TimeoutException e)
             {
@@ -185,10 +155,9 @@ public class LavaConnections extends AbstractLavaConnections
     
     private static abstract class RoundProcessor
     {
-        private static final RoundProcessor PRIMARY = new Primary();
-        private static final RoundProcessor SECONDARY = new Secondary();
-        private static final RoundProcessor PRIMARY_PARALLEL = new PrimaryParallel();
-        private static final RoundProcessor SECONDARY_PARALLEL = new SecondaryParallel();
+        private static final RoundProcessor SEQUENTIAL = new Sequential();
+        private static final RoundProcessor PARALLEL = new Parallel();
+        
         /**
          * Flowables passed in WILL BE MUTATED!
          * Note that step is 1-based, first step = 1. math works better that way
@@ -237,7 +206,7 @@ public class LavaConnections extends AbstractLavaConnections
                         // no need to go in next round if already exhausted available supply of lava 
                         // supply is rationed for each step - can be exceeded in any round that starts
                         // (and the first round always starts) but once exceeded stops subsequent rounds
-                        if(source.flowThisTick < source.maxOutputPerStep * step)
+                        if(source.outputThisTick < source.maxOutputPerStep * step)
                         {
                             connections[newSize++] = next;
                         }
@@ -251,16 +220,7 @@ public class LavaConnections extends AbstractLavaConnections
         
         protected abstract void process(Flowable connection);
         
-        private final static class Primary extends RoundProcessor
-        {
-            @Override
-            protected final void process(Flowable connection)
-            {
-               connection.doFirstStep(); 
-            }
-        }
-        
-        private final static class Secondary extends RoundProcessor
+        private final static class Sequential extends RoundProcessor
         {
             @Override
             protected final void process(Flowable connection)
@@ -269,16 +229,7 @@ public class LavaConnections extends AbstractLavaConnections
             }
         }
         
-        private final static class PrimaryParallel extends RoundProcessor
-        {
-            @Override
-            protected final void process(Flowable connection)
-            {
-               connection.doFirstStepParallel(); 
-            }
-        }
-        
-        private final static class SecondaryParallel extends RoundProcessor
+        private final static class Parallel extends RoundProcessor
         {
             @Override
             protected final void process(Flowable connection)
@@ -296,15 +247,11 @@ public class LavaConnections extends AbstractLavaConnections
         private int completedCount = 0;
         private final SimpleUnorderedArrayList<RoundTask> tasks;
         private final int step;
-        final RoundProcessor processor;
         
         private FlowStepTask(SimpleConcurrentList<Flowable> inputs, final int step)
         {
             super();
             this.step = step;
-            this.processor = step == 1 
-                    ? RoundProcessor.PRIMARY_PARALLEL
-                    : RoundProcessor.SECONDARY_PARALLEL;
             
             final int size = inputs.size();
             final int batchSize = size / Simulator.SIMULATION_POOL.getParallelism() / 2 + 1;
@@ -408,7 +355,7 @@ public class LavaConnections extends AbstractLavaConnections
              */
             public final void process()
             {
-                this.size = processor.processRound(flows, size, step);
+                this.size = RoundProcessor.PARALLEL.processRound(flows, size, step);
             }
             
             @Override

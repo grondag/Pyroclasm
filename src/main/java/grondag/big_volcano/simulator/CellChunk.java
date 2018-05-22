@@ -105,7 +105,7 @@ public class CellChunk
         
         this.cells = cells;
         
-        if(Configurator.VOLCANO.enableLavaChunkBufferTrace)
+        if(Configurator.VOLCANO.enableLavaCellChunkTrace)
             BigActiveVolcano.INSTANCE.info("Created chunk buffer with corner x=%d, z=%d", this.xStart, this.zStart);
     }
 
@@ -176,7 +176,7 @@ public class CellChunk
         
         if(this.isUnloaded || this.needsFullLoadOrValidation() || this.validationCount.get() == 0) return false;
 
-        if(Configurator.VOLCANO.enableLavaChunkBufferTrace)
+        if(Configurator.VOLCANO.enableLavaCellChunkTrace)
             BigActiveVolcano.INSTANCE.info("Validating marked cells in chunk with corner x=%d, z=%d", this.xStart, this.zStart);
         
         Chunk chunk = this.cells.sim.world.getChunkFromChunkCoords(PackedChunkPos.getChunkXPos(this.packedChunkPos), PackedChunkPos.getChunkZPos(this.packedChunkPos));
@@ -219,7 +219,7 @@ public class CellChunk
         {
             if(this.isUnloaded) return;
 
-            if(Configurator.VOLCANO.enableLavaChunkBufferTrace)
+            if(Configurator.VOLCANO.enableLavaCellChunkTrace)
                 BigActiveVolcano.INSTANCE.info("Loading (or reloading) chunk buffer with corner x=%d, z=%d", this.xStart, this.zStart);
             
             CellStackBuilder builder = new CellStackBuilder();
@@ -395,7 +395,7 @@ public class CellChunk
     {
         if(this.isUnloaded) return;
         
-        if(Configurator.VOLCANO.enableLavaChunkBufferTrace)
+        if(Configurator.VOLCANO.enableLavaCellChunkTrace)
             BigActiveVolcano.INSTANCE.info("Unloading chunk buffer with corner x=%d, z=%d", this.xStart, this.zStart);
 
         for(int x = 0; x < 16; x++)

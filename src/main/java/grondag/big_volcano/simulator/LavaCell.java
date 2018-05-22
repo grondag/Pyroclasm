@@ -81,7 +81,6 @@ public class LavaCell extends AbstractLavaCell
      */
     private int lastVisibleLevel = NEVER_REPORTED; 
     
-
     
     /** true if this cell should remain loaded */
     private boolean isActive = false;
@@ -111,20 +110,27 @@ public class LavaCell extends AbstractLavaCell
     private boolean needsRetentionUpdate = true;
     
     /**
-     * The simulation tick when lava was lasted added or flowed in/out of this cell.<br>
+     * The simulation tick when a significant amount of lava flowed in/out of this cell.<br>
      * Used to know when lava in a cell can be cooled.<br>
-     * Set to current simulation tick by {@link #updateLastFlowTick()}<p>
+     * Based on {@link #absoluteFlowThisTick}<p>
      * 
      * Initialized to 1 (instead of 0) so that consistently has sign when serialized. The sign
      * bit is used during serialization to store {@link #isCoolingDisabled}
      */
-    private int lastFlowTick = 1;
+    public int lastFlowTick = 1;
     
     /**
-     * Used in conneciton processing - if this is an output cell, set to zero before flow
+     * Accumulates the total of absolute value of flows in or out in the current tick.
+     * Set to zero at start of tick after checking for tick update.  Used to determine when cells can cool.
+     */
+    private int absoluteFlowThisTick = 0;
+    
+    /**
+     * Used in connection processing to limit the flow out of the block in a single tick.
+     * Only applies to cells that are a source. Set to zero before flow
      * starts and incremented every time lava flows out of this cell.
      */
-    public int flowThisTick = 0;
+    public int outputThisTick = 0;
     
     /**
      * Used in conneciton processing - if this is an output cell, set to amount of available
@@ -725,19 +731,23 @@ public class LavaCell extends AbstractLavaCell
     @Override
     public final void changeFluidUnits(int deltaUnits)
     {
-        // Check for melting of shallow floor that might causing this cell to merge with the cell below
-        if(this.isEmpty() && this.floorFlowHeight() > 0)
+        if(this.isEmpty())
         {
-            this.setValidationNeeded(true);
+            // needed so that we don't cool before flow tick can be updated based on flow tracking
+            this.lastFlowTick = Simulator.currentTick();
+            
+            // Check for melting of shallow floor that might causing this cell to merge with the cell below
+            if(this.floorFlowHeight() > 0) 
+                this.setValidationNeeded(true);
         }
         super.changeFluidUnits(deltaUnits);
+        this.absoluteFlowThisTick += deltaUnits < 0 ? -deltaUnits : deltaUnits;
     }
         
     public final void addLava(int fluidUnits)
     {
         if(fluidUnits == 0) return;
         this.changeFluidUnits(fluidUnits);
-        this.updateLastFlowTick();
     }
     
 //    private void doFallingParticles(int y, World world)
@@ -1024,7 +1034,6 @@ public class LavaCell extends AbstractLavaCell
         {
             int surfaceUnits = this.worldSurfaceUnits();
             newCell.changeFluidUnits(surfaceUnits - floorForNewCell * LavaSimulator.FLUID_UNITS_PER_LEVEL);
-            newCell.updateLastFlowTick();
         }
         
         if(this.worldSurfaceLevel() > newCeilingForThisCell)
@@ -1081,13 +1090,11 @@ public class LavaCell extends AbstractLavaCell
                     if(flowHeight > 0)
                     {
                         this.changeFluidUnits(-Math.min(this.fluidUnits(), flowHeight * LavaSimulator.FLUID_UNITS_PER_LEVEL));
-                        this.updateLastFlowTick();
                     }
                 }
                 else if( y < surfaceY)
                 {
                     this.changeFluidUnits(-Math.min(this.fluidUnits(), LavaSimulator.FLUID_UNITS_PER_BLOCK));
-                    this.updateLastFlowTick();
                 }
             }
             
@@ -1342,6 +1349,7 @@ public class LavaCell extends AbstractLavaCell
     
     public final void updateStuff(LavaSimulator sim)
     {
+        this.updateLastFlowTick();
         this.updateActiveStatus();
         this.updateConnectionsIfNeeded(sim);
     }
@@ -1822,12 +1830,29 @@ public class LavaCell extends AbstractLavaCell
     
  
     /**
-     * Makes the last flow tick for this cell equal the current simulator tick.
-     * Should be called whenever lava is added to this cell or flows in or out.
+     * Call at start of tick for each cell.  If cell contains lava and flow
+     * in the previous tick was above the configured threshold will make the 
+     * last flow tick for this cell equal the current simulator tick.<p>
+     * 
+     * For cells under pressure, the threshold is reduced because the flow
+     * represents a larger amount of lava being moved around.
      */
-    public final void updateLastFlowTick()
+    private final void updateLastFlowTick()
     {
-        this.lastFlowTick = Simulator.currentTick();
+        final int f = this.absoluteFlowThisTick;
+        if(f > 0)
+        {
+            this.absoluteFlowThisTick = 0;
+            
+            final int units = this.fluidUnits();
+            
+            if(units == 0) return;
+            
+            if(f > Configurator.VOLCANO.lavaCoolingFlowThreshold || (f > Configurator.Volcano.lavaCoolingPressuredFlowThreshold && units > this.volumeUnits()))
+            {
+                this.lastFlowTick = Simulator.currentTick();
+            }
+        }
     }
     
     /**
@@ -1888,7 +1913,7 @@ public class LavaCell extends AbstractLavaCell
                     keeper.nextToFlow = null;
                     
                     // only necessary if we're going to flow
-                    this.flowThisTick = 0;
+                    this.outputThisTick = 0;
                 }
                 else
                 {

@@ -2,6 +2,7 @@ package grondag.big_volcano;
 
 import java.util.IdentityHashMap;
 
+import grondag.big_volcano.simulator.LavaCell;
 import grondag.exotic_matter.init.ConfigPathNodeType;
 import grondag.exotic_matter.init.SubstanceConfig;
 import grondag.exotic_matter.model.BlockHarvestTool;
@@ -81,17 +82,17 @@ public class Configurator
         public int minDormantTicks = 20;
 
         @Comment({"Maximum number of ticks between the time a volcano becomes dormant and the same or another erupts.",
-        "Should be larger than minDormantTicks"})
+            "Should be larger than minDormantTicks"})
         @RangeInt(min = 20, max = 24000000)
         public int maxDormantTicks = 200;
 
         @Comment({"Maximum number of flying/falling volcalnic lava entities that may be in the world simultaneously.",
-        "Higher numbers may provide more responsive flowing and better realism but can create lag."})
+            "Higher numbers may provide more responsive flowing and better realism but can create lag."})
         @RangeInt(min = 10, max = 200)
         public int maxLavaEntities = 20;
 
         @Comment({"Number of ticks lava should go without a significant flow before it becomes basalt.",
-        "Should be larger than minDormantTicks"})
+            "Should be larger than minDormantTicks"})
         @RangeInt(min = 200, max = 200000)
         public int lavaCoolingTicks = 200;
 
@@ -100,24 +101,24 @@ public class Configurator
         public int basaltCoolingTicks = 20;
 
         @Comment({"Block updates are buffered for at least this many ticks before applied to world.",
-        "Higher numbers can be better for performance but may cause block updates to appear strangely."})
+            "Higher numbers can be better for performance but may cause block updates to appear strangely."})
         @RangeInt(min = 0, max = 20)
         public int minBlockUpdateBufferTicks = 3;
 
         @Comment({"Block updates are considered high priority after this many ticks.",
-        "Higher numbers can be better for performance but may cause block updates to appear strangely."})
+            "Higher numbers can be better for performance but may cause block updates to appear strangely."})
         @RangeInt(min = 10, max = 40)
         public int maxBlockUpdateBufferTicks = 20;
 
         @Comment({"Maximum number of chunk updates applied to world each tick.",
             "The actual number of chunk render updates can be higher due to effects on neighboring chunks.",
-        "Higher numbers provide more realism but can negatively affect performance."})
+            "Higher numbers provide more realism but can negatively affect performance."})
         @RangeInt(min = 1, max = 10)
         public int maxChunkUpdatesPerTick = 1;
 
         @Comment({"Blocks that will be destroyed on contact by volcanic lava.",
             "Blocks should be listed in modname:blockname format.",
-        "At this time, metadata and NBT values cannot be specified."})
+            "At this time, metadata and NBT values cannot be specified."})
         public String[] blocksDestroyedByVolcanicLava = {
                 "minecraft:sponge", 
                 "minecraft:stone_pressure_plate",
@@ -139,36 +140,36 @@ public class Configurator
                 "minecraft:hay_block",
                 "minecraft:coal_block",
                 "minecraft:packed_ice",
-        "minecraft:frosted_ice"};
+                "minecraft:frosted_ice"};
 
         @Comment({"Blocks that will stop the flow of volcanic lava.",
             "Blocks should be listed in modname:blockname format.",
-        "At this time, metadata and NBT values cannot be specified."})
+            "At this time, metadata and NBT values cannot be specified."})
         public String[] blocksSafeFromVolcanicLava = {"minecraft:end_gateway", "minecraft:portal", "minecraft:end_portal"};
 
         @RequiresMcRestart
         @Comment({"If true, volcano simulation will periodically output performance statistics to log.",
             "Does cause minor additional overhead and log spam so should generally only be enabled for testing.",
-        "Turning this off does NOT disable the minimal performance counting needed to detect simulation overload."})
+            "Turning this off does NOT disable the minimal performance counting needed to detect simulation overload."})
         public boolean enablePerformanceLogging = false;
 
         @Comment({"Number of seconds in each volcano fluid simulation performance sample.",
             "Larger numbers reduce log spam when performance logging is enabled.",
-        "Smaller numbers (recommended) make fluid simulation performance throttling more responsive."})
+            "Smaller numbers (recommended) make fluid simulation performance throttling more responsive."})
         @RangeInt(min = 10, max = 120)
         public int performanceSampleInterval = 20;
 
         @Comment({"Percentage of each server tick (1/20 of a second) that can be devoted to volcano fluid simulation.",
             "This is the single-threaded part of the simulation that interacts with the game world.",
             "Larger numbers will enable larger lava flows but casue simulation to compete with other in-game objects that tick.",
-        "If you are seeing log spam that the server can't keep up, reduce this mumber or disable volcanos."})
+            "If you are seeing log spam that the server can't keep up, reduce this mumber or disable volcanos."})
         @RangeInt(min = 2, max = 30)
         public int onTickProcessingBudget = 5;
 
         @Comment({"Percentage of elapsed time that can be devoted to volcano fluid simulation overall.",
             "This includes both single-threaded on-tick time and multi-threaded processing that occurs between server ticks.",
             "Larger numbers will enable larger lava flows but will consume more CPU used for other tasks on the machine where it runs.",
-        "If you are seeing lag or log spam that the server can't keep up, reduce this mumber or disable volcanos."})
+            "If you are seeing lag or log spam that the server can't keep up, reduce this mumber or disable volcanos."})
         @RangeInt(min = 5, max = 60)
         public int totalProcessingBudget = 10;
 
@@ -190,36 +191,50 @@ public class Configurator
         @RequiresMcRestart
         @Comment({"If true, volcano simulation will track and output the amount of fluid that flows across cell connections.",
             "Can cause additional overhead and log spam so should generally only be enabled for testing.",
-        "Turning this off does NOT disable the minimal performance counting needed to detect simulation overload."})
+            "Turning this off does NOT disable the minimal performance counting needed to detect simulation overload."})
         public boolean enableFlowTracking = false;
 
         @Comment({"If true, volcano simulation will output cell debug information each performance interval.",
-        "Will cause significant log spam so should only be enabled for testing."})
+            "Will cause significant log spam so should only be enabled for testing."})
         public boolean outputLavaCellDebugSummaries = false;
         
-        @Comment({"If true, volcano simulation will output chunk buffer creation, load and unload.",
-        "Will cause significant log spam so should only be enabled for debug and testing."})
-        public boolean enableLavaChunkBufferTrace = false;
+        @Comment({"If true, volcano simulation will output cell chunk creation, load and unload.",
+            "Will cause significant log spam so should only be enabled for debug and testing."})
+        public boolean enableLavaCellChunkTrace = false;
 
-        @Comment({"Once lava starts cooling, the minimum number of ticks (inclusive) an interior block has to wait after"
-                + "a neighbor successfully cools before it can also cool."})
+        @Comment({"Once lava starts cooling, the minimum number of ticks (inclusive) an interior block has to wait after",
+            "a neighbor successfully cools before it can also cool."})
         @RangeInt(min = 1, max = 2000)
         public int lavaCoolingPropagationMin = 20;
         
-        @Comment({"Once lava starts cooling, the maximum number of ticks (exclusive) an interior block has to wait after"
-                + "a neighbor successfully cools before it can also cool."})
+        @Comment({"Once lava starts cooling, the maximum number of ticks (exclusive) an interior block has to wait after",
+            "a neighbor successfully cools before it can also cool."})
         @RangeInt(min = 2, max = 2001)
         public int lavaCoolingPropagationMax = 40;
 
-        @Comment({"Enable render of lava cell bounding boxes for debug purposes."
-                + "Client-side only."})
+        @Comment({"The minimum lava fluid units that must flow through a cell (in or out) during a single tick to delay cooling.",
+            "1000 units is a single level of lava, and 12000 units are entire block of lava.",
+            "Small numbers will allow lava to fully level before it cools but it may take a longer time.",
+            "Larger number will result in faster cooling but the resulting terrain may be less even."})
+        @RangeInt(min = 2, max = 1000)
+        public int lavaCoolingFlowThreshold = 40;
+        
+        @Comment({"The minimum difference in cell lava surface units required for the direction of flow between two cell to reverse direction.",
+            "1000 units is a single level of lava, and 12000 units are entire block of lava.",
+            "Larger numbers will help prevent oscillations in pooled lava so that cooling can begin.",
+            "Smaller numbers will allow lava to fully equalize levels before lava hardens but may take longer."})
+        @RangeInt(min = 2, max = 1000)
+        public int lavaFlowReversalThreshold = 250;
+        
+        @Comment({"Enable render of lava cell bounding boxes for debug purposes.",
+            "Client-side only."})
         public boolean enableLavaCellDebugRender = false;
 
-        @Comment({"Enable render of lava cell chunk bounding boxes for debug purposes."
-                + "Client-side only."})
+        @Comment({"Enable render of lava cell chunk bounding boxes for debug purposes.",
+            "Client-side only."})
         public boolean enableLavaChunkDebugRender = false;
 
-        @Comment({"When cell/connection counts are above this limit, will use multiple threads.",
+        @Comment({"When cell counts are above this limit, will use multiple threads for cell processing.",
             "Defaults should generally be OK, but allows ajustment to tune performance for your hardware."})
         @RangeInt(min = 1000, max = 1000000)
         public int concurrencyThreshold = 2000;
@@ -241,9 +256,18 @@ public class Configurator
 
         /** Number of nanoseconds budgeted each interval for off-tick processing */
         public static long performanceBudgetTotalNanos;
+        
+        /**
+         * Like {@link #lavaCoolingFlowThreshold} but for cells under pressure. 
+         * Flows in cells under pressure count for more than cells in free flow.
+         * Will always be >= 1.
+         */
+        public static int lavaCoolingPressuredFlowThreshold;
 
         private static void recalcDerived()
         {
+            lavaCoolingPressuredFlowThreshold = Math.max(1, VOLCANO.lavaCoolingFlowThreshold / LavaCell.PRESSURE_FACTOR);
+            
             performanceSampleIntervalMillis = VOLCANO.performanceSampleInterval * 1000;
             peformanceSampleIntervalNanos = (long)performanceSampleIntervalMillis * 1000000;
             performanceBudgetOnTickNanos = peformanceSampleIntervalNanos * VOLCANO.onTickProcessingBudget / 100;

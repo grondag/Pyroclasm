@@ -113,7 +113,6 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
                 if(target != null)
                 {
                     target.changeFluidUnits(event.amount * FLUID_UNITS_PER_LEVEL);
-                    target.updateLastFlowTick();
                     target.setRefreshRange(event.y, event.y);
                 }
                 return true;

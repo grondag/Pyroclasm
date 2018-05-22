@@ -275,14 +275,7 @@ public class LavaCells
             this.forEach(cell -> 
             {
                 cell.updateActiveStatus();
-                
-                //TODO: need to synchronize world access or make sure chunks are loaded?
                 cell.updateConnectionsIfNeeded(sim);
-                
-                // Raw retention should be mostly current, but compute for any cells
-                // that were awaiting computation at last world save.
-                // Depends on connections being formed
-                cell.updateRetentionIfNeeded();
             });
         }
     }
