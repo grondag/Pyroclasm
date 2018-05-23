@@ -107,9 +107,9 @@ public class LavaTreeCutter implements ISimulationTickable, IReadWriteNBT
         this.world = world;
     }
     
-    public void queueTreeCheck(BlockPos pos)
+    public void queueTreeCheck(long packedBlockPos)
     {
-        queue.enqueue(PackedBlockPos.pack(pos));
+        queue.enqueue(packedBlockPos);
     }
 
     private void reset()

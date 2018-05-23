@@ -107,17 +107,9 @@ public class BasaltTracker
         }
         this.perfCounter.endRun();
     }
-        
-    /**
-     * Call from world thread only - not thread-saffe
-     */
-    public void trackCoolingBlock(BlockPos pos)
-    {
-        this.trackCoolingBlock(PackedBlockPos.pack(pos));
-    }
     
     /**
-     * Call from world thread only - not thread-saffe
+     * Call from world thread only - not thread-safe
      */
     public void trackCoolingBlock(long packedBlockPos)
     {

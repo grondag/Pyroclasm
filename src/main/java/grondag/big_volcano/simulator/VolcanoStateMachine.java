@@ -18,6 +18,7 @@ import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.init.Blocks;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.BlockPos.MutableBlockPos;
 import net.minecraft.util.math.Vec3i;
 import net.minecraft.world.World;
 
@@ -210,6 +211,11 @@ public class VolcanoStateMachine implements ISimulationTickable
     private long totalBoreUnitsLastPass = 0;
     
     
+    /**
+     * For use only in operation methods, which do not call into each other and are not re-entrant.
+     */
+    private final MutableBlockPos operationPos = new MutableBlockPos();
+    
     @SuppressWarnings("null")
     public VolcanoStateMachine(VolcanoNode volcano)
     {
@@ -285,13 +291,13 @@ public class VolcanoStateMachine implements ISimulationTickable
         }
     }
 
-    private BlockPos borePosForLevel(int index, int yLevel)
+    private MutableBlockPos setBorePosForLevel(MutableBlockPos pos, int index, int yLevel)
     {
         Vec3i offset = Useful.DISTANCE_SORTED_CIRCULAR_OFFSETS[index];
-        return new BlockPos(offset.getX() + this.center.getX(), yLevel, offset.getZ() + this.center.getZ());
+        pos.setPos(offset.getX() + this.center.getX(), yLevel, offset.getZ() + this.center.getZ());
+        return pos;
     }
     
-
     /**
      * Call each tick (on-tick, not  off-tick.)
      * Does some work to clear the bore.  If bore is clear
@@ -308,7 +314,7 @@ public class VolcanoStateMachine implements ISimulationTickable
             offsetIndex = 0;
         }
       
-        BlockPos pos = borePosForLevel(offsetIndex++, 0);
+        final MutableBlockPos pos = this.setBorePosForLevel(operationPos, offsetIndex++, 0);
         
         if(world.getBlockState(pos).getBlock() == ModBlocks.lava_dynamic_height)
         {
@@ -320,7 +326,7 @@ public class VolcanoStateMachine implements ISimulationTickable
         }
         else
         {
-            world.setBlockState(pos, TerrainBlockHelper.stateWithDiscreteFlowHeight(ModBlocks.lava_dynamic_height.getDefaultState(), TerrainState.BLOCK_LEVELS_INT));
+            world.setBlockState(pos.toImmutable(), TerrainBlockHelper.stateWithDiscreteFlowHeight(ModBlocks.lava_dynamic_height.getDefaultState(), TerrainState.BLOCK_LEVELS_INT));
         }
          
         if(this.offsetIndex >= MAX_BORE_OFFSET)
@@ -337,13 +343,18 @@ public class VolcanoStateMachine implements ISimulationTickable
                 
     }
     
+    /**
+     * Used only in {@link #getBoreCell(int)}
+     */
+    private MutableBlockPos getBoreCellPos = new MutableBlockPos();
+    
     private @Nullable LavaCell getBoreCell(int index)
     {
         LavaCell result = this.boreCells[index];
         
         if(result == null || result.isDeleted())
         {
-            BlockPos pos = borePosForLevel(index, 0);
+            final MutableBlockPos pos = this.setBorePosForLevel(this.getBoreCellPos, index, 0);
             result = lavaSim.cells.getCellIfExists(pos);
             if(result != null) result.setCoolingDisabled(true);
             this.boreCells[index] = result;
@@ -417,7 +428,6 @@ public class VolcanoStateMachine implements ISimulationTickable
             // if we've gone past the last offset, can go to next stage
             offsetIndex = 0;
             
-            //FIXME: remove
             BigActiveVolcano.INSTANCE.info("Switching from %s to %s", this.operation.toString(), Operation.FLOW.toString());
 
             return Operation.FLOW;
@@ -472,7 +482,7 @@ public class VolcanoStateMachine implements ISimulationTickable
             // open up the chamber
             
             // confirm barrier actually exists and mark cell for revalidation if not
-            IBlockState blockState = lavaSim.world.getBlockState(new BlockPos(cell.x(), cell.ceilingY() + 1, cell.z()));
+            IBlockState blockState = lavaSim.world.getBlockState(this.operationPos.setPos(cell.x(), cell.ceilingY() + 1, cell.z()));
             if(LavaTerrainHelper.canLavaDisplace(blockState))
             {
                 cell.setValidationNeeded(true);
@@ -528,7 +538,7 @@ public class VolcanoStateMachine implements ISimulationTickable
         
         if(cell.ceilingLevel() < this.maxCeilingLevel && cell.worldSurfaceLevel() == cell.ceilingLevel())
         {
-            BlockPos pos = new BlockPos(cell.x(), cell.ceilingY() + 1, cell.z());
+            MutableBlockPos pos = this.operationPos.setPos(cell.x(), cell.ceilingY() + 1, cell.z());
             IBlockState priorState = this.lavaSim.world.getBlockState(pos);
             if(!LavaTerrainHelper.canLavaDisplace(priorState))
             {
@@ -538,7 +548,7 @@ public class VolcanoStateMachine implements ISimulationTickable
                 }
                 else
                 {
-                    this.lavaSim.world.setBlockState(pos, Blocks.AIR.getDefaultState());
+                    this.lavaSim.world.setBlockState(pos.toImmutable(), Blocks.AIR.getDefaultState());
                 }
             }
             cell.setValidationNeeded(true);
@@ -590,7 +600,7 @@ public class VolcanoStateMachine implements ISimulationTickable
             return Operation.SETUP_CLEAR_AND_FILL;
         }
         
-        if(this.pushBlock(new BlockPos(cell.x(), cell.ceilingY() + 1, cell.z())))
+        if(this.pushBlock(this.operationPos.setPos(cell.x(), cell.ceilingY() + 1, cell.z())))
             cell.setValidationNeeded(true);
       
         if(this.offsetIndex >= MAX_BORE_OFFSET)
@@ -612,7 +622,7 @@ public class VolcanoStateMachine implements ISimulationTickable
      * Assumes given position is in the bore!
      * Return true if a push happened and cell should be revalidated.
      */
-    private boolean pushBlock(BlockPos fromPos)
+    private boolean pushBlock(MutableBlockPos fromPos)
     {
         IBlockState fromState = this.world.getBlockState(fromPos);
         
@@ -642,17 +652,21 @@ public class VolcanoStateMachine implements ISimulationTickable
             toState = fromState;
         }
         
-        this.world.setBlockState(fromPos, Blocks.AIR.getDefaultState());
+        this.world.setBlockState(fromPos.toImmutable(), Blocks.AIR.getDefaultState());
         
         if(toState != null)
         {
-            BlockPos destination  = findMoundSpot();
-            this.lavaSim.world.setBlockState(destination, toState);
+            this.lavaSim.world.setBlockState(findMoundSpot(), toState);
         }
         
         return true;
     }
 
+    /**
+     * For use only in {@link #findMoundSpot()}
+     */
+    private final MutableBlockPos findPos = new MutableBlockPos();
+    
     private BlockPos findMoundSpot()
     {
         int lowest = 255;
@@ -679,7 +693,7 @@ public class VolcanoStateMachine implements ISimulationTickable
             int y = this.world.getHeight(x, z);
             
             //TODO: consider mutable block pos here?
-            while(y > 0 && LavaTerrainHelper.canLavaDisplace(world.getBlockState(new BlockPos(x, y - 1, z))))
+            while(y > 0 && LavaTerrainHelper.canLavaDisplace(world.getBlockState(findPos.setPos(x, y - 1, z))))
             {
                 y--;
             }
@@ -692,7 +706,7 @@ public class VolcanoStateMachine implements ISimulationTickable
             }
         }
         
-        BlockPos best = new BlockPos(bestX, lowest, bestZ);
+        MutableBlockPos best = new MutableBlockPos(bestX, lowest, bestZ);
         
         // found the general location, now nudge to directly nearby blocks if any are lower
         for(int i = 1; i < 9; i++)
@@ -702,18 +716,18 @@ public class VolcanoStateMachine implements ISimulationTickable
             int y = this.world.getHeight(x, z);
             
             //TODO: consider mutable block pos?
-            while(y > 0 && LavaTerrainHelper.canLavaDisplace(world.getBlockState(new BlockPos(x, y - 1, z))))
+            while(y > 0 && LavaTerrainHelper.canLavaDisplace(world.getBlockState(findPos.setPos(x, y - 1, z))))
             {
                 y--;
             }
             
             if(y < best.getY())
             {
-                best = new BlockPos(x, y, z);
+                best.setPos(x, y, z);
             }
         }
         
-        return best;
+        return best.toImmutable();
     }
   
     /**
@@ -734,14 +748,14 @@ public class VolcanoStateMachine implements ISimulationTickable
             y = 0;
         }
       
-        BlockPos pos = borePosForLevel(offsetIndex, y);
+        final MutableBlockPos pos = this.setBorePosForLevel(this.operationPos, offsetIndex, y);
         
         if(world.getBlockState(pos).getMaterial() == Material.LAVA)
         {
             if(offsetIndex < MAX_BORE_OFFSET)
-                world.setBlockToAir(pos);
+                world.setBlockToAir(pos.toImmutable());
             else
-                world.setBlockState(pos, Blocks.OBSIDIAN.getDefaultState());
+                world.setBlockState(pos.toImmutable(), Blocks.OBSIDIAN.getDefaultState());
         }
          
         

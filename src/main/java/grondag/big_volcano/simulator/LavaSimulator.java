@@ -282,9 +282,9 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
 
     
     /** used by world update to notify when fillers are placed */
-    public void trackCoolingBlock(BlockPos pos)
+    public void trackCoolingBlock(long packedBlockPos)
     {
-        this.basaltTracker.trackCoolingBlock(pos);
+        this.basaltTracker.trackCoolingBlock(packedBlockPos);
         this.setDirty();
     }
     
@@ -294,7 +294,8 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
      */
     public void registerCoolingBlock(World worldIn, BlockPos pos)
     {
-        if(!itMe) trackCoolingBlock(pos);
+        if(!itMe && worldIn.provider.getDimension() == this.world.provider.getDimension()) 
+            trackCoolingBlock(PackedBlockPos.pack(pos));
     }
     
     protected void coolLava(BlockPos pos)

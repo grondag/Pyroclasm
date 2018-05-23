@@ -92,7 +92,7 @@ public class CoolingBasaltBlock extends TerrainDynamicBlock
     /**
      * Want to avoid the synchronization penalty of pooled block pos.
      */
-    private ThreadLocal<BlockPos.MutableBlockPos> canCoolPos = new ThreadLocal<BlockPos.MutableBlockPos>()
+    private static ThreadLocal<BlockPos.MutableBlockPos> canCoolPos = new ThreadLocal<BlockPos.MutableBlockPos>()
     {
 
         @Override

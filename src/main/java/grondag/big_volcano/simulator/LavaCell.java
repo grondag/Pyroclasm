@@ -19,6 +19,7 @@ import it.unimi.dsi.fastutil.ints.IntArrayList;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.init.Blocks;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.BlockPos.MutableBlockPos;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.relauncher.Side;
@@ -1577,6 +1578,20 @@ public class LavaCell extends AbstractLavaCell
     }
     
     /**
+     * Want to avoid the synchronization penalty of pooled block pos.
+     * Used only within {@link #getFlowFloorRetentionDepth()}
+     */
+    private static ThreadLocal<BlockPos.MutableBlockPos> flowFloorPos = new ThreadLocal<BlockPos.MutableBlockPos>()
+    {
+
+        @Override
+        protected MutableBlockPos initialValue()
+        {
+            return new BlockPos.MutableBlockPos();
+        }
+    };
+    
+    /**
      * Returns retained depth of lava on the given flow block in fluid units.<p>
      * 
      * Some approaches to this could exploit the information in connections to be
@@ -1596,7 +1611,9 @@ public class LavaCell extends AbstractLavaCell
         if(y <= 0) return LavaSimulator.FLUID_UNITS_PER_BLOCK;
         
         IBlockAccess world = this.locator.cellChunk.cells.sim.world;
-        BlockPos pos = new BlockPos(this.x(), y, this.z());
+        
+        BlockPos.MutableBlockPos pos = flowFloorPos.get();
+        pos.setPos(this.x(), y, this.z());
         IBlockState blockState = world.getBlockState(pos);
         TerrainState tState = TerrainBlockHelper.getTerrainState(blockState, world, pos);
         
@@ -1735,6 +1752,20 @@ public class LavaCell extends AbstractLavaCell
     }
     
     /**
+     * Want to avoid the synchronization penalty of pooled block pos.
+     * Used only in {@link #provideBlockUpdateIfNeeded(LavaSimulator)}
+     */
+    private static ThreadLocal<BlockPos.MutableBlockPos> updatePos = new ThreadLocal<BlockPos.MutableBlockPos>()
+    {
+
+        @Override
+        protected MutableBlockPos initialValue()
+        {
+            return new BlockPos.MutableBlockPos();
+        }
+    };
+    
+    /**
      * Assumes block updates will be applied to world/worldBuffer before any more world interaction occurs.
      * Consistent with this expectations, it sets lastVisibleLevel = currentVisibleLevel.
      * Also refreshes world for any blocks reported as suspended or destroyed and calls {@link #clearRefreshRange()}
@@ -1783,15 +1814,18 @@ public class LavaCell extends AbstractLavaCell
             
             final AdjustmentTracker tracker = new AdjustmentTracker();
             
+            final BlockPos.MutableBlockPos pos = updatePos.get();
+            
             for(int y = bottomY; y <= topY; y++)
             {
-                BlockPos pos = new BlockPos(x, y, z);
+                pos.setPos(x, y, z);
+                
                 IBlockState priorState = world.getBlockState(pos);
                 
                 if(hasLava && y == currentSurfaceY)
                 {
                     // partial or full lava block
-                    world.setBlockState(pos, 
+                    world.setBlockState(pos.toImmutable(), 
                             TerrainBlockHelper.stateWithDiscreteFlowHeight(ModBlocks.lava_dynamic_height.getDefaultState(), currentVisible - currentSurfaceY * TerrainState.BLOCK_LEVELS_INT));
                 
                     tracker.setAdjustmentNeededAround(x, y, z);
@@ -1799,13 +1833,13 @@ public class LavaCell extends AbstractLavaCell
                     
                     if(priorState.getBlock().isWood(world, pos))
                     {
-                        sim.lavaTreeCutter.queueTreeCheck(pos.up());
+                        sim.lavaTreeCutter.queueTreeCheck(PackedBlockPos.pack(x, y + 1, z));
                     }
                 }
                 else if(hasLava && y < currentSurfaceY)
                 {
                     // full lava block
-                    world.setBlockState(pos, 
+                    world.setBlockState(pos.toImmutable(), 
                             TerrainBlockHelper.stateWithDiscreteFlowHeight(ModBlocks.lava_dynamic_height.getDefaultState(), TerrainState.BLOCK_LEVELS_INT));
                     
                     tracker.setAdjustmentNeededAround(x, y, z);
@@ -1816,7 +1850,7 @@ public class LavaCell extends AbstractLavaCell
                     // don't want to clear non-air blocks if they did not contain lava - let falling particles do that
                     if(priorState.getBlock() == ModBlocks.lava_dynamic_height)
                     {
-                        world.setBlockState(pos, Blocks.AIR.getDefaultState());
+                        world.setBlockState(pos.toImmutable(), Blocks.AIR.getDefaultState());
                         
                         // difference here is that we allow fillers in the block being set
                         tracker.setAdjustmentNeededAround(x, y, z);
