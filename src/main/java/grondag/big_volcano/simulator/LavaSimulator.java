@@ -24,7 +24,7 @@ import grondag.exotic_matter.model.TerrainState;
 import grondag.exotic_matter.serialization.NBTDictionary;
 import grondag.exotic_matter.simulator.ISimulationTickable;
 import grondag.exotic_matter.simulator.persistence.ISimulationTopNode;
-import grondag.exotic_matter.varia.PackedBlockPos;
+import grondag.exotic_matter.world.PackedBlockPos;
 import grondag.exotic_matter.world.WorldInfo;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;

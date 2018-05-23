@@ -8,8 +8,8 @@ import javax.annotation.Nullable;
 import grondag.big_volcano.BigActiveVolcano;
 import grondag.big_volcano.Configurator;
 import grondag.exotic_matter.simulator.Simulator;
-import grondag.exotic_matter.varia.PackedChunkPos;
 import grondag.exotic_matter.varia.SimpleUnorderedArrayList;
+import grondag.exotic_matter.world.PackedChunkPos;
 import net.minecraft.world.chunk.Chunk;
 /**
  * Container for all cells in a world chunk.

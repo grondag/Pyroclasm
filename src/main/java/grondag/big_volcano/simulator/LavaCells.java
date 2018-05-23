@@ -13,7 +13,7 @@ import grondag.big_volcano.BigActiveVolcano;
 import grondag.big_volcano.Configurator;
 import grondag.exotic_matter.concurrency.PerformanceCounter;
 import grondag.exotic_matter.serialization.NBTDictionary;
-import grondag.exotic_matter.varia.PackedChunkPos;
+import grondag.exotic_matter.world.PackedChunkPos;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap.Entry;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;

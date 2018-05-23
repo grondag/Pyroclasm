@@ -11,7 +11,7 @@ import grondag.exotic_matter.concurrency.PerformanceCollector;
 import grondag.exotic_matter.concurrency.PerformanceCounter;
 import grondag.exotic_matter.concurrency.SimpleConcurrentList;
 import grondag.exotic_matter.simulator.Simulator;
-import grondag.exotic_matter.varia.PackedBlockPos;
+import grondag.exotic_matter.world.PackedBlockPos;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.math.BlockPos;
 

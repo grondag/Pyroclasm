@@ -3,8 +3,8 @@ package grondag.big_volcano.lava;
 
 import javax.annotation.Nullable;
 
-import grondag.exotic_matter.varia.PackedBlockPos;
 import grondag.exotic_matter.varia.Useful;
+import grondag.exotic_matter.world.PackedBlockPos;
 import net.minecraft.util.math.BlockPos;
 
 /**

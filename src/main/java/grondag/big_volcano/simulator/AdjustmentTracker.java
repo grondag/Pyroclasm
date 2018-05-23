@@ -10,7 +10,7 @@ import grondag.big_volcano.lava.LavaTerrainHelper;
 import grondag.exotic_matter.model.ISuperBlock;
 import grondag.exotic_matter.model.TerrainBlockHelper;
 import grondag.exotic_matter.terrain.TerrainStaticBlock;
-import grondag.exotic_matter.varia.PackedBlockPos;
+import grondag.exotic_matter.world.PackedBlockPos;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.util.math.BlockPos;

@@ -17,7 +17,7 @@ import grondag.big_volcano.Configurator;
 import grondag.big_volcano.simulator.LavaSimulator;
 import grondag.exotic_matter.serialization.NBTDictionary;
 import grondag.exotic_matter.simulator.Simulator;
-import grondag.exotic_matter.varia.PackedBlockPos;
+import grondag.exotic_matter.world.PackedBlockPos;
 import net.minecraft.nbt.NBTTagCompound;
 
 public class LavaBlobManager
