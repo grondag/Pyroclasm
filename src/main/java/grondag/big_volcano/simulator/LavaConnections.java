@@ -5,6 +5,7 @@ import java.util.concurrent.CountedCompleter;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
 
 import javax.annotation.Nullable;
 
@@ -12,61 +13,13 @@ import grondag.big_volcano.BigActiveVolcano;
 import grondag.big_volcano.Configurator;
 import grondag.big_volcano.simulator.LavaConnection.Flowable;
 import grondag.exotic_matter.concurrency.SimpleConcurrentList;
-import grondag.exotic_matter.concurrency.SimpleThreadPoolExecutor.ArrayMappingConsumer;
+import grondag.exotic_matter.concurrency.ScatterGatherThreadPool.ArrayMappingConsumer;
 import grondag.exotic_matter.simulator.Simulator;
 import grondag.exotic_matter.varia.SimpleUnorderedArrayList;
 
 public class LavaConnections extends AbstractLavaConnections
 {
     public static final int STEP_COUNT = 4;
-
-    final SimpleConcurrentList<Flowable> toProcess = SimpleConcurrentList.create(Flowable.class, Configurator.VOLCANO.enablePerformanceLogging, "Connection Processing", sim.perfCollectorOffTick);
-    
-//    private final ChunkSetupTask chunkTask = new ChunkSetupTask();
-    
-    private final ArrayMappingConsumer<CellChunk, Flowable> chunkConsumer =  new ArrayMappingConsumer<CellChunk, Flowable>(
-            (CellChunk c, SimpleUnorderedArrayList<Flowable> r) ->
-            {
-                if(c.isDeleted() || c.isNew()) return;
-                c.forEach(cell ->
-                {
-                    cell.updateStuff(sim);
-                    Flowable keeper = cell.getFlowChain();
-                    if(keeper != null) r.add(keeper);
-                });
-            },
-            toProcess );
-    
-    public LavaConnections(LavaSimulator sim)
-    {
-        super(sim);
-        
-    }
-    
-    @Override
-    public final void doCellSetup()
-    {
-        this.toProcess.clear();
-        
-        final int chunkCount = this.sim.cells.chunkCount();
-        
-        if(chunkCount == 0) return;
-        
-        if(chunkCount < 4)
-        {
-            this.setupCounter.startRun();
-            this.sim.cells.forEach(c -> setupCell(c));
-            this.setupCounter.endRun();
-            this.setupCounter.addCount(chunkCount);
-        }
-        else
-        {
-            this.parallelSetupCounter.startRun();
-            Simulator.SIMPLE_POOL.completeTask(this.sim.cells.allChunks().toArray(new CellChunk[chunkCount]), this.chunkConsumer);
-            this.parallelSetupCounter.endRun();
-            this.parallelSetupCounter.addCount(chunkCount);
-        }
-    }
     
     /**
      * Per-step max is always the available units / step count.
@@ -74,67 +27,35 @@ public class LavaConnections extends AbstractLavaConnections
      * Connections in subsequent rounds don't get to go if previous rounds have
      * used or exceeded the cumulative per-step max for the given step.
      */
-    private final void setupCell(LavaCell cell)
+    private final ArrayMappingConsumer<CellChunk, Flowable> chunkConsumer =  new ArrayMappingConsumer<CellChunk, Flowable>(
+            (CellChunk c, Consumer<Flowable> r) ->
+            {
+                if(c.isDeleted() || c.isNew()) return;
+                c.forEach(cell ->
+                {
+                    cell.updateStuff(sim);
+                    Flowable keeper = cell.getFlowChain();
+                    if(keeper != null) r.accept(keeper);
+                });
+            },
+            toProcess );
+    
+    public LavaConnections(LavaSimulator sim)
     {
-        if(cell.isDeleted()) return;
-        cell.updateStuff(sim);
-        Flowable keeper = cell.getFlowChain();
-        if(keeper != null) this.toProcess.add(keeper);
+        super(sim);
     }
+    
+    @Override
+    public final void doCellSetup()
+    {
+        final int chunkCount = this.sim.cells.chunkCount();
+        if(chunkCount == 0) return;
         
-//    private class ChunkSetupTask implements ISharableTask
-//    {
-//        private final ThreadLocal<SimpleUnorderedArrayList<Flowable>> results = new ThreadLocal<SimpleUnorderedArrayList<Flowable>>()
-//        {
-//            @Override
-//            protected SimpleUnorderedArrayList<Flowable> initialValue()
-//            {
-//                return new SimpleUnorderedArrayList<Flowable>();
-//            }
-//        };
-//
-//        private Object[] chunks = new Object[0];
-//        
-//        private ChunkSetupTask prepare()
-//        {
-//            this.chunks = sim.cells.allChunks().toArray();
-//            return this;
-//        }
-//
-//        @Override
-//        public void onThreadComplete()
-//        {
-//            final SimpleUnorderedArrayList<Flowable> results = this.results.get();
-//            if(!results.isEmpty()) toProcess.addAll(results);
-//            results.clear();
-//        }
-//        
-//        @Override
-//        public final boolean doSomeWork(final int batchIndex)
-//        {
-//            final int size = this.chunks.length;
-//            if(batchIndex < size)
-//            {
-//                setupChunk((CellChunk)this.chunks[batchIndex]);
-//                return (batchIndex + 1) != size;
-//            }
-//            else return false;
-//        }
-//        
-//        private void setupChunk(CellChunk chunk)
-//        {
-//            if(chunk.isDeleted() || chunk.isNew()) return;
-//            
-//            final SimpleUnorderedArrayList<Flowable> results = this.results.get();
-//            
-//            chunk.forEach(cell ->
-//            {
-//                cell.updateStuff(sim);
-//                Flowable keeper = cell.getFlowChain();
-//                if(keeper != null) results.add(keeper);
-//            });
-//        }
-//    }
+        this.setupCounter.startRun();
+        Simulator.SCATTER_GATHER_POOL.completeTask(this.sim.cells.allChunks().toArray(new CellChunk[chunkCount]), 1, this.chunkConsumer);
+        this.setupCounter.endRun();
+        this.setupCounter.addCount(chunkCount);
+    }
     
     @Override
     protected final void doStepInner()

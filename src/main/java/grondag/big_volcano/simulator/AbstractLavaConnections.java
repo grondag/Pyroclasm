@@ -2,7 +2,9 @@ package grondag.big_volcano.simulator;
 
 import grondag.big_volcano.BigActiveVolcano;
 import grondag.big_volcano.Configurator;
+import grondag.big_volcano.simulator.LavaConnection.Flowable;
 import grondag.exotic_matter.concurrency.PerformanceCounter;
+import grondag.exotic_matter.concurrency.SimpleConcurrentList;
 
 public abstract class AbstractLavaConnections
 {
@@ -13,18 +15,19 @@ public abstract class AbstractLavaConnections
     protected int[] flowCounts = new int[5];
     public final PerformanceCounter setupCounter;
     public final PerformanceCounter stepCounter;
-    public final PerformanceCounter parallelSetupCounter;
     public final PerformanceCounter parallelStepCounter;
-    
+    final SimpleConcurrentList<Flowable> toProcess;
+
     protected AbstractLavaConnections(LavaSimulator sim)
     {
         super();
         this.sim = sim;
-        setupCounter = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Connection Setup -  Server Thread", sim.perfCollectorOffTick);
+        setupCounter = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Connection Setup", sim.perfCollectorOffTick);
         stepCounter = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Flow Step - Server Thread", sim.perfCollectorOffTick);
         
-        parallelSetupCounter = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Connection Setup - Multi-threaded", sim.perfCollectorOffTick);
         parallelStepCounter = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Flow Step - Multi-threaded", sim.perfCollectorOffTick);
+        
+        this.toProcess = SimpleConcurrentList.create(Flowable.class, Configurator.VOLCANO.enablePerformanceLogging, "Connection Processing", sim.perfCollectorOffTick);
     }
 
 
@@ -73,6 +76,7 @@ public abstract class AbstractLavaConnections
     
     /**
      * Causes all connections to flow (if they can)
+     * and then clears the list of flowable connections.
      */
     public final void processConnections()
     {
@@ -82,6 +86,7 @@ public abstract class AbstractLavaConnections
         this.doStep();
         this.doStep();
         this.doStep();
+        this.toProcess.clear();
     }
 
     protected void doStep()
