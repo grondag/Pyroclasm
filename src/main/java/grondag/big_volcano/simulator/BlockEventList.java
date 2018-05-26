@@ -58,12 +58,11 @@ public class BlockEventList
         {
             if(!this.eventList.isEmpty())
             {
-                Simulator.runTaskAppropriately(
-                        this.eventList, 
-                        e -> { if(!(e == null || e.isDeleted())) e.process(maxRetries); }, 
-                        Configurator.VOLCANO.concurrencyThreshold, 
-                        perfCounter);
+                perfCounter.startRun();
+                Simulator.SCATTER_GATHER_POOL.completeTask(this.eventList, Configurator.VOLCANO.concurrencyThreshold, e -> { if(!(e == null || e.isDeleted())) e.process(maxRetries); });
+                perfCounter.addCount(this.eventList.size());
                 this.eventList.removeSomeDeletedItems(EVENT_REMOVAL_PREDICATE);
+                perfCounter.endRun();
             }
         }
     }
