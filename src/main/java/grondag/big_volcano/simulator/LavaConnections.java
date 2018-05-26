@@ -1,7 +1,6 @@
 package grondag.big_volcano.simulator;
 
 
-import java.util.Iterator;
 import java.util.concurrent.CountedCompleter;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -13,12 +12,30 @@ import grondag.big_volcano.BigActiveVolcano;
 import grondag.big_volcano.Configurator;
 import grondag.big_volcano.simulator.LavaConnection.Flowable;
 import grondag.exotic_matter.concurrency.SimpleConcurrentList;
+import grondag.exotic_matter.concurrency.SimpleThreadPoolExecutor.ArrayMappingConsumer;
 import grondag.exotic_matter.simulator.Simulator;
 import grondag.exotic_matter.varia.SimpleUnorderedArrayList;
 
 public class LavaConnections extends AbstractLavaConnections
 {
+    public static final int STEP_COUNT = 4;
+
     final SimpleConcurrentList<Flowable> toProcess = SimpleConcurrentList.create(Flowable.class, Configurator.VOLCANO.enablePerformanceLogging, "Connection Processing", sim.perfCollectorOffTick);
+    
+//    private final ChunkSetupTask chunkTask = new ChunkSetupTask();
+    
+    private final ArrayMappingConsumer<CellChunk, Flowable> chunkConsumer =  new ArrayMappingConsumer<CellChunk, Flowable>(
+            (CellChunk c, SimpleUnorderedArrayList<Flowable> r) ->
+            {
+                if(c.isDeleted() || c.isNew()) return;
+                c.forEach(cell ->
+                {
+                    cell.updateStuff(sim);
+                    Flowable keeper = cell.getFlowChain();
+                    if(keeper != null) r.add(keeper);
+                });
+            },
+            toProcess );
     
     public LavaConnections(LavaSimulator sim)
     {
@@ -33,7 +50,9 @@ public class LavaConnections extends AbstractLavaConnections
         
         final int chunkCount = this.sim.cells.chunkCount();
         
-        if(chunkCount < 16)
+        if(chunkCount == 0) return;
+        
+        if(chunkCount < 4)
         {
             this.setupCounter.startRun();
             this.sim.cells.forEach(c -> setupCell(c));
@@ -43,19 +62,10 @@ public class LavaConnections extends AbstractLavaConnections
         else
         {
             this.parallelSetupCounter.startRun();
-            try
-            {
-                Simulator.SIMULATION_POOL.submit(new CellSetupTask()).get(1, TimeUnit.SECONDS);
-            }
-            catch (InterruptedException | ExecutionException | TimeoutException e)
-            {
-                BigActiveVolcano.INSTANCE.error("Unexpected error during lava cell setup", e);
-            }
+            Simulator.SIMPLE_POOL.completeTask(this.sim.cells.allChunks().toArray(new CellChunk[chunkCount]), this.chunkConsumer);
             this.parallelSetupCounter.endRun();
             this.parallelSetupCounter.addCount(chunkCount);
         }
-        
-
     }
     
     /**
@@ -64,16 +74,67 @@ public class LavaConnections extends AbstractLavaConnections
      * Connections in subsequent rounds don't get to go if previous rounds have
      * used or exceeded the cumulative per-step max for the given step.
      */
-    private void setupCell(LavaCell cell)
+    private final void setupCell(LavaCell cell)
     {
         if(cell.isDeleted()) return;
         cell.updateStuff(sim);
         Flowable keeper = cell.getFlowChain();
         if(keeper != null) this.toProcess.add(keeper);
     }
-    
-    public static final int STEP_COUNT = 4;
-            
+        
+//    private class ChunkSetupTask implements ISharableTask
+//    {
+//        private final ThreadLocal<SimpleUnorderedArrayList<Flowable>> results = new ThreadLocal<SimpleUnorderedArrayList<Flowable>>()
+//        {
+//            @Override
+//            protected SimpleUnorderedArrayList<Flowable> initialValue()
+//            {
+//                return new SimpleUnorderedArrayList<Flowable>();
+//            }
+//        };
+//
+//        private Object[] chunks = new Object[0];
+//        
+//        private ChunkSetupTask prepare()
+//        {
+//            this.chunks = sim.cells.allChunks().toArray();
+//            return this;
+//        }
+//
+//        @Override
+//        public void onThreadComplete()
+//        {
+//            final SimpleUnorderedArrayList<Flowable> results = this.results.get();
+//            if(!results.isEmpty()) toProcess.addAll(results);
+//            results.clear();
+//        }
+//        
+//        @Override
+//        public final boolean doSomeWork(final int batchIndex)
+//        {
+//            final int size = this.chunks.length;
+//            if(batchIndex < size)
+//            {
+//                setupChunk((CellChunk)this.chunks[batchIndex]);
+//                return (batchIndex + 1) != size;
+//            }
+//            else return false;
+//        }
+//        
+//        private void setupChunk(CellChunk chunk)
+//        {
+//            if(chunk.isDeleted() || chunk.isNew()) return;
+//            
+//            final SimpleUnorderedArrayList<Flowable> results = this.results.get();
+//            
+//            chunk.forEach(cell ->
+//            {
+//                cell.updateStuff(sim);
+//                Flowable keeper = cell.getFlowChain();
+//                if(keeper != null) results.add(keeper);
+//            });
+//        }
+//    }
     
     @Override
     protected final void doStepInner()
@@ -98,58 +159,6 @@ public class LavaConnections extends AbstractLavaConnections
                 BigActiveVolcano.INSTANCE.error("Unexpected error during lava connection processing", e);
             }
             this.parallelStepCounter.endRun();
-        }
-    }
-    
-    
-    @SuppressWarnings("serial")
-    protected class CellSetupTask extends CountedCompleter<Void>
-    {
-        
-        @Override
-        public void compute()
-        {
-            Iterator<CellChunk> it = sim.cells.allChunks().iterator();
-            
-            SetupTask myTask = new SetupTask(it.next());
-            
-            while(it.hasNext())
-            {
-                this.addToPendingCount(1);
-                new SetupTask(it.next()).fork();
-            }
-            
-            // invokes tryComplete for us
-            myTask.compute(); 
-            
-        }
-
-        private class SetupTask extends CountedCompleter<Void>
-        {
-            private final CellChunk chunk;
-            
-            private SetupTask(CellChunk chunk)
-            {
-                super();
-                this.chunk = chunk;
-            }
-            
-            @Override
-            public void compute()
-            {
-                SimpleUnorderedArrayList<Flowable> results = new SimpleUnorderedArrayList<>(chunk.getActiveCount());
-                
-                chunk.forEach(cell ->
-                {
-                    cell.updateStuff(sim);
-                    Flowable keeper = cell.getFlowChain();
-                    if(keeper != null) results.add(keeper);
-                });
-                
-                if(!results.isEmpty()) toProcess.addAll(results);
-                
-                CellSetupTask.this.tryComplete();
-            }
         }
     }
     

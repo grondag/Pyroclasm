@@ -26,7 +26,21 @@ public class LavaCells
     private final static String NBT_LAVA_CELLS = NBTDictionary.claim("lavaCells");
     private final static int CAPACITY_INCREMENT = 0x10000;
     
-    private final Long2ObjectOpenHashMap<CellChunk> cellChunks = new Long2ObjectOpenHashMap<CellChunk>();
+    @SuppressWarnings("serial")
+    private static class ChunkMap extends Long2ObjectOpenHashMap<CellChunk>
+    {
+        private static final Object[] EMPTY = new Object[0];
+        /**
+         * See {@link LavaCells#rawChunks()}
+         */
+        public final Object[] rawValues()
+        {
+            return this.value == null  ?  EMPTY : this.value;
+        }
+    };
+    
+    private final ChunkMap cellChunks = new ChunkMap();
+    
     
     private final ChunkTracker chunkTracker;
     /** 
@@ -175,6 +189,15 @@ public class LavaCells
     public Collection<CellChunk> allChunks()
     {
         return this.cellChunks.values();
+    }
+    
+    /**
+     * Provides direct access to the map's underlying value array.  Allows brute-force parallel scan
+     * with caveat that must check for nulls.
+     */
+    public Object[] rawChunks()
+    {
+        return this.cellChunks.rawValues();
     }
     
     public @Nullable CellChunk getCellChunk(int xBlock, int zBlock)
