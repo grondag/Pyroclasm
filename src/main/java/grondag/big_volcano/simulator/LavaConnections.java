@@ -50,7 +50,7 @@ public class LavaConnections extends AbstractLavaConnections
         if(chunkCount == 0) return;
         
         this.setupCounter.startRun();
-        Simulator.SCATTER_GATHER_POOL.completeTask(this.sim.cells.allChunks().toArray(new CellChunk[chunkCount]), 1, this.chunkConsumer);
+        Simulator.SCATTER_GATHER_POOL.completeTask(this.sim.cells.allChunks().toArray(new CellChunk[chunkCount]), ScatterGatherThreadPool.POOL_SIZE, this.chunkConsumer);
         this.setupCounter.endRun();
         this.setupCounter.addCount(chunkCount);
     }
