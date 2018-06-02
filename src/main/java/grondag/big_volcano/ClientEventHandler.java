@@ -4,6 +4,7 @@ import javax.annotation.Nullable;
 
 import org.lwjgl.opengl.GL11;
 
+import grondag.big_volcano.lava.FXLavaBlob;
 import grondag.big_volcano.simulator.AbstractLavaCell;
 import grondag.big_volcano.simulator.CellChunk;
 import grondag.big_volcano.simulator.LavaCell;
@@ -31,12 +32,16 @@ public class ClientEventHandler
     @SubscribeEvent()
     public static void renderWorldLastEvent(RenderWorldLastEvent event)
     {
+        Tessellator tessellator = Tessellator.getInstance();
+        
+        FXLavaBlob.doDeferredRenders(tessellator);
+        
         if(!(Configurator.VOLCANO.enableLavaCellDebugRender || Configurator.VOLCANO.enableLavaChunkDebugRender)) return;
         
         LavaSimulator lavaSim = Simulator.instance().getNode(LavaSimulator.class);
         if(lavaSim == null) return;
         
-        Tessellator tessellator = Tessellator.getInstance();
+        
         BufferBuilder bufferBuilder = tessellator.getBuffer();
         EntityPlayerSP player = Minecraft.getMinecraft().player;
         

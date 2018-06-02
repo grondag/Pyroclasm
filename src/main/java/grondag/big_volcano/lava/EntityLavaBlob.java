@@ -1,6 +1,8 @@
 package grondag.big_volcano.lava;
 
 import java.util.List;
+import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 import javax.annotation.Nonnull;
 
@@ -261,8 +263,34 @@ public class EntityLavaBlob extends Entity
         this.motionY *= 0.9800000190734863D;
         this.motionZ *= 0.9800000190734863D;
 
+        this.emitParticles();
+        
         if (this.onGround) this.land();
         
+    }
+    
+    private void emitParticles()
+    {
+        if(isDead || !world.isRemote)
+            return;
+
+        Random r = ThreadLocalRandom.current();
+        
+
+//        do {
+//            size = osize + ((float) Math.random() - 0.5F) * 0.065F + (float) Math.sin(r.nextInt(9001)) * 0.4F;
+//            Botania.proxy.wispFX(posX, posY, posZ, r, g, b, 0.2F * size, (float) -motionX * 0.01F, (float) -motionY * 0.01F, (float) -motionZ * 0.01F);
+//
+//            posX += diffVecNorm.x * distance;
+//            posY += diffVecNorm.y * distance;
+//            posZ += diffVecNorm.z * distance;
+//
+//            currentPos = Vector3.fromEntity(this);
+//            diffVec = oldPos.subtract(currentPos);
+//        } while(Math.abs(diffVec.mag()) > distance);
+
+        BigActiveVolcano.proxy.spawnLavaBlobParticle(world, posX, posY, posZ, (r.nextFloat() - 0.5F) * 0.06F, (r.nextFloat() - 0.5F) * 0.06F, (r.nextFloat() - 0.5F) * 0.06F, 2);
+
     }
     
     private void land()
