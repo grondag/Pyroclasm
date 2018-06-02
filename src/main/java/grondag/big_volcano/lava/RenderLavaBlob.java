@@ -5,9 +5,9 @@ import java.util.List;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import grondag.exotic_matter.model.mesh.MeshHelper;
 import grondag.exotic_matter.model.primitives.IPolygon;
 import grondag.exotic_matter.model.primitives.Poly;
-import grondag.exotic_matter.model.primitives.QuadHelper;
 import grondag.exotic_matter.model.primitives.Vertex;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.GLAllocation;
@@ -34,7 +34,7 @@ public class RenderLavaBlob extends Render<EntityLavaBlob>
 
     private static final ResourceLocation TEXTURE = new ResourceLocation("big_volcano:textures/entity/lava.png");
 
-    private static final List<IPolygon> quads = QuadHelper.makeIcosahedron(new Vec3d(0,0,0), 0.5, Poly.mutable(4));
+    private static final List<IPolygon> quads = MeshHelper.makeIcosahedron(new Vec3d(0,0,0), 0.5, Poly.mutable(4));
 
     @Override
     public void doRender(@Nonnull EntityLavaBlob entity, double x, double y, double z, float entityYaw, float partialTicks)
