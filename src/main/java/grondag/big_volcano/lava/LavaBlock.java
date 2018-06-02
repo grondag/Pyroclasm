@@ -5,8 +5,8 @@ import javax.annotation.Nullable;
 
 import grondag.big_volcano.simulator.LavaCell;
 import grondag.big_volcano.simulator.LavaSimulator;
-import grondag.exotic_matter.model.BlockSubstance;
-import grondag.exotic_matter.model.ISuperModelState;
+import grondag.exotic_matter.block.BlockSubstance;
+import grondag.exotic_matter.model.state.ISuperModelState;
 import grondag.exotic_matter.simulator.Simulator;
 import grondag.exotic_matter.terrain.TerrainDynamicBlock;
 import mcjty.theoneprobe.api.IProbeHitData;

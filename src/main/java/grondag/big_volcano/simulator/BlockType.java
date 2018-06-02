@@ -2,7 +2,7 @@ package grondag.big_volcano.simulator;
 
 import grondag.big_volcano.init.ModBlocks;
 import grondag.big_volcano.lava.LavaTerrainHelper;
-import grondag.exotic_matter.model.TerrainBlockHelper;
+import grondag.exotic_matter.terrain.TerrainBlockHelper;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.init.Blocks;

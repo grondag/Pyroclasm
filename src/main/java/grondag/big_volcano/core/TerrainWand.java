@@ -3,11 +3,11 @@ package grondag.big_volcano.core;
 import javax.annotation.Nonnull;
 
 import grondag.big_volcano.init.ModBlocks;
+import grondag.exotic_matter.block.ISuperBlock;
 import grondag.exotic_matter.init.RegistratingItem;
-import grondag.exotic_matter.model.ISuperBlock;
-import grondag.exotic_matter.model.TerrainBlockHelper;
-import grondag.exotic_matter.model.TerrainState;
+import grondag.exotic_matter.terrain.TerrainBlockHelper;
 import grondag.exotic_matter.terrain.TerrainDynamicBlock;
+import grondag.exotic_matter.terrain.TerrainState;
 import grondag.exotic_matter.terrain.TerrainStaticBlock;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;

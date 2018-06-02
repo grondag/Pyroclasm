@@ -1,6 +1,6 @@
 package grondag.big_volcano.simulator;
 
-import grondag.exotic_matter.model.TerrainState;
+import grondag.exotic_matter.terrain.TerrainState;
 
 public abstract class AbstractLavaCell
 {

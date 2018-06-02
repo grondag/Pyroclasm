@@ -5,10 +5,10 @@ import java.util.List;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import grondag.exotic_matter.render.IPolygon;
-import grondag.exotic_matter.render.Poly;
-import grondag.exotic_matter.render.QuadHelper;
-import grondag.exotic_matter.render.Vertex;
+import grondag.exotic_matter.model.primitives.IPolygon;
+import grondag.exotic_matter.model.primitives.Poly;
+import grondag.exotic_matter.model.primitives.QuadHelper;
+import grondag.exotic_matter.model.primitives.Vertex;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.GLAllocation;
 import net.minecraft.client.renderer.GlStateManager;

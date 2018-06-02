@@ -8,11 +8,11 @@ import javax.annotation.Nullable;
 
 import grondag.big_volcano.init.ModBlocks;
 import grondag.big_volcano.simulator.LavaSimulator;
-import grondag.exotic_matter.model.BlockSubstance;
-import grondag.exotic_matter.model.ISuperBlock;
-import grondag.exotic_matter.model.ISuperModelState;
-import grondag.exotic_matter.model.TerrainBlockHelper;
+import grondag.exotic_matter.block.BlockSubstance;
+import grondag.exotic_matter.block.ISuperBlock;
+import grondag.exotic_matter.model.state.ISuperModelState;
 import grondag.exotic_matter.simulator.Simulator;
+import grondag.exotic_matter.terrain.TerrainBlockHelper;
 import grondag.exotic_matter.terrain.TerrainDynamicBlock;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;

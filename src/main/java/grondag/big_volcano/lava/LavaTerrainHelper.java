@@ -10,7 +10,7 @@ import javax.annotation.Nullable;
 import gnu.trove.list.TLongList;
 import grondag.big_volcano.Configurator;
 import grondag.big_volcano.init.ModBlocks;
-import grondag.exotic_matter.model.TerrainBlockHelper;
+import grondag.exotic_matter.terrain.TerrainBlockHelper;
 import grondag.exotic_matter.varia.Useful;
 import grondag.exotic_matter.world.PackedBlockPos;
 import net.minecraft.block.Block;

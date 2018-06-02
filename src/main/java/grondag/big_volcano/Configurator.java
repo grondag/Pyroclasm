@@ -3,9 +3,9 @@ package grondag.big_volcano;
 import java.util.IdentityHashMap;
 
 import grondag.big_volcano.simulator.LavaCell;
+import grondag.exotic_matter.block.BlockHarvestTool;
 import grondag.exotic_matter.init.ConfigPathNodeType;
 import grondag.exotic_matter.init.SubstanceConfig;
-import grondag.exotic_matter.model.BlockHarvestTool;
 import net.minecraft.block.Block;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.config.Config;

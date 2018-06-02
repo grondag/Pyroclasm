@@ -1,11 +1,11 @@
 package grondag.big_volcano.init;
 
 import grondag.big_volcano.Configurator;
-import grondag.exotic_matter.model.BlockColorMapProvider;
-import grondag.exotic_matter.model.BlockSubstance;
-import grondag.exotic_matter.model.Chroma;
-import grondag.exotic_matter.model.Hue;
-import grondag.exotic_matter.model.Luminance;
+import grondag.exotic_matter.block.BlockSubstance;
+import grondag.exotic_matter.model.color.BlockColorMapProvider;
+import grondag.exotic_matter.model.color.Chroma;
+import grondag.exotic_matter.model.color.Hue;
+import grondag.exotic_matter.model.color.Luminance;
 import net.minecraft.block.SoundType;
 import net.minecraft.block.material.Material;
 
