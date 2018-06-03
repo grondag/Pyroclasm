@@ -167,6 +167,8 @@ public abstract class AbstractLavaCell
 
     /** Y of last (top) block that could contain lava */
     public final int ceilingY() { return this.ceilingY; }
+    
+    public final boolean isOpenToSky() { return this.ceilingY == 255; }
 
     /** calculates the block y from a top bound (inclusive) given as a fluid level */
     protected static final int getYFromCeilingLevel(int ceilingLevelIn)

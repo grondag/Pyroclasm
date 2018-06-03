@@ -440,7 +440,7 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
         
         final World world = this.world;
         final MinecraftServer server = world.getMinecraftServer();
-        int capacity =  server == null ? 0 : Configurator.VOLCANO.maxLavaEntities - EntityLavaBlob.getLiveParticleCount(server);
+        int capacity =  server == null ? 0 : Configurator.VOLCANO.maxLavaEntities - EntityLavaBlob.getLiveParticleCount();
         
         if(capacity <= 0) return;
         

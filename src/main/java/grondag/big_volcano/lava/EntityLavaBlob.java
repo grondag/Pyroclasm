@@ -27,7 +27,6 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.datasync.DataParameter;
 import net.minecraft.network.datasync.DataSerializers;
 import net.minecraft.network.datasync.EntityDataManager;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.ReportedException;
 import net.minecraft.util.math.AxisAlignedBB;
@@ -53,7 +52,6 @@ public class EntityLavaBlob extends Entity
     
     private int cachedAmount;
     
-    private static int liveParticleLastServerTick = 0;
     private static int liveParticleCount = 0;
 
     private static final DataParameter<Integer> FLUID_AMOUNT = EntityDataManager.<Integer>createKey(EntityLavaBlob.class, DataSerializers.VARINT);
@@ -64,38 +62,42 @@ public class EntityLavaBlob extends Entity
         return this.id;
     }
 
-    /** 
-     * If particle count has been recently updated, returns it, otherwise returns 0.
-     * Requires server reference because it is static and doesn't have a reference.
+    /**
+     * Server side count of particles still living
      */
-    public static int getLiveParticleCount(MinecraftServer server)
+    public static int getLiveParticleCount()
     {
-        return liveParticleLastServerTick + 2 > server.getTickCounter() ? liveParticleCount: 0;
+        return liveParticleCount;
     }
     
     public EntityLavaBlob(World world, int amount, Vec3d position, Vec3d velocity)
     {
+        this(world, amount, position.x, position.y, position.z, velocity.x, velocity.y, velocity.z);
+    }
+    
+    public EntityLavaBlob(World world, int amount, double x, double y, double z, double dx, double dy, double dz)
+    {
         this(world, amount);
-//        if(!world.isRemote) HardScience.log.info("EntityLavaParticle amount=" + amount + " @" + position.toString());
-        this.setPosition(position.x, position.y, position.z);
-
-
-        this.motionX = velocity.x;
-        this.motionY = velocity.y;
-        this.motionZ = velocity.z;
-
+        this.setPosition(x, y, z);
+        this.prevPosX = this.posX;
+        this.prevPosY = this.posY;
+        this.prevPosZ = this.posZ;
+        this.motionX = dx;
+        this.motionY = dy;
+        this.motionZ = dz;
     }
 
     public EntityLavaBlob(World world)
     {
         this(world, LavaSimulator.FLUID_UNITS_PER_BLOCK);
-//        if(!world.isRemote) HardScience.log.info("EntityLavaParticle no params");
     }
 
     public EntityLavaBlob(World world, int amount)
     {
         super(world);
-//        if(!world.isRemote) HardScience.log.info("EntityLavaParticle amount=" + amount);
+        if(!world.isRemote) 
+            liveParticleCount++;
+        
         this.id = nextParticleID++;
         if(!world.isRemote)
         {
@@ -225,14 +227,6 @@ public class EntityLavaBlob extends Entity
     @Override
     public void onUpdate()
     {
-        // track the number of active particles - server only
-        if(!this.world.isRemote && liveParticleLastServerTick != this.getServer().getTickCounter()) 
-        {
-            liveParticleLastServerTick = this.getServer().getTickCounter();
-            liveParticleCount = 0;
-        }
-        liveParticleCount++;
-        
         if(this.ticksExisted > 600)
         {
             BigActiveVolcano.INSTANCE.info("Ancient lava particle died of old age.");
@@ -292,7 +286,7 @@ public class EntityLavaBlob extends Entity
             pX = this.prevPosX;
             pY = this.prevPosY;
             pZ = this.prevPosZ;
-            this.spawnBlobAround(pZ, pX, pY, r);
+            this.spawnBlobAround(pX, pY, pZ, r);
         }
         
         final double dx = this.posX - pX;
@@ -389,7 +383,8 @@ public class EntityLavaBlob extends Entity
     @Override
     public void setDead()
     {
-        liveParticleCount--;
+        if(!this.world.isRemote)
+            liveParticleCount--;
         super.setDead();
     }
     

@@ -1,5 +1,6 @@
 package grondag.big_volcano.simulator;
 
+import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
 import javax.annotation.Nullable;
@@ -7,6 +8,7 @@ import javax.annotation.Nullable;
 import grondag.big_volcano.BigActiveVolcano;
 import grondag.big_volcano.Configurator;
 import grondag.big_volcano.init.ModBlocks;
+import grondag.big_volcano.lava.EntityLavaBlob;
 import grondag.big_volcano.lava.LavaTerrainHelper;
 import grondag.exotic_matter.simulator.ISimulationTickable;
 import grondag.exotic_matter.simulator.Simulator;
@@ -69,7 +71,6 @@ import net.minecraft.world.World;
  */
 public class VolcanoStateMachine implements ISimulationTickable
 {
-
     private static enum Operation
     {
         /**
@@ -165,6 +166,8 @@ public class VolcanoStateMachine implements ISimulationTickable
     
     private Operation operation = Operation.SETUP_CONVERT_LAVA;
     
+    private double blobChance = 0;
+    
     /**
      * List of bore cells at volcano floor, from center out. Will be
      * empty until {@link #setupFind()} has fully finished.
@@ -235,6 +238,8 @@ public class VolcanoStateMachine implements ISimulationTickable
     {
         this.lavaRemainingThisPass = Configurator.VOLCANO.lavaBlocksPerSecond * LavaSimulator.FLUID_UNITS_PER_BLOCK / 20;
         
+        final Random r = ThreadLocalRandom.current();
+        
         for(int i = 0; i < OPERATIONS_PER_TICK; i++)
         {
             switch(this.operation)
@@ -265,7 +270,7 @@ public class VolcanoStateMachine implements ISimulationTickable
                     break;
 
                 case FLOW:
-                    this.operation = flow();
+                    this.operation = flow(r);
                     break;
 
                 case MELT_CHECK:
@@ -417,6 +422,7 @@ public class VolcanoStateMachine implements ISimulationTickable
         if(offsetIndex++ == 0)
         {
             this.maxCeilingLevel = l;
+            this.blobChance = cell.isOpenToSky() ? 1.0 : 0;
         }
         else 
         {
@@ -438,7 +444,7 @@ public class VolcanoStateMachine implements ISimulationTickable
         }        
     }
 
-    private Operation flow()
+    private Operation flow(Random r)
     {
         if(this.offsetIndex >= MAX_BORE_OFFSET) 
         {
@@ -450,6 +456,40 @@ public class VolcanoStateMachine implements ISimulationTickable
         {
             this.lavaAddeddThisPass = 0;
             this.totalBoreUnitsThisPass = 0;
+        }
+        
+        if(this.blobChance > 0 && lavaRemainingThisPass > 0)
+        {
+            final int blobCount = r.nextInt(4) + r.nextInt(4) + r.nextInt(4);
+            if(EntityLavaBlob.getLiveParticleCount() + blobCount <= Configurator.VOLCANO.maxLavaEntities && Math.abs(r.nextGaussian()) < blobChance)
+            {
+                final LavaCell center = getBoreCell(0);
+                if(center != null && center.isOpenToSky())
+                {
+                    for(int i = 0; i < blobCount; i++)
+                    {
+                        final double dx = (r.nextDouble() - 0.5) * 2;
+                        final double dz = (r.nextDouble() - 0.5) * 2;
+                        final int units = Math.max(LavaSimulator.FLUID_UNITS_PER_HALF_BLOCK, 
+                                r.nextInt(LavaSimulator.FLUID_UNITS_PER_BLOCK) 
+                                + r.nextInt(LavaSimulator.FLUID_UNITS_PER_BLOCK) 
+                                + r.nextInt(LavaSimulator.FLUID_UNITS_PER_BLOCK));
+                        EntityLavaBlob blob = new EntityLavaBlob(
+                                this.world, 
+                                units, 
+                                center.x(), 
+                                center.worldSurfaceY() + 1,
+                                center.z(), 
+                                dx,
+                                Math.max(.75, r.nextGaussian() * 0.1 + 1),
+                                dz);
+                        this.world.spawnEntity(blob);
+                        this.lavaRemainingThisPass -= units;
+                    }
+                    blobChance = Math.max(0.001, blobChance / 2);
+                }
+                else blobChance = 0;
+            }
         }
         
         LavaCell cell = this.getBoreCell(offsetIndex++);

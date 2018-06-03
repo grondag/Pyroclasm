@@ -109,6 +109,12 @@ public class FXLavaBlob extends Particle
     }
 
     @Override
+    public int getFXLayer()
+    {
+        return 1;
+    }
+    
+    @Override
     public void move(double x, double y, double z)
     {
         this.setBoundingBox(this.getBoundingBox().offset(x, y, z));
