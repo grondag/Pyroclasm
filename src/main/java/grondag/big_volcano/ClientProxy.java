@@ -10,7 +10,7 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 public class ClientProxy extends CommonProxy
 {
     @Override
-    public void spawnLavaBlobParticle(World worldIn, double x, double y, double z, float xSpeed, double ySpeed, double zSpeed, float radius)
+    public void spawnLavaBlobParticle(World worldIn, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed, float radius)
     {
         FXLavaBlob blob = new FXLavaBlob(Minecraft.getMinecraft().world, x, y, z, xSpeed, ySpeed, zSpeed, radius);
         Minecraft.getMinecraft().effectRenderer.addEffect(blob);

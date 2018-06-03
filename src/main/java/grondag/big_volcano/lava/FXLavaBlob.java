@@ -1,5 +1,8 @@
 package grondag.big_volcano.lava;
 
+import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
+
 import org.lwjgl.opengl.GL11;
 
 import grondag.exotic_matter.varia.SimpleUnorderedArrayList;
@@ -11,11 +14,14 @@ import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
+/**
+ * Hat tip to Vaskii and Azanor for a working example (via Botania)
+ * of how to handle the rendering for this.  Saved much time.
+ */
 @SideOnly(Side.CLIENT)
 public class FXLavaBlob extends Particle
 {
@@ -25,8 +31,53 @@ public class FXLavaBlob extends Particle
      */
     private static final SimpleUnorderedArrayList<FXLavaBlob> renderBlobs = new SimpleUnorderedArrayList<>();
     
-    private static final ResourceLocation TEXTURE = new ResourceLocation("big_volcano:textures/items/lava_blob.png");
+    private static final ResourceLocation TEXTURE = new ResourceLocation("big_volcano:textures/environment/lava_blob.png");
 
+    private static float uMin[] = new float[16];
+    private static float uMax[] = new float[16];
+    private static float vMin[] = new float[16];
+    private static float vMax[] = new float[16];
+    
+    {
+        int index = 0;
+        
+        for(int i = 0; i < 2; i++)
+        {
+            for(int j = 0; j < 2; j++)
+            {
+                uMin[index] = 0 + 0.5f * i;
+                uMax[index] = 0.5f + 0.5f * i;
+                vMin[index] = 0 + 0.5f * j;
+                vMax[index] = 0.5f + 0.5f * j;
+                index++;
+            }
+        }
+        
+        for(int i = 0; i < 4; i++)
+        {
+            // flip u
+            uMin[index] = uMax[i];
+            uMax[index] = uMin[i];
+            vMin[index] = vMin[i];
+            vMax[index] = vMax[i];
+            index++;
+            
+            // flip v
+            uMin[index] = uMin[i];
+            uMax[index] = uMax[i];
+            vMin[index] = vMax[i];
+            vMax[index] = vMin[i];
+            index++;
+            
+            // flip both
+            uMin[index] = uMax[i];
+            uMax[index] = uMin[i];
+            vMin[index] = vMax[i];
+            vMax[index] = vMin[i];
+            index++;
+        }
+    }
+    
     final float blobScale;
     
     // deferred render value
@@ -36,23 +87,25 @@ public class FXLavaBlob extends Particle
     float rotationYZ;
     float rotationXY;
     float rotationXZ;
+    int textureID;
+    
     
     public FXLavaBlob(World worldIn, double xCoordIn, double yCoordIn, double zCoordIn, double xSpeedIn, double ySpeedIn, double zSpeedIn, float scale)
     {
-        super(worldIn, xCoordIn, yCoordIn, zCoordIn, xSpeedIn, ySpeedIn, zSpeedIn);
-        this.motionX = this.motionX * 0.009999999776482582D + xSpeedIn;
-        this.motionY = this.motionY * 0.009999999776482582D + ySpeedIn;
-        this.motionZ = this.motionZ * 0.009999999776482582D + zSpeedIn;
-        this.posX += (double)((this.rand.nextFloat() - this.rand.nextFloat()) * 0.05F);
-        this.posY += (double)((this.rand.nextFloat() - this.rand.nextFloat()) * 0.05F);
-        this.posZ += (double)((this.rand.nextFloat() - this.rand.nextFloat()) * 0.05F);
+        // don't use version with speed parameters because it randomizes
+        super(worldIn, xCoordIn, yCoordIn, zCoordIn);
+        this.motionX = xSpeedIn;
+        this.motionY = ySpeedIn;
+        this.motionZ = zSpeedIn;
         this.blobScale = scale;
         this.particleScale = scale;
         this.particleRed = 1.0F;
         this.particleGreen = 1.0F;
         this.particleBlue = 1.0F;
-        this.particleMaxAge = 16;
-        this.setParticleTextureIndex(48);
+        Random r = ThreadLocalRandom.current();
+        this.particleMaxAge = 12 + r.nextInt(4) + r.nextInt(4);
+        this.canCollide = false;
+        this.textureID = r.nextInt(16);
     }
 
     @Override
@@ -65,6 +118,8 @@ public class FXLavaBlob extends Particle
     @Override
     public void renderParticle(BufferBuilder buffer, Entity entityIn, float partialTicks, float rotationX, float rotationZ, float rotationYZ, float rotationXY, float rotationXZ)
     {
+        if(this.isExpired) return;
+        
         this.partialTicks = partialTicks;
         this.rotationX = rotationX;
         this.rotationZ = rotationZ;
@@ -72,8 +127,8 @@ public class FXLavaBlob extends Particle
         this.rotationXY = rotationXY;
         this.rotationXZ = rotationXZ;
         
-        float f = ((float)this.particleAge + partialTicks) / (float)this.particleMaxAge;
-        this.particleScale = this.blobScale * (1.0F - f * 0.9F);
+        float f = (24f - (float)this.particleAge + partialTicks) / 24f;
+        this.particleScale = this.blobScale * f;
         renderBlobs.add(this);
     }
 
@@ -87,44 +142,42 @@ public class FXLavaBlob extends Particle
         float x = (float)(prevPosX + (posX - prevPosX) * partialTicks- interpPosX);
         float y = (float)(prevPosY + (posY - prevPosY) * partialTicks - interpPosY);
         float z = (float)(prevPosZ + (posZ - prevPosZ) * partialTicks - interpPosZ);
-        buffer.pos(x - rotationX * radius - rotationXY * radius, y - rotationZ * radius, z - rotationYZ * radius - rotationXZ * radius).tex(0, 1).lightmap(LIGHTMAP_HIGH, LIGHTMAP_LOW).color(particleRed, particleGreen, particleBlue, 0.5F).endVertex();
-        buffer.pos(x - rotationX * radius + rotationXY * radius, y + rotationZ * radius, z - rotationYZ * radius + rotationXZ * radius).tex(1, 1).lightmap(LIGHTMAP_HIGH, LIGHTMAP_LOW).color(particleRed, particleGreen, particleBlue, 0.5F).endVertex();
-        buffer.pos(x + rotationX * radius + rotationXY * radius, y + rotationZ * radius, z + rotationYZ * radius + rotationXZ * radius).tex(1, 0).lightmap(LIGHTMAP_HIGH, LIGHTMAP_LOW).color(particleRed, particleGreen, particleBlue, 0.5F).endVertex();
-        buffer.pos(x + rotationX * radius - rotationXY * radius, y - rotationZ * radius, z + rotationYZ * radius - rotationXZ * radius).tex(0, 0).lightmap(LIGHTMAP_HIGH, LIGHTMAP_LOW).color(particleRed, particleGreen, particleBlue, 0.5F).endVertex();
+        buffer.pos(x - rotationX * radius - rotationXY * radius, y - rotationZ * radius, z - rotationYZ * radius - rotationXZ * radius)
+            .tex(uMin[textureID], vMin[textureID]).lightmap(LIGHTMAP_HIGH, LIGHTMAP_LOW).color(particleRed, particleGreen, particleBlue, 0.5F).endVertex();
+        buffer.pos(x - rotationX * radius + rotationXY * radius, y + rotationZ * radius, z - rotationYZ * radius + rotationXZ * radius)
+            .tex(uMax[textureID], vMin[textureID]).lightmap(LIGHTMAP_HIGH, LIGHTMAP_LOW).color(particleRed, particleGreen, particleBlue, 0.5F).endVertex();
+        buffer.pos(x + rotationX * radius + rotationXY * radius, y + rotationZ * radius, z + rotationYZ * radius + rotationXZ * radius)
+            .tex(uMax[textureID], vMax[textureID]).lightmap(LIGHTMAP_HIGH, LIGHTMAP_LOW).color(particleRed, particleGreen, particleBlue, 0.5F).endVertex();
+        buffer.pos(x + rotationX * radius - rotationXY * radius, y - rotationZ * radius, z + rotationYZ * radius - rotationXZ * radius)
+            .tex(uMin[textureID], vMax[textureID]).lightmap(LIGHTMAP_HIGH, LIGHTMAP_LOW).color(particleRed, particleGreen, particleBlue, 0.5F).endVertex();
     }
     
     public static void doDeferredRenders(Tessellator tessellator)
     {
         if(renderBlobs.isEmpty()) return;
         
-        GlStateManager.color(1.0F, 1.0F, 1.0F, 0.75F);
+        GL11.glPushAttrib(GL11.GL_LIGHTING_BIT);
+        GlStateManager.depthMask(false);
+        GlStateManager.enableBlend();
+        GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE);
+        GlStateManager.alphaFunc(GL11.GL_GREATER, 0.003921569F);
+        GlStateManager.disableLighting();
+        
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 0.5F);
         Minecraft.getMinecraft().renderEngine.bindTexture(TEXTURE);
         BufferBuilder buffer = tessellator.getBuffer();
         buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX_LMAP_COLOR);
         renderBlobs.forEach(b -> b.renderDeferred(buffer));
         tessellator.draw();
         
+        GlStateManager.alphaFunc(GL11.GL_GREATER, 0.1F);
+        GlStateManager.disableBlend();
+        GlStateManager.depthMask(true);
+        GL11.glPopAttrib();
+        
         renderBlobs.clear();
     }
     
-    @Override
-    public int getBrightnessForRender(float p_189214_1_)
-    {
-        float f = ((float)this.particleAge + p_189214_1_) / (float)this.particleMaxAge;
-        f = MathHelper.clamp(f, 0.0F, 1.0F);
-        int i = super.getBrightnessForRender(p_189214_1_);
-        int j = i & 255;
-        int k = i >> 16 & 255;
-        j = j + (int)(f * 15.0F * 16.0F);
-
-        if (j > 240)
-        {
-            j = 240;
-        }
-
-        return j | k << 16;
-    }
-
     @Override
     public void onUpdate()
     {
@@ -138,14 +191,5 @@ public class FXLavaBlob extends Particle
         }
 
         this.move(this.motionX, this.motionY, this.motionZ);
-        this.motionX *= 0.9599999785423279D;
-        this.motionY *= 0.9599999785423279D;
-        this.motionZ *= 0.9599999785423279D;
-
-        if (this.onGround)
-        {
-            this.motionX *= 0.699999988079071D;
-            this.motionZ *= 0.699999988079071D;
-        }
     }
 }

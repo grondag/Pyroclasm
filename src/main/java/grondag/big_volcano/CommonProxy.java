@@ -3,7 +3,6 @@ package grondag.big_volcano;
 import grondag.big_volcano.init.ModBlocks;
 import grondag.big_volcano.init.ModEntities;
 import grondag.big_volcano.init.ModRecipes;
-import grondag.big_volcano.lava.FXLavaBlob;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
@@ -29,7 +28,7 @@ public class CommonProxy
         
     }
     
-    public void spawnLavaBlobParticle(World worldIn, double x, double y, double z, float xSpeed, double ySpeed, double zSpeed, float radius)
+    public void spawnLavaBlobParticle(World worldIn, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed, float radius)
     {
         //client only
     }

@@ -37,6 +37,10 @@ import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 
+/**
+ * Hat tip to Vaskii and Azanor for a working example (via Botania)
+ * of how to handle the rendering for this.  Saved much time.
+ */
 public class EntityLavaBlob extends Entity
 {
     private static final String NBT_LAVA_PARTICLE_AMOUNT = NBTDictionary.claim("lavaPartAmt");
@@ -111,11 +115,10 @@ public class EntityLavaBlob extends Entity
         this.setSize(edgeLength, edgeLength);
 
         /**
-         * Is essentially the diameter of a sphere with volume = amount.
+         * Is essentially the diameter of a sphere with volume = amount,
+         * plus 1 extra to allow for surrounding glow.
          */
-        this.renderScale = (float) (2 * Math.pow(unitAmout * 3 / (Math.PI * 4), 1F/3F));
-
-        //        HardScience.log.info("Particle @" + this.getPosition().toString() + " has edgeLength_mm=" + edgeLength_mm + "  and scale=" + renderScale);
+        this.renderScale = 1f + (float) (2 * Math.pow(unitAmout * 3 / (Math.PI * 4), 1F/3F));
     }
 
     @Override
@@ -269,6 +272,10 @@ public class EntityLavaBlob extends Entity
         
     }
     
+    private double pX = Double.MAX_VALUE;
+    private double pY = Double.MAX_VALUE;
+    private double pZ = Double.MAX_VALUE;
+
     private void emitParticles()
     {
         if(isDead || !world.isRemote)
@@ -276,23 +283,57 @@ public class EntityLavaBlob extends Entity
 
         Random r = ThreadLocalRandom.current();
         
+        double pX = this.pX;;
+        double pY = this.pY;
+        double pZ = this.pZ;
+        
+        if(pX == Double.MAX_VALUE)
+        {
+            pX = this.prevPosX;
+            pY = this.prevPosY;
+            pZ = this.prevPosZ;
+            this.spawnBlobAround(pZ, pX, pY, r);
+        }
+        
+        final double dx = this.posX - pX;
+        final double dy = this.posY - pY;
+        final double dz = this.posZ - pZ;
+        
+        final double dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        
+        if(dist >= 0.1)
+        {
+            double step = 0.1;
+            while(step <= dist)
+            {
+                this.spawnBlobAround(pX + step * dx, pY + step * dy,  pZ + step * dz, r);
+                step += 0.1;
+            }
+        }
 
-//        do {
-//            size = osize + ((float) Math.random() - 0.5F) * 0.065F + (float) Math.sin(r.nextInt(9001)) * 0.4F;
-//            Botania.proxy.wispFX(posX, posY, posZ, r, g, b, 0.2F * size, (float) -motionX * 0.01F, (float) -motionY * 0.01F, (float) -motionZ * 0.01F);
-//
-//            posX += diffVecNorm.x * distance;
-//            posY += diffVecNorm.y * distance;
-//            posZ += diffVecNorm.z * distance;
-//
-//            currentPos = Vector3.fromEntity(this);
-//            diffVec = oldPos.subtract(currentPos);
-//        } while(Math.abs(diffVec.mag()) > distance);
-
-        BigActiveVolcano.proxy.spawnLavaBlobParticle(world, posX, posY, posZ, (r.nextFloat() - 0.5F) * 0.06F, (r.nextFloat() - 0.5F) * 0.06F, (r.nextFloat() - 0.5F) * 0.06F, 2);
-
+        this.prevPosX = pX;
+        this.prevPosY = pY;
+        this.prevPosZ = pZ;
     }
     
+    private void spawnBlobAround(double x, double y, double z, Random r)
+    {
+        final double rx = r.nextGaussian() * 0.05;
+        final double ry = r.nextGaussian() * 0.05;
+        final double rz = r.nextGaussian() * 0.05;
+        
+        BigActiveVolcano.proxy.spawnLavaBlobParticle(
+                world, 
+                x + rx, 
+                y + ry, 
+                z + rz, 
+                // subtract portion offset to move particles back towards center as they decay
+                this.motionX * 0.25 - rx * 0.05, 
+                this.motionY * 0.25 - ry * 0.05, 
+                this.motionZ * 0.25 - rz * 0.05, 
+                (float) (this.renderScale * (1 + r.nextGaussian() * 0.05)));
+    }
+
     private void land()
     {
         if(!this.world.isRemote )
