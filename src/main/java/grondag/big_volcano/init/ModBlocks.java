@@ -6,9 +6,7 @@ import grondag.big_volcano.lava.LavaBlock;
 import grondag.exotic_matter.block.ISuperBlock;
 import grondag.exotic_matter.block.SuperSimpleBlock;
 import grondag.exotic_matter.model.color.BlockColorMapProvider;
-import grondag.exotic_matter.model.color.Chroma;
-import grondag.exotic_matter.model.color.Hue;
-import grondag.exotic_matter.model.color.Luminance;
+import grondag.exotic_matter.model.color.Translucency;
 import grondag.exotic_matter.model.mesh.ModShapes;
 import grondag.exotic_matter.model.painting.PaintLayer;
 import grondag.exotic_matter.model.state.ISuperModelState;
@@ -73,7 +71,7 @@ public class ModBlocks
         workingModel.setShape(ModShapes.TERRAIN_HEIGHT);
         workingModel.setTexture(PaintLayer.BASE, ModTextures.BIGTEX_BASALT_COOL_ZOOM);
         workingModel.setColorMap(PaintLayer.BASE, BlockColorMapProvider.COLOR_BASALT);
-        workingModel.setTexture(PaintLayer.CUT, ModTextures.BIGTEX_BASALT_CUT);
+        workingModel.setTexture(PaintLayer.CUT, ModTextures.BIGTEX_BASALT_CUT_ZOOM);
         workingModel.setColorMap(PaintLayer.CUT, BlockColorMapProvider.COLOR_BASALT);
         
         Block dynamicBasaltHeight = new TerrainDynamicBlock(prefix("basalt_cool_dynamic_height"), ModSubstances.BASALT, workingModel.clone(), false).setCreativeTab(BigActiveVolcano.tabMod);
@@ -112,11 +110,13 @@ public class ModBlocks
         
         workingModel = new ModelState();
         workingModel.setShape(ModShapes.TERRAIN_HEIGHT);
-        workingModel.setTexture(PaintLayer.BASE, ModTextures.BIGTEX_LAVA);
-        workingModel.setColorMap(PaintLayer.BASE, BlockColorMapProvider.INSTANCE.getColorMap(Hue.RED, Chroma.WHITE, Luminance.BRILLIANT));
+        workingModel.setTexture(PaintLayer.BASE, ModTextures.BIGTEX_BASALT_COOL_ZOOM);
+        workingModel.setColorMap(PaintLayer.BASE, BlockColorMapProvider.COLOR_LAVA);
         workingModel.setFullBrightness(PaintLayer.BASE, true);
-        workingModel.setTexture(PaintLayer.MIDDLE, ModTextures.BIGTEX_BASALT_HINT);
-        workingModel.setColorMap(PaintLayer.MIDDLE, BlockColorMapProvider.INSTANCE.getColorMap(Hue.VERMILLION, Chroma.ULTRA_ACCENT, Luminance.MEDIUM_DARK));
+        workingModel.setTexture(PaintLayer.MIDDLE, ModTextures.BIGTEX_BASALT_VERY_HOT);
+        workingModel.setColorMap(PaintLayer.MIDDLE, BlockColorMapProvider.COLOR_BASALT);
+        workingModel.setTranslucent(PaintLayer.MIDDLE, true);
+        workingModel.setTranslucency(Translucency.TINTED);
         workingModel.setFullBrightness(PaintLayer.MIDDLE, false);
         
         Block dynamicLavaHeight = new LavaBlock(prefix("lava_dynamic_height"), ModSubstances.VOLCANIC_LAVA, workingModel, false).setCreativeTab(BigActiveVolcano.tabMod);
@@ -163,11 +163,11 @@ public class ModBlocks
     {
         ISuperModelState model = new ModelState();
         model.setShape(isFiller ? ModShapes.TERRAIN_FILLER : ModShapes.TERRAIN_HEIGHT);
-        model.setTexture(PaintLayer.BASE, ModTextures.BIGTEX_LAVA);
-        model.setColorMap(PaintLayer.BASE, BlockColorMapProvider.INSTANCE.getColorMap(Hue.TORCH, Chroma.PURE_NETURAL, Luminance.BRILLIANT));
+        model.setTexture(PaintLayer.BASE, ModTextures.BIGTEX_BASALT_COOL_ZOOM);
+        model.setColorMap(PaintLayer.BASE, BlockColorMapProvider.COLOR_LAVA);
         model.setFullBrightness(PaintLayer.BASE, true);
         model.setTexture(PaintLayer.MIDDLE, tex);
-        model.setColorMap(PaintLayer.MIDDLE, BlockColorMapProvider.INSTANCE.getColorMap(Hue.COBALT, Chroma.NEUTRAL, Luminance.MEDIUM_DARK));
+        model.setColorMap(PaintLayer.MIDDLE, BlockColorMapProvider.COLOR_BASALT);
         model.setMiddleLayerEnabled(true);
         
         return new CoolingBasaltBlock(name, ModSubstances.BASALT, model, isFiller).setAllowSilkHarvest(false).setCreativeTab(BigActiveVolcano.tabMod);
