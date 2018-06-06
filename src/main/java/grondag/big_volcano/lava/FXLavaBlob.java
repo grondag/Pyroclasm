@@ -5,6 +5,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import org.lwjgl.opengl.GL11;
 
+import grondag.exotic_matter.model.render.QuadBakery;
 import grondag.exotic_matter.varia.SimpleUnorderedArrayList;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.particle.Particle;
@@ -138,10 +139,6 @@ public class FXLavaBlob extends Particle
         renderBlobs.add(this);
     }
 
-    static private final int COMBINED_LIGHT_MAP = 15 << 20 | 15 << 4;
-    static private final int LIGHTMAP_HIGH = COMBINED_LIGHT_MAP >> 16 & 0xFFFF;
-    static private final int LIGHTMAP_LOW = COMBINED_LIGHT_MAP & 0xFFFF;
-    
     private void renderDeferred(BufferBuilder buffer)
     {
         float radius = 0.5F * particleScale;
@@ -149,13 +146,13 @@ public class FXLavaBlob extends Particle
         float y = (float)(prevPosY + (posY - prevPosY) * partialTicks - interpPosY);
         float z = (float)(prevPosZ + (posZ - prevPosZ) * partialTicks - interpPosZ);
         buffer.pos(x - rotationX * radius - rotationXY * radius, y - rotationZ * radius, z - rotationYZ * radius - rotationXZ * radius)
-            .tex(uMin[textureID], vMin[textureID]).lightmap(LIGHTMAP_HIGH, LIGHTMAP_LOW).color(particleRed, particleGreen, particleBlue, 0.5F).endVertex();
+            .tex(uMin[textureID], vMin[textureID]).lightmap(QuadBakery.MAX_LIGHT, QuadBakery.MAX_LIGHT).color(particleRed, particleGreen, particleBlue, 0.5F).endVertex();
         buffer.pos(x - rotationX * radius + rotationXY * radius, y + rotationZ * radius, z - rotationYZ * radius + rotationXZ * radius)
-            .tex(uMax[textureID], vMin[textureID]).lightmap(LIGHTMAP_HIGH, LIGHTMAP_LOW).color(particleRed, particleGreen, particleBlue, 0.5F).endVertex();
+            .tex(uMax[textureID], vMin[textureID]).lightmap(QuadBakery.MAX_LIGHT, QuadBakery.MAX_LIGHT).color(particleRed, particleGreen, particleBlue, 0.5F).endVertex();
         buffer.pos(x + rotationX * radius + rotationXY * radius, y + rotationZ * radius, z + rotationYZ * radius + rotationXZ * radius)
-            .tex(uMax[textureID], vMax[textureID]).lightmap(LIGHTMAP_HIGH, LIGHTMAP_LOW).color(particleRed, particleGreen, particleBlue, 0.5F).endVertex();
+            .tex(uMax[textureID], vMax[textureID]).lightmap(QuadBakery.MAX_LIGHT, QuadBakery.MAX_LIGHT).color(particleRed, particleGreen, particleBlue, 0.5F).endVertex();
         buffer.pos(x + rotationX * radius - rotationXY * radius, y - rotationZ * radius, z + rotationYZ * radius - rotationXZ * radius)
-            .tex(uMin[textureID], vMax[textureID]).lightmap(LIGHTMAP_HIGH, LIGHTMAP_LOW).color(particleRed, particleGreen, particleBlue, 0.5F).endVertex();
+            .tex(uMin[textureID], vMax[textureID]).lightmap(QuadBakery.MAX_LIGHT, QuadBakery.MAX_LIGHT).color(particleRed, particleGreen, particleBlue, 0.5F).endVertex();
     }
     
     public static void doDeferredRenders(Tessellator tessellator)
