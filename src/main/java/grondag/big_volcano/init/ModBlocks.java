@@ -12,6 +12,7 @@ import grondag.exotic_matter.model.painting.PaintLayer;
 import grondag.exotic_matter.model.state.ISuperModelState;
 import grondag.exotic_matter.model.state.ModelState;
 import grondag.exotic_matter.model.texture.ITexturePalette;
+import grondag.exotic_matter.model.texture.TexturePaletteRegistry;
 import grondag.exotic_matter.terrain.TerrainBlockRegistry;
 import grondag.exotic_matter.terrain.TerrainCubicBlock;
 import grondag.exotic_matter.terrain.TerrainDynamicBlock;
@@ -110,7 +111,7 @@ public class ModBlocks
         
         workingModel = new ModelState();
         workingModel.setShape(ModShapes.TERRAIN_HEIGHT);
-        workingModel.setTexture(PaintLayer.BASE, ModTextures.BIGTEX_BASALT_COOL_ZOOM);
+        workingModel.setTexture(PaintLayer.BASE, grondag.exotic_matter.init.ModTextures.BIGTEX_MARBLE_ZOOM);
         workingModel.setColorMap(PaintLayer.BASE, BlockColorMapProvider.COLOR_LAVA);
         workingModel.setFullBrightness(PaintLayer.BASE, true);
         workingModel.setTexture(PaintLayer.MIDDLE, ModTextures.BIGTEX_BASALT_VERY_HOT);
@@ -163,7 +164,7 @@ public class ModBlocks
     {
         ISuperModelState model = new ModelState();
         model.setShape(isFiller ? ModShapes.TERRAIN_FILLER : ModShapes.TERRAIN_HEIGHT);
-        model.setTexture(PaintLayer.BASE, ModTextures.BIGTEX_BASALT_COOL_ZOOM);
+        model.setTexture(PaintLayer.BASE, grondag.exotic_matter.init.ModTextures.BIGTEX_MARBLE_ZOOM);
         model.setColorMap(PaintLayer.BASE, BlockColorMapProvider.COLOR_LAVA);
         model.setFullBrightness(PaintLayer.BASE, true);
         model.setTexture(PaintLayer.MIDDLE, tex);
