@@ -6,7 +6,6 @@ import grondag.big_volcano.lava.LavaBlock;
 import grondag.exotic_matter.block.ISuperBlock;
 import grondag.exotic_matter.block.SuperSimpleBlock;
 import grondag.exotic_matter.model.color.BlockColorMapProvider;
-import grondag.exotic_matter.model.color.Translucency;
 import grondag.exotic_matter.model.mesh.ModShapes;
 import grondag.exotic_matter.model.painting.PaintLayer;
 import grondag.exotic_matter.model.state.ISuperModelState;
@@ -116,7 +115,7 @@ public class ModBlocks
         workingModel.setTexture(PaintLayer.MIDDLE, ModTextures.BIGTEX_BASALT_VERY_HOT);
         workingModel.setColorRGB(PaintLayer.MIDDLE, BlockColorMapProvider.COLOR_BASALT);
         workingModel.setTranslucent(PaintLayer.MIDDLE, true);
-        workingModel.setTranslucency(Translucency.TINTED);
+        workingModel.setAlpha(PaintLayer.MIDDLE, 0x20);
         workingModel.setFullBrightness(PaintLayer.MIDDLE, false);
         
         Block dynamicLavaHeight = new LavaBlock(prefix("lava_dynamic_height"), ModSubstances.VOLCANIC_LAVA, workingModel, false).setCreativeTab(BigActiveVolcano.tabMod);
