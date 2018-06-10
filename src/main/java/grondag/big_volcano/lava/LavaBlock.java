@@ -142,5 +142,9 @@ public class LavaBlock extends TerrainDynamicBlock
         }
     }
 
-
+    @Override
+    public final int heatLevel()
+    {
+        return 5;
+    }
 }

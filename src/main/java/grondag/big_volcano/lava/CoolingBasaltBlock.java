@@ -153,6 +153,10 @@ public class CoolingBasaltBlock extends TerrainDynamicBlock
         LavaSimulator sim = Simulator.instance().getNode(LavaSimulator.class);
         if(sim != null) sim.registerCoolingBlock(worldIn, pos);
     }
-    
-    
+
+    @Override
+    public final int heatLevel()
+    {
+        return this.heatLevel;
+    }
 }

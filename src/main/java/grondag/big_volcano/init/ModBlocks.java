@@ -110,13 +110,11 @@ public class ModBlocks
         workingModel = new ModelState();
         workingModel.setShape(ModShapes.TERRAIN_HEIGHT);
         workingModel.setTexture(PaintLayer.BASE, grondag.exotic_matter.init.ModTextures.BIGTEX_MARBLE_ZOOM);
-        workingModel.setColorRGB(PaintLayer.BASE, BlockColorMapProvider.COLOR_LAVA);
+        workingModel.setColorRGB(PaintLayer.BASE, BlockColorMapProvider.COLOR_BASALT);
         workingModel.setBrightness(PaintLayer.BASE, 15);
         workingModel.setTexture(PaintLayer.MIDDLE, ModTextures.BIGTEX_BASALT_VERY_HOT);
         workingModel.setColorRGB(PaintLayer.MIDDLE, BlockColorMapProvider.COLOR_BASALT);
         workingModel.setTranslucent(PaintLayer.MIDDLE, true);
-        workingModel.setAlpha(PaintLayer.MIDDLE, 0x20);
-        workingModel.setBrightness(PaintLayer.MIDDLE, 15);
         
         Block dynamicLavaHeight = new LavaBlock(prefix("lava_dynamic_height"), ModSubstances.VOLCANIC_LAVA, workingModel, false).setCreativeTab(BigActiveVolcano.tabMod);
         
@@ -163,7 +161,7 @@ public class ModBlocks
         ISuperModelState model = new ModelState();
         model.setShape(isFiller ? ModShapes.TERRAIN_FILLER : ModShapes.TERRAIN_HEIGHT);
         model.setTexture(PaintLayer.BASE, grondag.exotic_matter.init.ModTextures.BIGTEX_MARBLE_ZOOM);
-        model.setColorRGB(PaintLayer.BASE, BlockColorMapProvider.COLOR_LAVA);
+        model.setColorRGB(PaintLayer.BASE, BlockColorMapProvider.COLOR_BASALT);
         model.setBrightness(PaintLayer.BASE, 15);
         model.setTexture(PaintLayer.MIDDLE, tex);
         model.setColorRGB(PaintLayer.MIDDLE, BlockColorMapProvider.COLOR_BASALT);
