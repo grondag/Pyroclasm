@@ -165,7 +165,6 @@ public class ModBlocks
         model.setBrightness(PaintLayer.BASE, 15);
         model.setTexture(PaintLayer.MIDDLE, tex);
         model.setColorRGB(PaintLayer.MIDDLE, BlockColorMapProvider.COLOR_BASALT);
-        model.setMiddleLayerEnabled(true);
         
         return new CoolingBasaltBlock(name, ModSubstances.BASALT, model, isFiller).setAllowSilkHarvest(false).setCreativeTab(BigActiveVolcano.tabMod);
     }
