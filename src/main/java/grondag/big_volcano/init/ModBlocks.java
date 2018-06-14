@@ -15,6 +15,8 @@ import grondag.exotic_matter.terrain.TerrainBlockRegistry;
 import grondag.exotic_matter.terrain.TerrainCubicBlock;
 import grondag.exotic_matter.terrain.TerrainDynamicBlock;
 import grondag.exotic_matter.terrain.TerrainStaticBlock;
+import grondag.exotic_matter.terrain.VertexProcessorLava;
+import grondag.exotic_matter.varia.Color;
 import net.minecraft.block.Block;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -109,12 +111,15 @@ public class ModBlocks
         
         workingModel = new ModelState();
         workingModel.setShape(ModShapes.TERRAIN_HEIGHT);
-        workingModel.setTexture(PaintLayer.BASE, grondag.exotic_matter.init.ModTextures.BIGTEX_MARBLE_ZOOM);
+        workingModel.setTexture(PaintLayer.BASE, ModTextures.BIGTEX_BASALT_CUT_ZOOM);
         workingModel.setColorRGB(PaintLayer.BASE, BlockColorMapProvider.COLOR_BASALT);
-        workingModel.setBrightness(PaintLayer.BASE, 15);
-        workingModel.setTexture(PaintLayer.MIDDLE, ModTextures.BIGTEX_BASALT_VERY_HOT);
-        workingModel.setColorRGB(PaintLayer.MIDDLE, BlockColorMapProvider.COLOR_BASALT);
-        workingModel.setTranslucent(PaintLayer.MIDDLE, true);
+        workingModel.setTexture(PaintLayer.MIDDLE, ModTextures.LAVA);
+        workingModel.setVertexProcessor(PaintLayer.MIDDLE, VertexProcessorLava.INSTANCE);
+        workingModel.setColorRGB(PaintLayer.MIDDLE, Color.WHITE);
+        workingModel.setBrightness(PaintLayer.MIDDLE, 15);
+        workingModel.setTexture(PaintLayer.OUTER, ModTextures.BIGTEX_BASALT_VERY_HOT);
+        workingModel.setColorRGB(PaintLayer.OUTER, BlockColorMapProvider.COLOR_BASALT);
+        workingModel.setTranslucent(PaintLayer.OUTER, true);
         
         Block dynamicLavaHeight = new LavaBlock(prefix("lava_dynamic_height"), ModSubstances.VOLCANIC_LAVA, workingModel, false).setCreativeTab(BigActiveVolcano.tabMod);
         
@@ -160,11 +165,14 @@ public class ModBlocks
     {
         ISuperModelState model = new ModelState();
         model.setShape(isFiller ? ModShapes.TERRAIN_FILLER : ModShapes.TERRAIN_HEIGHT);
-        model.setTexture(PaintLayer.BASE, grondag.exotic_matter.init.ModTextures.BIGTEX_MARBLE_ZOOM);
+        model.setTexture(PaintLayer.BASE, ModTextures.BIGTEX_BASALT_CUT_ZOOM);
         model.setColorRGB(PaintLayer.BASE, BlockColorMapProvider.COLOR_BASALT);
-        model.setBrightness(PaintLayer.BASE, 15);
-        model.setTexture(PaintLayer.MIDDLE, tex);
-        model.setColorRGB(PaintLayer.MIDDLE, BlockColorMapProvider.COLOR_BASALT);
+        model.setTexture(PaintLayer.MIDDLE, ModTextures.LAVA);
+        model.setVertexProcessor(PaintLayer.MIDDLE, VertexProcessorLava.INSTANCE);
+        model.setColorRGB(PaintLayer.MIDDLE, Color.WHITE);
+        model.setBrightness(PaintLayer.MIDDLE, 15);
+        model.setTexture(PaintLayer.OUTER, tex);
+        model.setColorRGB(PaintLayer.OUTER, BlockColorMapProvider.COLOR_BASALT);
         
         return new CoolingBasaltBlock(name, ModSubstances.BASALT, model, isFiller).setAllowSilkHarvest(false).setCreativeTab(BigActiveVolcano.tabMod);
     }

@@ -36,4 +36,6 @@ public class ModTextures
     public static final ITexturePalette BIGTEX_BASALT_HOT = TexturePaletteRegistry.addTexturePallette("basalt_hot", "basalt_hot", new TexturePaletteSpec(BIGTEX_BASALT_COOLING));
     public static final ITexturePalette BIGTEX_BASALT_VERY_HOT = TexturePaletteRegistry.addTexturePallette("basalt_very_hot", "basalt_very_hot", new TexturePaletteSpec(BIGTEX_BASALT_COOLING));
 
+    public static final ITexturePalette LAVA = TexturePaletteRegistry.addTexturePallette("lava", "lava", new TexturePaletteSpec(BIGTEX_BASALT_COOLING));
+
 }
