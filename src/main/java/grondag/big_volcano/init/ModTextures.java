@@ -20,7 +20,7 @@ public class ModTextures
     //======================================================================
     
     public static final ITexturePalette BIGTEX_BASALT_CUT = TexturePaletteRegistry.addTexturePallette("basalt_cut", "basalt_cut", 
-            new TexturePaletteSpec(BigActiveVolcano.INSTANCE).withVersionCount(1).withScale(TextureScale.MEDIUM).withLayout(TextureLayout.BIGTEX)
+            new TexturePaletteSpec(BigActiveVolcano.INSTANCE).withVersionCount(1).withScale(TextureScale.MEDIUM).withLayout(TextureLayout.SIMPLE)
             .withRotation(CONSISTENT.with(ROTATE_NONE)).withRenderIntent(TextureRenderIntent.BASE_ONLY).withGroups(TextureGroup.STATIC_TILES));
     public static final ITexturePalette BIGTEX_BASALT_CUT_ZOOM = TexturePaletteRegistry.addZoomedPallete(BIGTEX_BASALT_CUT);
     public static final ITexturePalette BIGTEX_BASALT_CUT_ZOOM_X2 = TexturePaletteRegistry.addZoomedPallete(BIGTEX_BASALT_CUT_ZOOM);
@@ -30,12 +30,19 @@ public class ModTextures
     public static final ITexturePalette BIGTEX_BASALT_COOL_ZOOM_X2 = TexturePaletteRegistry.addZoomedPallete(BIGTEX_BASALT_COOL_ZOOM);
 
     public static final ITexturePalette BIGTEX_BASALT_COOLING = TexturePaletteRegistry.addTexturePallette("basalt_cooling", "basalt_cooling", 
-             new TexturePaletteSpec(BigActiveVolcano.INSTANCE).withVersionCount(1).withScale(TextureScale.LARGE).withLayout(TextureLayout.BIGTEX)
+             new TexturePaletteSpec(BigActiveVolcano.INSTANCE).withVersionCount(1).withScale(TextureScale.LARGE).withLayout(TextureLayout.SIMPLE)
              .withRotation(CONSISTENT.with(ROTATE_NONE)).withRenderIntent(TextureRenderIntent.OVERLAY_ONLY).withGroups(TextureGroup.STATIC_DETAILS));
     public static final ITexturePalette BIGTEX_BASALT_WARM = TexturePaletteRegistry.addTexturePallette("basalt_warm", "basalt_warm",  new TexturePaletteSpec(BIGTEX_BASALT_COOLING));
     public static final ITexturePalette BIGTEX_BASALT_HOT = TexturePaletteRegistry.addTexturePallette("basalt_hot", "basalt_hot", new TexturePaletteSpec(BIGTEX_BASALT_COOLING));
     public static final ITexturePalette BIGTEX_BASALT_VERY_HOT = TexturePaletteRegistry.addTexturePallette("basalt_very_hot", "basalt_very_hot", new TexturePaletteSpec(BIGTEX_BASALT_COOLING));
 
-    public static final ITexturePalette LAVA = TexturePaletteRegistry.addTexturePallette("lava", "lava", new TexturePaletteSpec(BIGTEX_BASALT_COOLING));
+    public static final ITexturePalette LAVA = TexturePaletteRegistry.addTexturePallette("lava", "lava", 
+            new TexturePaletteSpec(BigActiveVolcano.INSTANCE)
+            .withVersionCount(16)
+            .withScale(TextureScale.SINGLE)
+            .withLayout(TextureLayout.QUADRANT_CONNECTED)
+            .withRotation(CONSISTENT.with(ROTATE_NONE))
+            .withRenderIntent(TextureRenderIntent.OVERLAY_ONLY)
+            .withGroups(TextureGroup.STATIC_TILES));
 
 }

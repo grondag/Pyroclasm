@@ -117,9 +117,9 @@ public class ModBlocks
         workingModel.setVertexProcessor(PaintLayer.MIDDLE, VertexProcessorLava.INSTANCE);
         workingModel.setColorRGB(PaintLayer.MIDDLE, Color.WHITE);
         workingModel.setBrightness(PaintLayer.MIDDLE, 15);
-        workingModel.setTexture(PaintLayer.OUTER, ModTextures.BIGTEX_BASALT_VERY_HOT);
-        workingModel.setColorRGB(PaintLayer.OUTER, BlockColorMapProvider.COLOR_BASALT);
-        workingModel.setTranslucent(PaintLayer.OUTER, true);
+//        workingModel.setTexture(PaintLayer.OUTER, ModTextures.BIGTEX_BASALT_VERY_HOT);
+//        workingModel.setColorRGB(PaintLayer.OUTER, BlockColorMapProvider.COLOR_BASALT);
+//        workingModel.setTranslucent(PaintLayer.OUTER, true);
         
         Block dynamicLavaHeight = new LavaBlock(prefix("lava_dynamic_height"), ModSubstances.VOLCANIC_LAVA, workingModel, false).setCreativeTab(BigActiveVolcano.tabMod);
         
