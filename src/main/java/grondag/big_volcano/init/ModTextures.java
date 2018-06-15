@@ -40,9 +40,9 @@ public class ModTextures
             new TexturePaletteSpec(BigActiveVolcano.INSTANCE)
             .withVersionCount(16)
             .withScale(TextureScale.SINGLE)
-            .withLayout(TextureLayout.QUADRANT_CONNECTED)
+            .withLayout(TextureLayout.LAVA_CONNECTED)
             .withRotation(CONSISTENT.with(ROTATE_NONE))
             .withRenderIntent(TextureRenderIntent.OVERLAY_ONLY)
-            .withGroups(TextureGroup.STATIC_TILES));
+            .withGroups(TextureGroup.STATIC_BORDERS));
 
 }

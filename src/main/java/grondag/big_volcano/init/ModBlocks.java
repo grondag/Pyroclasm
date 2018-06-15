@@ -71,6 +71,7 @@ public class ModBlocks
         workingModel = new ModelState();
         workingModel.setShape(ModShapes.TERRAIN_HEIGHT);
         workingModel.setTexture(PaintLayer.BASE, ModTextures.BIGTEX_BASALT_COOL_ZOOM);
+//        workingModel.setTexture(PaintLayer.BASE, grondag.exotic_matter.init.ModTextures.TEST);
         workingModel.setColorRGB(PaintLayer.BASE, BlockColorMapProvider.COLOR_BASALT);
         workingModel.setTexture(PaintLayer.CUT, ModTextures.BIGTEX_BASALT_CUT_ZOOM);
         workingModel.setColorRGB(PaintLayer.CUT, BlockColorMapProvider.COLOR_BASALT);
