@@ -65,6 +65,10 @@ public class ModBlocks
         workingModel.setShape(ModShapes.CUBE);
         workingModel.setTexture(PaintLayer.BASE, grondag.exotic_matter.init.ModTextures.BLOCK_COBBLE);
         workingModel.setColorRGB(PaintLayer.BASE, BlockColorMapProvider.COLOR_BASALT);
+        workingModel.setTexture(PaintLayer.MIDDLE, ModTextures.LAVA);
+//      workingModel.setVertexProcessor(PaintLayer.MIDDLE, VertexProcessorLava.INSTANCE);
+        workingModel.setColorRGB(PaintLayer.MIDDLE, Color.WHITE);
+        workingModel.setBrightness(PaintLayer.MIDDLE, 15);
         event.getRegistry().register(new SuperSimpleBlock(prefix("basalt_cobble"), ModSubstances.BASALT, workingModel).setCreativeTab(BigActiveVolcano.tabMod));
 
         workingModel = new ModelState();
