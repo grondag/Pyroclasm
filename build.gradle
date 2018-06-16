@@ -118,14 +118,13 @@ dependencies {
     deobfCompile "org.magicwerk:brownies-collections:0.9.13"
     shade "org.magicwerk:brownies-collections:0.9.13"
     
-    	deobfCompile "team.chisel.ctm:CTM:MC1.12-${ctm_version}"
 	deobfCompile "mezz.jei:jei_1.12.2:${jei_version}"
     deobfCompile "mcjty.theoneprobe:TheOneProbe-1.12:1.12-${top_version}"
 	
 	// not currently using these APIs
 	// here to support compatibility testing in dev environment
 	// or because thinking about using the APIs
-    deobfCompile "MCMultiPart2:MCMultiPart:${mcmp_version}"
+    // deobfCompile "MCMultiPart2:MCMultiPart:${mcmp_version}"
 }
 
 processResources
