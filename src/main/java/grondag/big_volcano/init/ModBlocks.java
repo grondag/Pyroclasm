@@ -114,28 +114,19 @@ public class ModBlocks
         workingModel.setShape(ModShapes.TERRAIN_HEIGHT);
         workingModel.setTexture(PaintLayer.BASE, ModTextures.BIGTEX_BASALT_COOL_ZOOM);
         workingModel.setColorRGB(PaintLayer.BASE, BlockColorMapProvider.COLOR_BASALT);
-
-        workingModel.setTexture(PaintLayer.MIDDLE, ModTextures.LAVA_QUADRANTS);
-        workingModel.setVertexProcessor(PaintLayer.MIDDLE, VertexProcessorLava.INSTANCE);
-        workingModel.setColorRGB(PaintLayer.MIDDLE, Color.WHITE);
-        workingModel.setBrightness(PaintLayer.MIDDLE, 15);
         
-//        workingModel.setTexture(PaintLayer.OUTER, ModTextures.BIGTEX_BASALT_VERY_HOT);
-//        workingModel.setColorRGB(PaintLayer.OUTER, BlockColorMapProvider.COLOR_LAVA);
-//        workingModel.setTranslucent(PaintLayer.OUTER, true);
-//        workingModel.setAlpha(PaintLayer.OUTER, 64);
-        
-        workingModel.setTexture(PaintLayer.CUT, ModTextures.BIGTEX_BASALT_CUT_ZOOM);
-        workingModel.setColorRGB(PaintLayer.CUT, BlockColorMapProvider.COLOR_BASALT);
-        
-        workingModel.setTexture(PaintLayer.LAMP, ModTextures.LAVA_TILE);
+        workingModel.setTexture(PaintLayer.LAMP, grondag.exotic_matter.init.ModTextures.WHITE);
         workingModel.setColorRGB(PaintLayer.LAMP, Color.WHITE);
         workingModel.setBrightness(PaintLayer.LAMP, 15);
         workingModel.setVertexProcessor(PaintLayer.LAMP, VertexProcessorLava.INSTANCE);
         workingModel.setTranslucent(PaintLayer.LAMP, true);
         
-
+        workingModel.setTexture(PaintLayer.CUT, ModTextures.BIGTEX_BASALT_CUT_ZOOM);
+        workingModel.setColorRGB(PaintLayer.CUT, BlockColorMapProvider.COLOR_BASALT);
         
+        // TODO: need an overlay texture for sides
+//        workingModel.setTexture(PaintLayer.OUTER, ModTextures.BIGTEX_BASALT_VERY_HOT);
+//        workingModel.setColorRGB(PaintLayer.OUTER, BlockColorMapProvider.COLOR_BASALT);
 
         
         
@@ -186,22 +177,21 @@ public class ModBlocks
         model.setTexture(PaintLayer.BASE, ModTextures.BIGTEX_BASALT_COOL_ZOOM);
         model.setColorRGB(PaintLayer.BASE, BlockColorMapProvider.COLOR_BASALT);
         
-        model.setTexture(PaintLayer.MIDDLE, ModTextures.LAVA_QUADRANTS);
-        model.setColorRGB(PaintLayer.MIDDLE, Color.WHITE);
-        model.setBrightness(PaintLayer.MIDDLE, 15);
-        model.setVertexProcessor(PaintLayer.CUT, VertexProcessorLava.INSTANCE);
-        
-        model.setTexture(PaintLayer.OUTER, tex);
-        model.setColorRGB(PaintLayer.OUTER, BlockColorMapProvider.COLOR_BASALT);
-        
-        model.setTexture(PaintLayer.CUT, ModTextures.BIGTEX_BASALT_CUT_ZOOM);
-        model.setColorRGB(PaintLayer.CUT, BlockColorMapProvider.COLOR_BASALT);
-        
-        model.setTexture(PaintLayer.LAMP, ModTextures.LAVA_TILE);
+        model.setTexture(PaintLayer.LAMP, grondag.exotic_matter.init.ModTextures.WHITE);
         model.setColorRGB(PaintLayer.LAMP, Color.WHITE);
         model.setBrightness(PaintLayer.LAMP, 15);
         model.setVertexProcessor(PaintLayer.LAMP, VertexProcessorLava.INSTANCE);
         model.setTranslucent(PaintLayer.LAMP, true);
+        
+//        model.setTexture(PaintLayer.MIDDLE, ModTextures.BIGTEX_BASALT_VERY_HOT);
+//        model.setColorRGB(PaintLayer.MIDDLE, BlockColorMapProvider.COLOR_BASALT);
+        
+        model.setTexture(PaintLayer.CUT, ModTextures.BIGTEX_BASALT_CUT_ZOOM);
+        model.setColorRGB(PaintLayer.CUT, BlockColorMapProvider.COLOR_BASALT);
+        
+        // TODO: need an overlay texture for sides
+//        model.setTexture(PaintLayer.OUTER, ModTextures.BIGTEX_BASALT_VERY_HOT);
+//        model.setColorRGB(PaintLayer.OUTER, BlockColorMapProvider.COLOR_BASALT);
         
         return new CoolingBasaltBlock(name, ModSubstances.BASALT, model, isFiller).setAllowSilkHarvest(false).setCreativeTab(BigActiveVolcano.tabMod);
     }

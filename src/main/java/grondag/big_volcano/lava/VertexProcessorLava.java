@@ -1,5 +1,8 @@
 package grondag.big_volcano.lava;
 
+import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
+
 import grondag.exotic_matter.model.color.BlockColorMapProvider;
 import grondag.exotic_matter.model.painting.PaintLayer;
 import grondag.exotic_matter.model.painting.VertexProcessor;
@@ -16,13 +19,21 @@ import net.minecraft.util.math.MathHelper;
 
 public class VertexProcessorLava extends VertexProcessor
 {
-    private static final int[] GRADIENT = { 0xffc00000, 0xfff30000, 0xfffa3754, 0xfffb9b39, 0xfffdda0f, 0xfffffba3};
-
+    private static final int[] GRADIENT = { 0xc00000, 0xf30000, 0xfa3754, 0xfb9b39, 0xfdda0f, 0xfffba3};
+    private static final float[] NORMAL_VARIATION = new float[0x10000];
+    
     public final static VertexProcessorLava INSTANCE = new VertexProcessorLava() {};
     
     static
     {
         VertexProcessors.register(INSTANCE);
+        Random r = new Random(567);
+        for(int i = 0; i < NORMAL_VARIATION.length; i++)
+        {
+            NORMAL_VARIATION[i] = (float) r.nextGaussian() / 4f;
+        }
+        
+        assert GRADIENT.length == IHotBlock.HEAT_LEVEL_COUNT : "Lava heat gradient colors don't match heal level count";
     }
     
     private VertexProcessorLava()
@@ -30,22 +41,26 @@ public class VertexProcessorLava extends VertexProcessor
         super("lava");
     }
     
-    private static int glowColor(int glow)
+    private static float getVariation(int x, int z)
     {
-        int lowIndex = glow / 51;
-        int highIndex = (glow + 50) / 51;
-        if(lowIndex == highIndex) return GRADIENT[lowIndex];
-        return ColorHelper.interpolate(GRADIENT[lowIndex], GRADIENT[highIndex], glow - lowIndex * 51);  
+        return NORMAL_VARIATION[((x<< 8) | z)  & 0xFFFF];
+    }
+    
+    private static int heatColor(float heat)
+    {
+        final float h = heat - 0.5f;
+        final int lowIndex = MathHelper.floor(h);
+        if(lowIndex < 0) return GRADIENT[0];
+        final int highIndex = lowIndex + 1;
+        if(highIndex >= IHotBlock.MAX_HEAT) return GRADIENT[IHotBlock.MAX_HEAT];
+        
+        return ColorHelper.interpolate(GRADIENT[lowIndex], GRADIENT[highIndex], h - lowIndex);  
     }
     
     @Override
     public void process(IMutablePolygon result, ISuperModelState modelState, PaintLayer paintLayer)
     {
           TerrainState flowState = modelState.getTerrainState();
-        
-          // FIXME: remove
-          if(paintLayer == PaintLayer.MIDDLE)
-              System.out.println("boop");
           
           for(int i = 0; i < result.vertexCount(); i++)
           {
@@ -63,16 +78,22 @@ public class VertexProcessorLava extends VertexProcessor
                   final float xDist = v.x + 0.5f - xMax;
                   final float zDist = v.z + 0.5f - zMax;
                   
+                  final int xPos = modelState.getPosX();
+                  final int zPos = modelState.getPosZ();
+                  
                   final int a1 = flowState.getHotness(xMin, zMin);
                   final int a2 = flowState.getHotness(xMax, zMin);
-                  final float aAvg = a1 + (float)(a2 - a1) * xDist;
+                  final float a1v = a1 == 0 ? 0 : a1 + getVariation(xPos + xMin, zPos + zMin);
+                  final float a2v = a2 == 0 ? 0 : a2 + getVariation(xPos + xMax, zPos + zMin);
+                  final float aAvg = a1v + (float)(a2v - a1v) * xDist;
                   
                   final int b1 = flowState.getHotness(xMin, zMax);
                   final int b2 = flowState.getHotness(xMax, zMax);
-                  final float bAvg = b1 + (float)(b2 - b1) * xDist;
+                  final float b1v = b1 == 0 ? 0 : b1 + getVariation(xPos + xMin, zPos + zMax);
+                  final float b2v = b2 == 0 ? 0 : b2 + getVariation(xPos + xMax, zPos + zMax);
+                  final float bAvg = b1v + (float)(b2v - b1v) * xDist;
                   
                   final float avgHeat = aAvg + (float)(bAvg-aAvg) * zDist;
-                  final int gb =  (int)(avgHeat / IHotBlock.MAX_HEAT * 255) & 0xFF;
                   
                   final int j1 = a1 == 0 ? 0 : 1;
                   final int j2 = a2 == 0 ? 0 : 1;
@@ -84,9 +105,10 @@ public class VertexProcessorLava extends VertexProcessor
                   
                   final float avgAlpha = jAvg + (float)(kAvg-jAvg) * zDist;
                   
-                  final int alpha =  MathHelper.clamp((int)(avgAlpha * 512) - 255, 0, 255);
+                 // final int alpha =  MathHelper.clamp((int)(avgAlpha * 512) - 255, 0, 255);
+                  final int alpha = 0xff;
                   
-                  final int color = (alpha << 24) | 0xFF0000 | (gb << 8) | gb;
+                  final int color = (alpha << 24) | heatColor(avgHeat);
                   
                   result.setVertex(i, v.withColorGlow(color, 255));
               }
