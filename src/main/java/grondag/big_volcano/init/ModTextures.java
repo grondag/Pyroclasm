@@ -36,14 +36,22 @@ public class ModTextures
     public static final ITexturePalette BIGTEX_BASALT_HOT = TexturePaletteRegistry.addTexturePallette("basalt_hot", "basalt_hot", new TexturePaletteSpec(BIGTEX_BASALT_COOLING));
     public static final ITexturePalette BIGTEX_BASALT_VERY_HOT = TexturePaletteRegistry.addTexturePallette("basalt_very_hot", "basalt_very_hot", new TexturePaletteSpec(BIGTEX_BASALT_COOLING));
 
-    public static final ITexturePalette LAVA = TexturePaletteRegistry.addTexturePallette("lava", "lava", 
+    public static final ITexturePalette LAVA_QUADRANTS = TexturePaletteRegistry.addTexturePallette("lava_quadrant", "lava_quadrant", 
             new TexturePaletteSpec(BigActiveVolcano.INSTANCE)
             .withVersionCount(16)
             .withScale(TextureScale.SINGLE)
-            .withLayout(TextureLayout.QUADRANT_CONNECTED)
-            .withRotation(CONSISTENT.with(ROTATE_NONE))
+            .withLayout(TextureLayout.LAVA_CONNECTED)
             .withRenderIntent(TextureRenderIntent.OVERLAY_ONLY)
             .withRenderNoBorderAsTile(true)
             .withGroups(TextureGroup.STATIC_BORDERS));
+    
+    public static final ITexturePalette LAVA_TILE = TexturePaletteRegistry.addTexturePallette("lava", "lava", 
+            new TexturePaletteSpec(BigActiveVolcano.INSTANCE)
+            .withVersionCount(2)
+            .withScale(TextureScale.SINGLE)
+            .withLayout(TextureLayout.SIMPLE)
+            .withRotation(RANDOM.with(ROTATE_NONE))
+            .withRenderIntent(TextureRenderIntent.BASE_OR_OVERLAY_CUTOUT_OKAY)
+            .withGroups(TextureGroup.STATIC_TILES));
 
 }
