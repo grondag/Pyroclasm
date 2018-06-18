@@ -1,9 +1,5 @@
 package grondag.big_volcano.lava;
 
-import java.util.Random;
-import java.util.concurrent.ThreadLocalRandom;
-
-import grondag.exotic_matter.model.color.BlockColorMapProvider;
 import grondag.exotic_matter.model.painting.PaintLayer;
 import grondag.exotic_matter.model.painting.VertexProcessor;
 import grondag.exotic_matter.model.painting.VertexProcessors;
@@ -13,105 +9,96 @@ import grondag.exotic_matter.model.primitives.Vertex;
 import grondag.exotic_matter.model.state.ISuperModelState;
 import grondag.exotic_matter.terrain.IHotBlock;
 import grondag.exotic_matter.terrain.TerrainState;
-import grondag.exotic_matter.varia.Color;
 import grondag.exotic_matter.varia.ColorHelper;
 import net.minecraft.util.math.MathHelper;
 
 public class VertexProcessorLava extends VertexProcessor
 {
-    private static final int[] GRADIENT = { 0xc00000, 0xf30000, 0xfa3754, 0xfb9b39, 0xfdda0f, 0xfffba3};
-    private static final float[] NORMAL_VARIATION = new float[0x10000];
-    
     public final static VertexProcessorLava INSTANCE = new VertexProcessorLava() {};
-    
+
     static
     {
         VertexProcessors.register(INSTANCE);
-        Random r = new Random(567);
-        for(int i = 0; i < NORMAL_VARIATION.length; i++)
-        {
-            NORMAL_VARIATION[i] = (float) r.nextGaussian() / 4f;
-        }
-        
-        assert GRADIENT.length == IHotBlock.HEAT_LEVEL_COUNT : "Lava heat gradient colors don't match heal level count";
     }
-    
+
     private VertexProcessorLava()
     {
         super("lava");
     }
-    
-    private static float getVariation(int x, int z)
+
+    /**
+     * Generates a normal(ish) distribution around 0 with a range of -0.5 to 0.5.
+     * Results are deterministic, based on a hash of the inputs.
+     */
+    private final float vary(int x, int z)
     {
-        return NORMAL_VARIATION[((x<< 8) | z)  & 0xFFFF];
+        final int hash = MathHelper.hash((x << 16) | z);
+        final float i = (float)(hash & 0xFFF) / 0xFFF;
+        final float j = (float)((hash >> 12) & 0xFFF) / 0xFFF;
+        return (i + j) / 2f - 0.5f;
     }
-    
-    private static int heatColor(float heat)
-    {
-        final float h = heat - 0.5f;
-        final int lowIndex = MathHelper.floor(h);
-        if(lowIndex < 0) return GRADIENT[0];
-        final int highIndex = lowIndex + 1;
-        if(highIndex >= IHotBlock.MAX_HEAT) return GRADIENT[IHotBlock.MAX_HEAT];
-        
-        return ColorHelper.interpolate(GRADIENT[lowIndex], GRADIENT[highIndex], h - lowIndex);  
-    }
-    
+
     @Override
     public void process(IMutablePolygon result, ISuperModelState modelState, PaintLayer paintLayer)
     {
-          TerrainState flowState = modelState.getTerrainState();
-          
-          for(int i = 0; i < result.vertexCount(); i++)
-          {
-              Vertex v = result.getVertex(i);
-              if(v != null)
-              {
-                  // Subtract 0.5 to so that lower qudrant/half uses lower neighbor as low bound
-                  // for heat interpolation.  Add epsilon so we don't round down ~edge points.
-                  final int xMin = MathHelper.floor(v.x - 0.5f + QuadHelper.EPSILON);
-                  final int zMin = MathHelper.floor(v.z - 0.5f + QuadHelper.EPSILON);
-                  final int xMax = xMin + 1;
-                  final int zMax = zMin + 1;
-                  // we want distance from block centers, and vertex origin is at lower corner of center block
-                  // zMax will be 0 in lower half/quadrant, and 1 in upper, so that frame is within our interpolation pointw
-                  final float xDist = v.x + 0.5f - xMax;
-                  final float zDist = v.z + 0.5f - zMax;
-                  
-                  final int xPos = modelState.getPosX();
-                  final int zPos = modelState.getPosZ();
-                  
-                  final int a1 = flowState.getHotness(xMin, zMin);
-                  final int a2 = flowState.getHotness(xMax, zMin);
-                  final float a1v = a1 == 0 ? 0 : a1 + getVariation(xPos + xMin, zPos + zMin);
-                  final float a2v = a2 == 0 ? 0 : a2 + getVariation(xPos + xMax, zPos + zMin);
-                  final float aAvg = a1v + (float)(a2v - a1v) * xDist;
-                  
-                  final int b1 = flowState.getHotness(xMin, zMax);
-                  final int b2 = flowState.getHotness(xMax, zMax);
-                  final float b1v = b1 == 0 ? 0 : b1 + getVariation(xPos + xMin, zPos + zMax);
-                  final float b2v = b2 == 0 ? 0 : b2 + getVariation(xPos + xMax, zPos + zMax);
-                  final float bAvg = b1v + (float)(b2v - b1v) * xDist;
-                  
-                  final float avgHeat = aAvg + (float)(bAvg-aAvg) * zDist;
-                  
-                  final int j1 = a1 == 0 ? 0 : 1;
-                  final int j2 = a2 == 0 ? 0 : 1;
-                  final float jAvg = j1 + (float)(j2 - j1) * xDist;
-                  
-                  final int k1 = b1 == 0 ? 0 : 1;
-                  final int k2 = b2 == 0 ? 0 : 1;
-                  final float kAvg = k1 + (float)(k2 - k1) * xDist;
-                  
-                  final float avgAlpha = jAvg + (float)(kAvg-jAvg) * zDist;
-                  
-                 // final int alpha =  MathHelper.clamp((int)(avgAlpha * 512) - 255, 0, 255);
-                  final int alpha = 0xff;
-                  
-                  final int color = (alpha << 24) | heatColor(avgHeat);
-                  
-                  result.setVertex(i, v.withColorGlow(color, 255));
-              }
-          }
+        TerrainState flowState = modelState.getTerrainState();
+
+        for(int i = 0; i < result.vertexCount(); i++)
+        {
+            Vertex v = result.getVertex(i);
+            if(v != null)
+            {
+                // Subtract 0.5 to so that lower qudrant/half uses lower neighbor as low bound
+                // for heat interpolation.  Add epsilon so we don't round down ~edge points.
+                final int xMin = MathHelper.floor(v.x - 0.5f + QuadHelper.EPSILON);
+                final int zMin = MathHelper.floor(v.z - 0.5f + QuadHelper.EPSILON);
+                final int xMax = xMin + 1;
+                final int zMax = zMin + 1;
+
+                // translate into 0-1 range within respective quadrant
+                final float xDist = v.x * 2f - xMax;
+                final float zDist = v.z * 2f - zMax;
+
+                assert xDist >= -QuadHelper.EPSILON && xDist <= 1 + QuadHelper.EPSILON;
+                assert zDist >= -QuadHelper.EPSILON && zDist <= 1 + QuadHelper.EPSILON;
+
+                final float h00 = flowState.midHotness(xMin, zMin);
+                final float h10 = flowState.midHotness(xMax, zMin);
+                final float h01 = flowState.midHotness(xMin, zMax);
+                final float h11 = flowState.midHotness(xMax, zMax);
+                
+                final float b00 = Math.min(1, h00);
+                final float b10 = Math.min(1, h10);
+                final float b01 = Math.min(1, h01);
+                final float b11 = Math.min(1, h11);
+                
+//                final int b00 = flowState.neighborHotness(xMin, zMin) == 0 ? 0 : 1;
+//                final int b10 = flowState.neighborHotness(xMax, zMin) == 0 ? 0 : 1;
+//                final int b01 = flowState.neighborHotness(xMin, zMax) == 0 ? 0 : 1;
+//                final int b11 = flowState.neighborHotness(xMax, zMax) == 0 ? 0 : 1;
+
+                final int x2 = modelState.getPosX() * 2;
+                final int z2 = modelState.getPosZ() * 2;
+
+                final float v00 = h00 < QuadHelper.EPSILON ? 0 : h00 + vary(x2 + xMin, z2 + zMin);
+                final float v10 = h10 < QuadHelper.EPSILON ? 0 : h10 + vary(x2 + xMax, z2 + zMin);
+                final float v01 = h01 < QuadHelper.EPSILON ? 0 : h01 + vary(x2 + xMin, z2 + zMax);
+                final float v11 = h11 < QuadHelper.EPSILON ? 0 : h11 + vary(x2 + xMax, z2 + zMax);
+
+                final float v_0Avg = v00 + (float)(v10 - v00) * xDist;
+                final float v_1Avg = v01 + (float)(v11 - v01) * xDist;
+                final float avgHeat = v_0Avg + (float)(v_1Avg - v_0Avg) * zDist;
+                final int kelvin = Math.max(1000, 1000 + (int)(1000 * avgHeat / IHotBlock.MAX_HEAT));
+
+                final float jAvg = b00 + (b10 - b00) * xDist;
+                final float kAvg = b01 + (b11 - b01) * xDist;
+                final float avgAlpha = jAvg + (kAvg-jAvg) * zDist;
+                final int alpha =  MathHelper.clamp((int)(avgAlpha * 512) - 255, 0, 255);
+
+                final int color = (alpha << 24) | ColorHelper.colorForTemperature(kelvin);
+
+                result.setVertex(i, v.withColorGlow(color, 255));
+            }
+        }
     }
 }
