@@ -74,7 +74,7 @@ public class VertexProcessorLava extends VertexProcessor
                 final float v_0Avg = v00 + (float)(v10 - v00) * xDist;
                 final float v_1Avg = v01 + (float)(v11 - v01) * xDist;
                 final float avgHeat = v_0Avg + (float)(v_1Avg - v_0Avg) * zDist;
-                final int kelvin = Math.max(1000, 800 + (int)(1000 * avgHeat / IHotBlock.MAX_HEAT));
+                final int kelvin = Math.max(1000, 1000 + (int)(600 * avgHeat / IHotBlock.MAX_HEAT));
 
                 final float a00 = flowState.lavaAlpha(xMin, zMin);
                 final float a10 = flowState.lavaAlpha(xMax, zMin);
