@@ -54,4 +54,9 @@ public class ModTextures
             .withRenderIntent(TextureRenderIntent.BASE_OR_OVERLAY_CUTOUT_OKAY)
             .withGroups(TextureGroup.STATIC_TILES));
 
+    public static final ITexturePalette BIGTEX_LAVA_SURFACE = TexturePaletteRegistry.addTexturePallette("lava_surface", "lava_surface", new TexturePaletteSpec(BIGTEX_BASALT_CUT));
+    public static final ITexturePalette BIGTEX_LAVA_SURFACE_ZOOM = TexturePaletteRegistry.addZoomedPallete(BIGTEX_LAVA_SURFACE);
+    public static final ITexturePalette BIGTEX_LAVA_SURFACE_ZOOM_X2 = TexturePaletteRegistry.addZoomedPallete(BIGTEX_LAVA_SURFACE_ZOOM);
+    
+
 }

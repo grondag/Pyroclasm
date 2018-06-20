@@ -56,30 +56,16 @@ public class VertexProcessorLava extends VertexProcessor
                 final int zMax = zMin + 1;
 
                 // translate into 0-1 range within respective quadrant
-                final float xDist = v.x * 2f - xMax;
-                final float zDist = v.z * 2f - zMax;
-
-                assert xDist >= -QuadHelper.EPSILON && xDist <= 1 + QuadHelper.EPSILON;
-                assert zDist >= -QuadHelper.EPSILON && zDist <= 1 + QuadHelper.EPSILON;
+                final float xDist = MathHelper.clamp(v.x * 2f - xMax, 0, 1);
+                final float zDist = MathHelper.clamp(v.z * 2f - zMax, 0, 1);
 
                 final float h00 = flowState.midHotness(xMin, zMin);
                 final float h10 = flowState.midHotness(xMax, zMin);
                 final float h01 = flowState.midHotness(xMin, zMax);
                 final float h11 = flowState.midHotness(xMax, zMax);
                 
-                final float b00 = Math.min(1, h00);
-                final float b10 = Math.min(1, h10);
-                final float b01 = Math.min(1, h01);
-                final float b11 = Math.min(1, h11);
-                
-//                final int b00 = flowState.neighborHotness(xMin, zMin) == 0 ? 0 : 1;
-//                final int b10 = flowState.neighborHotness(xMax, zMin) == 0 ? 0 : 1;
-//                final int b01 = flowState.neighborHotness(xMin, zMax) == 0 ? 0 : 1;
-//                final int b11 = flowState.neighborHotness(xMax, zMax) == 0 ? 0 : 1;
-
                 final int x2 = modelState.getPosX() * 2;
                 final int z2 = modelState.getPosZ() * 2;
-
                 final float v00 = h00 < QuadHelper.EPSILON ? 0 : h00 + vary(x2 + xMin, z2 + zMin);
                 final float v10 = h10 < QuadHelper.EPSILON ? 0 : h10 + vary(x2 + xMax, z2 + zMin);
                 final float v01 = h01 < QuadHelper.EPSILON ? 0 : h01 + vary(x2 + xMin, z2 + zMax);
@@ -88,12 +74,16 @@ public class VertexProcessorLava extends VertexProcessor
                 final float v_0Avg = v00 + (float)(v10 - v00) * xDist;
                 final float v_1Avg = v01 + (float)(v11 - v01) * xDist;
                 final float avgHeat = v_0Avg + (float)(v_1Avg - v_0Avg) * zDist;
-                final int kelvin = Math.max(1000, 1000 + (int)(1000 * avgHeat / IHotBlock.MAX_HEAT));
+                final int kelvin = Math.max(1000, 800 + (int)(1000 * avgHeat / IHotBlock.MAX_HEAT));
 
-                final float jAvg = b00 + (b10 - b00) * xDist;
-                final float kAvg = b01 + (b11 - b01) * xDist;
+                final float a00 = flowState.lavaAlpha(xMin, zMin);
+                final float a10 = flowState.lavaAlpha(xMax, zMin);
+                final float a01 = flowState.lavaAlpha(xMin, zMax);
+                final float a11 = flowState.lavaAlpha(xMax, zMax);
+                final float jAvg = a00 + (a10 - a00) * xDist;
+                final float kAvg = a01 + (a11 - a01) * xDist;
                 final float avgAlpha = jAvg + (kAvg-jAvg) * zDist;
-                final int alpha =  MathHelper.clamp((int)(avgAlpha * 512) - 255, 0, 255);
+                final int alpha =  MathHelper.clamp(Math.round(avgAlpha * 255), 0, 255);
 
                 final int color = (alpha << 24) | ColorHelper.colorForTemperature(kelvin);
 
