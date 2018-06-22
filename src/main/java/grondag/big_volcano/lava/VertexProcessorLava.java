@@ -1,6 +1,5 @@
 package grondag.big_volcano.lava;
 
-import grondag.exotic_matter.model.color.BlockColorMapProvider;
 import grondag.exotic_matter.model.painting.PaintLayer;
 import grondag.exotic_matter.model.painting.VertexProcessor;
 import grondag.exotic_matter.model.painting.VertexProcessors;

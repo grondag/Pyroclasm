@@ -23,7 +23,7 @@ public class VertexProcessorLavaAdvanced extends VertexProcessor
 
     private VertexProcessorLavaAdvanced()
     {
-        super("lava");
+        super("lava_advanced");
     }
 
     /**
@@ -43,6 +43,8 @@ public class VertexProcessorLavaAdvanced extends VertexProcessor
     {
         TerrainState flowState = modelState.getTerrainState();
 
+        final int baseColor = modelState.getColorARGB(PaintLayer.BASE) & 0xFFFFFF;
+        
         for(int i = 0; i < result.vertexCount(); i++)
         {
             Vertex v = result.getVertex(i);
@@ -74,20 +76,19 @@ public class VertexProcessorLavaAdvanced extends VertexProcessor
                 final float v_0Avg = v00 + (float)(v10 - v00) * xDist;
                 final float v_1Avg = v01 + (float)(v11 - v01) * xDist;
                 final float avgHeat = v_0Avg + (float)(v_1Avg - v_0Avg) * zDist;
-                final int kelvin = Math.max(1000, 1000 + (int)(600 * avgHeat / IHotBlock.MAX_HEAT));
+                final int temp = MathHelper.clamp(Math.round(127 * avgHeat / IHotBlock.MAX_HEAT), 0, 127);
 
-                final float a00 = flowState.lavaAlpha(xMin, zMin);
-                final float a10 = flowState.lavaAlpha(xMax, zMin);
-                final float a01 = flowState.lavaAlpha(xMin, zMax);
-                final float a11 = flowState.lavaAlpha(xMax, zMax);
+                final float a00 = flowState.crustAlpha(xMin, zMin);
+                final float a10 = flowState.crustAlpha(xMax, zMin);
+                final float a01 = flowState.crustAlpha(xMin, zMax);
+                final float a11 = flowState.crustAlpha(xMax, zMax);
                 final float jAvg = a00 + (a10 - a00) * xDist;
                 final float kAvg = a01 + (a11 - a01) * xDist;
                 final float avgAlpha = jAvg + (kAvg-jAvg) * zDist;
-                final int alpha =  MathHelper.clamp(Math.round(avgAlpha * 255), 0, 255);
+                final int alpha =  MathHelper.clamp(Math.round(avgAlpha * 127), 0, 127);
+                final int combined = temp | (alpha << 4);
 
-                final int color = (alpha << 24) | ColorHelper.colorForTemperature(kelvin);
-
-                result.setVertex(i, v.withColorGlow(color, 255));
+                result.setVertex(i, v.withColor((combined << 24) | baseColor));
             }
         }
     }

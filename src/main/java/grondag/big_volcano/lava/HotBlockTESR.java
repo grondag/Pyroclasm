@@ -72,18 +72,18 @@ public class HotBlockTESR extends TileEntitySpecialRenderer<HotBlockTileEntity>
         PerQuadModelRenderer.INSTANCE.renderModel(world, this.tesrDelegate, state, pos, buffer, true, 0L);
         Tessellator.getInstance().draw();
         
-        GlStateManager.enableAlpha();
-        GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-        GlStateManager.enableBlend();
-        GlStateManager.disableCull();
-        ForgeHooksClient.setRenderLayer(BlockRenderLayer.TRANSLUCENT);
-        buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.BLOCK);
-        PerQuadModelRenderer.INSTANCE.renderModel(world, this.tesrDelegate, state, pos, buffer, true, 0L);
-        Tessellator.getInstance().draw();
-            // FIXME: only do this when texture demands it and use FastTESR other times
+//        GlStateManager.enableAlpha();
+//        GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+//        GlStateManager.enableBlend();
+//        GlStateManager.disableCull();
+//        ForgeHooksClient.setRenderLayer(BlockRenderLayer.TRANSLUCENT);
+//        buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.BLOCK);
+//        PerQuadModelRenderer.INSTANCE.renderModel(world, this.tesrDelegate, state, pos, buffer, true, 0L);
+//        Tessellator.getInstance().draw();
+//            // FIXME: only do this when texture demands it and use FastTESR other times
 
         ForgeHooksClient.setRenderLayer(null);
         RenderHelper.enableStandardItemLighting();
-        GlStateManager.enableCull();
+//        GlStateManager.enableCull();
     }
 }
