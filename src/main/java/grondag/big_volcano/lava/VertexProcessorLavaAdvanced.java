@@ -1,6 +1,5 @@
 package grondag.big_volcano.lava;
 
-import grondag.exotic_matter.model.color.BlockColorMapProvider;
 import grondag.exotic_matter.model.painting.PaintLayer;
 import grondag.exotic_matter.model.painting.VertexProcessor;
 import grondag.exotic_matter.model.painting.VertexProcessors;
@@ -13,16 +12,16 @@ import grondag.exotic_matter.terrain.TerrainState;
 import grondag.exotic_matter.varia.ColorHelper;
 import net.minecraft.util.math.MathHelper;
 
-public class VertexProcessorLava extends VertexProcessor
+public class VertexProcessorLavaAdvanced extends VertexProcessor
 {
-    public final static VertexProcessorLava INSTANCE = new VertexProcessorLava() {};
+    public final static VertexProcessorLavaAdvanced INSTANCE = new VertexProcessorLavaAdvanced() {};
 
     static
     {
         VertexProcessors.register(INSTANCE);
     }
 
-    private VertexProcessorLava()
+    private VertexProcessorLavaAdvanced()
     {
         super("lava");
     }
@@ -83,9 +82,10 @@ public class VertexProcessorLava extends VertexProcessor
                 final float a11 = flowState.lavaAlpha(xMax, zMax);
                 final float jAvg = a00 + (a10 - a00) * xDist;
                 final float kAvg = a01 + (a11 - a01) * xDist;
-                final float avgIntensity = MathHelper.clamp(jAvg + (kAvg-jAvg) * zDist, 0, 1);
-                final int hotColor = ColorHelper.colorForTemperature(kelvin);
-                final int color = 0xFF000000 | ColorHelper.interpolate(0x3c3e4a, hotColor, avgIntensity);
+                final float avgAlpha = jAvg + (kAvg-jAvg) * zDist;
+                final int alpha =  MathHelper.clamp(Math.round(avgAlpha * 255), 0, 255);
+
+                final int color = (alpha << 24) | ColorHelper.colorForTemperature(kelvin);
 
                 result.setVertex(i, v.withColorGlow(color, 255));
             }

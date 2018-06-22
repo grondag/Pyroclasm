@@ -3,6 +3,7 @@ package grondag.big_volcano.lava;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import grondag.big_volcano.Configurator;
 import grondag.big_volcano.simulator.LavaCell;
 import grondag.big_volcano.simulator.LavaSimulator;
 import grondag.exotic_matter.block.BlockSubstance;
@@ -161,6 +162,8 @@ public class LavaBlock extends TerrainDynamicBlock implements ITileEntityProvide
     @Override
     public EnumBlockRenderType getRenderType(IBlockState state)
     {
-        return EnumBlockRenderType.INVISIBLE;
+        return Configurator.RENDER.enableAdvancedLavaRender
+                ? EnumBlockRenderType.INVISIBLE
+                : EnumBlockRenderType.MODEL;
     }
 }

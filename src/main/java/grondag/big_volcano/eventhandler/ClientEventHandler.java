@@ -143,6 +143,7 @@ public class ClientEventHandler
     public static void modelRegistryEvent(ModelRegistryEvent event)
     {
         // Bind TESR to tile entity
-        ClientRegistry.bindTileEntitySpecialRenderer(HotBlockTileEntity.class, HotBlockTESR.INSTANCE);
+        if(Configurator.RENDER.enableAdvancedLavaRender)
+            ClientRegistry.bindTileEntitySpecialRenderer(HotBlockTileEntity.class, HotBlockTESR.INSTANCE);
     }
 }

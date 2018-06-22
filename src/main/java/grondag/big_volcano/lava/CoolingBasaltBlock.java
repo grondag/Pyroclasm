@@ -6,6 +6,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import grondag.big_volcano.Configurator;
 import grondag.big_volcano.init.ModBlocks;
 import grondag.big_volcano.simulator.LavaSimulator;
 import grondag.exotic_matter.block.BlockSubstance;
@@ -173,6 +174,8 @@ public class CoolingBasaltBlock extends TerrainDynamicBlock implements ITileEnti
     @Override
     public EnumBlockRenderType getRenderType(IBlockState state)
     {
-        return EnumBlockRenderType.INVISIBLE;
+        return Configurator.RENDER.enableAdvancedLavaRender
+                ? EnumBlockRenderType.INVISIBLE
+                : EnumBlockRenderType.MODEL;
     }
 }

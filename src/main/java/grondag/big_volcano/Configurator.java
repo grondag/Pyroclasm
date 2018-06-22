@@ -52,9 +52,10 @@ public class Configurator
 
     public static class Render
     {
+        @RequiresMcRestart
         @Comment({"Enable single-pass rendering of lava and hot basalt using shaders.",
         "On supporting hardware, will be faster and look better than conventional render."})
-        public boolean enableAdvancedLavaRender = true;
+        public boolean enableAdvancedLavaRender = false;
         
         @Comment({"Enable render of lava cell bounding boxes for debug purposes.",
         "Client-side only."})
