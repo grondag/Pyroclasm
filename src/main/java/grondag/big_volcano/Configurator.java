@@ -43,6 +43,27 @@ public class Configurator
         public SubstanceConfig volcanicLava = new SubstanceConfig(-1, BlockHarvestTool.SHOVEL, 3, 2000, 0.75).setBurning().withPathNodeType(ConfigPathNodeType.LAVA);
     }    
 
+    ////////////////////////////////////////////////////        
+    // RENDER
+    ////////////////////////////////////////////////////
+    @LangKey("config.render")
+    @Comment("Volcano render settings. Client-side only")
+    public static Render RENDER = new Render();
+
+    public static class Render
+    {
+        @Comment({"Enable single-pass rendering of lava and hot basalt using shaders.",
+        "On supporting hardware, will be faster and look better than conventional render."})
+        public boolean enableAdvancedLavaRender = true;
+        
+        @Comment({"Enable render of lava cell bounding boxes for debug purposes.",
+        "Client-side only."})
+        public boolean enableLavaCellDebugRender = false;
+
+        @Comment({"Enable render of lava cell chunk bounding boxes for debug purposes.",
+        "Client-side only."})
+        public boolean enableLavaChunkDebugRender = false;
+    }  
 
     ////////////////////////////////////////////////////        
     // VOLCANO
@@ -226,14 +247,6 @@ public class Configurator
         @RangeInt(min = 2, max = 1000)
         public int lavaFlowReversalThreshold = 250;
         
-        @Comment({"Enable render of lava cell bounding boxes for debug purposes.",
-            "Client-side only."})
-        public boolean enableLavaCellDebugRender = false;
-
-        @Comment({"Enable render of lava cell chunk bounding boxes for debug purposes.",
-            "Client-side only."})
-        public boolean enableLavaChunkDebugRender = false;
-
         @Comment({"When cell counts are above this limit, will use multiple threads for cell processing.",
             "Defaults should generally be OK, but allows ajustment to tune performance for your hardware."})
         @RangeInt(min = 1000, max = 1000000)
