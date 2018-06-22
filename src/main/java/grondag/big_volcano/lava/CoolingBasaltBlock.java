@@ -15,14 +15,17 @@ import grondag.exotic_matter.simulator.Simulator;
 import grondag.exotic_matter.terrain.TerrainBlockHelper;
 import grondag.exotic_matter.terrain.TerrainDynamicBlock;
 import net.minecraft.block.Block;
+import net.minecraft.block.ITileEntityProvider;
 import net.minecraft.block.state.IBlockState;
+import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.EnumBlockRenderType;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.BlockPos.MutableBlockPos;
 import net.minecraft.util.math.Vec3i;
 import net.minecraft.world.World;
 
-public class CoolingBasaltBlock extends TerrainDynamicBlock
+public class CoolingBasaltBlock extends TerrainDynamicBlock implements ITileEntityProvider
 {
 
     @Nullable protected TerrainDynamicBlock nextCoolingBlock;
@@ -158,5 +161,18 @@ public class CoolingBasaltBlock extends TerrainDynamicBlock
     public final int heatLevel()
     {
         return this.heatLevel;
+    }
+
+    @Override
+    @Nullable
+    public TileEntity createNewTileEntity(World worldIn, int meta)
+    {
+        return new HotBlockTileEntity();
+    }
+    
+    @Override
+    public EnumBlockRenderType getRenderType(IBlockState state)
+    {
+        return EnumBlockRenderType.INVISIBLE;
     }
 }

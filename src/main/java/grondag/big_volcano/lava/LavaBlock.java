@@ -16,17 +16,20 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockDynamicLiquid;
 import net.minecraft.block.BlockFalling;
 import net.minecraft.block.BlockLiquid;
+import net.minecraft.block.ITileEntityProvider;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
+import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.EnumBlockRenderType;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.Explosion;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.common.Optional;
 
-public class LavaBlock extends TerrainDynamicBlock
+public class LavaBlock extends TerrainDynamicBlock implements ITileEntityProvider
 {
 
     public LavaBlock(String blockName, BlockSubstance substance, ISuperModelState defaultModelState, boolean isFiller)
@@ -146,5 +149,18 @@ public class LavaBlock extends TerrainDynamicBlock
     public final int heatLevel()
     {
         return 5;
+    }
+
+    @Override
+    @Nullable
+    public TileEntity createNewTileEntity(World worldIn, int meta)
+    {
+        return new HotBlockTileEntity();
+    }
+
+    @Override
+    public EnumBlockRenderType getRenderType(IBlockState state)
+    {
+        return EnumBlockRenderType.INVISIBLE;
     }
 }
