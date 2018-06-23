@@ -4,9 +4,12 @@ import javax.annotation.Nonnull;
 
 import org.lwjgl.opengl.GL11;
 
+import grondag.big_volcano.BigActiveVolcano;
 import grondag.exotic_matter.block.SuperBlock;
 import grondag.exotic_matter.model.render.PerQuadModelRenderer;
 import grondag.exotic_matter.model.render.RenderLayout;
+import grondag.exotic_matter.model.render.Shaders;
+import grondag.exotic_matter.model.render.Shaders.Shader;
 import grondag.exotic_matter.model.varia.SuperDispatcher;
 import grondag.exotic_matter.model.varia.SuperDispatcher.DispatchDelegate;
 import net.minecraft.client.Minecraft;
@@ -27,6 +30,8 @@ import net.minecraftforge.common.property.IExtendedBlockState;
 public class HotBlockTESR extends TileEntitySpecialRenderer<HotBlockTileEntity>
 {
     public static HotBlockTESR INSTANCE = new HotBlockTESR();
+    
+    private static Shader lavaShader = Shaders.register(BigActiveVolcano.MODID, "lava.vert", "lava.frag");
     
     protected static void addVertexWithUV(BufferBuilder buffer, double x, double y, double z, double u, double v, int skyLight, int blockLight)
     {
@@ -68,9 +73,12 @@ public class HotBlockTESR extends TileEntitySpecialRenderer<HotBlockTileEntity>
         GlStateManager.disableAlpha();
         
         ForgeHooksClient.setRenderLayer(BlockRenderLayer.SOLID);
+
+        lavaShader.activate();
         buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.BLOCK);
         PerQuadModelRenderer.INSTANCE.renderModel(world, this.tesrDelegate, state, pos, buffer, true, 0L);
         Tessellator.getInstance().draw();
+        lavaShader.deactivate();
         
 //        GlStateManager.enableAlpha();
 //        GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);

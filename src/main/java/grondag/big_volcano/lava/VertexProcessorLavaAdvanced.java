@@ -9,7 +9,6 @@ import grondag.exotic_matter.model.primitives.Vertex;
 import grondag.exotic_matter.model.state.ISuperModelState;
 import grondag.exotic_matter.terrain.IHotBlock;
 import grondag.exotic_matter.terrain.TerrainState;
-import grondag.exotic_matter.varia.ColorHelper;
 import net.minecraft.util.math.MathHelper;
 
 public class VertexProcessorLavaAdvanced extends VertexProcessor
@@ -76,19 +75,18 @@ public class VertexProcessorLavaAdvanced extends VertexProcessor
                 final float v_0Avg = v00 + (float)(v10 - v00) * xDist;
                 final float v_1Avg = v01 + (float)(v11 - v01) * xDist;
                 final float avgHeat = v_0Avg + (float)(v_1Avg - v_0Avg) * zDist;
-                final int temp = MathHelper.clamp(Math.round(127 * avgHeat / IHotBlock.MAX_HEAT), 0, 127);
+                final float temp = avgHeat / IHotBlock.MAX_HEAT;
 
-                final float a00 = flowState.crustAlpha(xMin, zMin);
-                final float a10 = flowState.crustAlpha(xMax, zMin);
-                final float a01 = flowState.crustAlpha(xMin, zMax);
-                final float a11 = flowState.crustAlpha(xMax, zMax);
+                final float a00 = flowState.edgeAlpha(xMin, zMin);
+                final float a10 = flowState.edgeAlpha(xMax, zMin);
+                final float a01 = flowState.edgeAlpha(xMin, zMax);
+                final float a11 = flowState.edgeAlpha(xMax, zMax);
                 final float jAvg = a00 + (a10 - a00) * xDist;
                 final float kAvg = a01 + (a11 - a01) * xDist;
                 final float avgAlpha = jAvg + (kAvg-jAvg) * zDist;
-                final int alpha =  MathHelper.clamp(Math.round(avgAlpha * 127), 0, 127);
-                final int combined = temp | (alpha << 4);
+                final int alpha =  MathHelper.clamp(Math.round(avgAlpha * temp * 255), 0, 255);
 
-                result.setVertex(i, v.withColor((combined << 24) | baseColor));
+                result.setVertex(i, v.withColor((alpha << 24) | baseColor));
             }
         }
     }
