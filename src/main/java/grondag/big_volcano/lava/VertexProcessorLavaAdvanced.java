@@ -83,7 +83,7 @@ public class VertexProcessorLavaAdvanced extends VertexProcessor
                 final float a11 = flowState.edgeAlpha(xMax, zMax);
                 final float jAvg = a00 + (a10 - a00) * xDist;
                 final float kAvg = a01 + (a11 - a01) * xDist;
-                final float avgAlpha = jAvg + (kAvg-jAvg) * zDist;
+                final float avgAlpha = 1 - (jAvg + (kAvg-jAvg) * zDist);
                 final int alpha =  MathHelper.clamp(Math.round(avgAlpha * temp * 255), 0, 255);
 
                 result.setVertex(i, v.withColor((alpha << 24) | baseColor));
