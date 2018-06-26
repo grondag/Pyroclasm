@@ -20,13 +20,26 @@ float green(float heatAlpha)
 /**
  *
  */
-float crustAlpha(float texAlpha, float heatAlpha)
+float crustAlpha(float translucency, float heatAlpha)
 {
-	if(texAlpha < heatAlpha * 0.95) return 0;
+	// hottest
+	// t = 0 -> 0
+	// t = .5 -> .3
+	// t = .9 -> 1
 
-	float coolness = 1 - heatAlpha;
-	float translucency = 1 - texAlpha;
-	return clamp(1.0 - translucency * (1 - coolness * coolness * coolness), 0.0, 1.0);
+	// coolest
+	// t = .98 -> 1
+	// t = .5 -> .1
+//	float top = 1 - heatAlpha * 0.1;
+	float bottom = 1 - sqrt(heatAlpha);
+	float t = smoothstep(bottom, 1, translucency);
+	return t > 0.5 ? 0 : 1 - t;
+
+//	float coolness = 1 - heatAlpha;
+//	return 1.0 - translucency * (1 - coolness * coolness * coolness);
+//	return (1 - texAlpha) * 0.98 + 0.02;
+//	float translucency = 1 - texAlpha;
+//	return 1.0 - texAlpha * (1 - coolness * coolness * coolness);
 
 //	if(heatAlpha == 0.0)
 //		return 1.0;
@@ -50,15 +63,21 @@ void main()
 	// a = plasma
 	vec4 texColor = texture2D(texture, vec2(gl_TexCoord[0]));
 	float a = crustAlpha(texColor.g, gl_Color.w);
+
 	if(a == 0)
 	{
-		gl_FragColor = vec4(1.0, green(gl_Color.a) + texColor.a * gl_Color.a * 1.3, 0.0, 1.0);
+		gl_FragColor = vec4(1.0, green(gl_Color.a) + texColor.a * gl_Color.a / 2.0, 0.0, 1.0);
 	}
 	else
 	{
-		vec4 hotColor = vec4(1.0, green(gl_Color.a), 0.0, 1.0);
 		vec4 baseColor = vec4(texColor.rrr * gl_Color.rgb * light.rgb, 1.0);
-		gl_FragColor = mix(hotColor, baseColor, a);
+//		if(a > 0.9)
+			gl_FragColor = baseColor;
+//		else
+//		{
+//			vec4 hotColor = vec4(1.0, green(gl_Color.a) * 0.6, 0.0, 1.0);
+//			gl_FragColor = mix(hotColor, baseColor, a);
+//		}
 	}
 }
 
