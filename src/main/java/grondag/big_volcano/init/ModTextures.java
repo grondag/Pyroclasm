@@ -37,5 +37,10 @@ public class ModTextures
     public static final ITexturePalette BIGTEX_LAVA_SURFACE_ZOOM = TexturePaletteRegistry.addZoomedPallete(BIGTEX_LAVA_SURFACE);
     public static final ITexturePalette BIGTEX_LAVA_SURFACE_ZOOM_X2 = TexturePaletteRegistry.addZoomedPallete(BIGTEX_LAVA_SURFACE_ZOOM);
     
+    public static final ITexturePalette BIGTEX_LAVA_MULTI = TexturePaletteRegistry.addTexturePallette("lava_multi", "lava_multi", 
+            new TexturePaletteSpec(BIGTEX_BASALT_CUT).withGroups(TextureGroup.HIDDEN_TILES));
+    public static final ITexturePalette BIGTEX_LAVA_MULTI_ZOOM = TexturePaletteRegistry.addZoomedPallete(BIGTEX_LAVA_MULTI);
+    public static final ITexturePalette BIGTEX_LAVA_MULTI_ZOOM_X2 = TexturePaletteRegistry.addZoomedPallete(BIGTEX_LAVA_MULTI_ZOOM);
+    
 
 }
