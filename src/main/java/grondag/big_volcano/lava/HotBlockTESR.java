@@ -8,9 +8,11 @@ import org.lwjgl.opengl.GL13;
 
 import grondag.big_volcano.BigActiveVolcano;
 import grondag.exotic_matter.block.SuperBlock;
+import grondag.exotic_matter.model.painting.PaintLayer;
 import grondag.exotic_matter.model.render.RenderLayout;
 import grondag.exotic_matter.model.render.Shaders;
 import grondag.exotic_matter.model.render.Shaders.Shader;
+import grondag.exotic_matter.model.state.ISuperModelState;
 import grondag.exotic_matter.model.varia.SuperDispatcher;
 import grondag.exotic_matter.model.varia.SuperDispatcher.DispatchDelegate;
 import net.minecraft.client.Minecraft;
@@ -20,6 +22,7 @@ import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.renderer.texture.TextureMap;
 import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
@@ -95,6 +98,12 @@ public class HotBlockTESR extends TileEntitySpecialRenderer<HotBlockTileEntity>
         lavaShader.activate();
         lavaShader.setUniform("texture", OpenGlHelper.defaultTexUnit - GL13.GL_TEXTURE0);
         lavaShader.setUniform("lightMap", OpenGlHelper.lightmapTexUnit - GL13.GL_TEXTURE0);
+        lavaShader.setUniform("time", grondag.exotic_matter.ClientProxy.getWorldTime());
+        ISuperModelState modelState = state.getValue(SuperBlock.MODEL_STATE);
+        TextureAtlasSprite tex = modelState.getTexture(PaintLayer.BASE).getSampleSprite();
+        lavaShader.setUniform("uMin", tex.getMinU());
+        lavaShader.setUniform("vMin", tex.getMinV());
+        lavaShader.setUniform("uvSize", tex.getMaxU() - tex.getMinU());
         buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.BLOCK);
         
         if(blockRenderer == null)

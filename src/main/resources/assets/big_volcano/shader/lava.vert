@@ -2,8 +2,11 @@
 
 uniform sampler2D texture;
 uniform sampler2D lightMap;
-//uniform int time;
+uniform float time;
 varying vec4 light;
+uniform float uMin;
+uniform float vMin;
+uniform float uvSize;
 
 void main()
 {

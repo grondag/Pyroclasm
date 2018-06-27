@@ -2,8 +2,113 @@
 
 uniform sampler2D texture;
 uniform sampler2D lightMap;
-//uniform int time;
+uniform float time;
 varying vec4 light;
+uniform float uMin;
+uniform float vMin;
+uniform float uvSize;
+
+//  Patricio Gonzalez, The Book of Shaders
+// https://thebookofshaders.com/
+vec2 random2(vec2 st)
+{
+    st = vec2( dot(st,vec2(127.1,311.7)),
+              dot(st,vec2(269.5,183.3)) );
+    return -1.0 + 2.0*fract(sin(st)*43758.5453123);
+}
+
+float random (vec2 st)
+{
+    return fract(sin(dot(st.xy,
+                         vec2(12.9898,78.233)))*
+        43758.5453123);
+}
+
+// 2D Noise based on Morgan McGuire @morgan3d
+// https://www.shadertoy.com/view/4dS3Wd
+float noise (in vec2 st)
+{
+    vec2 i = floor(st);
+    vec2 f = fract(st);
+
+    // Four corners in 2D of a tile
+    float a = random(i);
+    float b = random(i + vec2(1.0, 0.0));
+    float c = random(i + vec2(0.0, 1.0));
+    float d = random(i + vec2(1.0, 1.0));
+
+    // Smooth Interpolation
+
+    // Cubic Hermine Curve.  Same as SmoothStep()
+    vec2 u = f*f*(3.0-2.0*f);
+    // u = smoothstep(0.,1.,f);
+
+    // Mix 4 coorners percentages
+    return mix(a, b, u.x) +
+            (c - a)* u.y * (1.0 - u.x) +
+            (d - b) * u.x * u.y;
+}
+
+float noise(vec2 st, float period)
+{
+    return noise(st * period);
+    // return random(st);
+}
+
+mat2 makem2(in float theta){float c = cos(theta);float s = sin(theta);return mat2(c,-s,s,c);}
+
+mat2 m2 = mat2( 0.80,  0.60, -0.60,  0.80 );
+
+float grid(vec2 p)
+{
+	float s = sin(p.x)*cos(p.y);
+	return s;
+}
+
+float flow(in vec2 p)
+{
+	float z=2.;
+	float rz = 0.;
+	float flowTime = time * 0.005;
+	vec2 bp = p;
+	for (float i= 1.;i < 7.;i++ )
+	{
+		bp += flowTime*1.5;
+		vec2 gr = vec2(grid(p*3.-flowTime*2.),grid(p*3.+4.-flowTime*2.))*0.4;
+		gr = normalize(gr)*0.4;
+		gr *= makem2((p.x+p.y)*.3+flowTime*10.);
+		p += gr*0.5;
+
+		rz+= (sin(noise(p*.01, 256.0)*8.)*0.5+0.5) /z;
+
+		p = mix(bp,p,.5);
+		z *= 1.7;
+		p *= 2.5;
+		p*=m2;
+		bp *= 2.5;
+		bp*=m2;
+	}
+	return rz;
+}
+//float rand(vec2 co)
+//{
+//    return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
+//}
+
+// Value Noise by Inigo Quilez - iq/2013
+// https://www.shadertoy.com/view/lsf3WH
+//float noise(vec2 st)
+//{
+//    vec2 i = floor(st);
+//    vec2 f = fract(st);
+//
+//    vec2 u = f*f*(3.0-2.0*f);
+//
+//    return mix( mix( dot( random2(i + vec2(0.0,0.0) ), f - vec2(0.0,0.0) ),
+//                     dot( random2(i + vec2(1.0,0.0) ), f - vec2(1.0,0.0) ), u.x),
+//                mix( dot( random2(i + vec2(0.0,1.0) ), f - vec2(0.0,1.0) ),
+//                     dot( random2(i + vec2(1.0,1.0) ), f - vec2(1.0,1.0) ), u.x), u.y);
+//}
 
 // Maps input alpha to kelvin degrees and then estimates green
 // color component for black body radiation at that temperature.
@@ -55,28 +160,29 @@ float crustAlpha(float translucency, float heatAlpha)
 
 void main()
 {
+	// texture for hot blocks contains...
+	// rgb = basalt surface
+	// a = crack gradient
 
-	// texture for hot blocks contains four images
-	// r = basalt surface
-	// g = glow gradient
-	// b = crack gradient
-	// a = plasma
-	vec4 texColor = texture2D(texture, vec2(gl_TexCoord[0]));
-	float a = crustAlpha(texColor.g, gl_Color.w);
+	vec2 uv = vec2(gl_TexCoord[0]);
+	vec4 texColor = texture2D(texture, uv);
+	float a = crustAlpha(texColor.a, gl_Color.w);
 
 	if(a == 0)
 	{
-		gl_FragColor = vec4(1.0, green(gl_Color.a) + texColor.a * gl_Color.a / 2.0, 0.0, 1.0);
+		vec2 seed = vec2(uv.s - uMin, uv.t - vMin) / uvSize;
+		float n = 0.2 / flow(seed);
+		gl_FragColor = vec4(1.0, min(1.0, green(gl_Color.a) + n), 0.0, 1.0);
 	}
 	else
 	{
-		vec4 baseColor = vec4(texColor.rrr * gl_Color.rgb * light.rgb, 1.0);
-//		if(a > 0.9)
-			gl_FragColor = baseColor;
+		vec4 baseColor = vec4(texColor.rgb * gl_Color.rgb * light.rgb, 1.0);
+//		if(a > 0.8)
+//			gl_FragColor = baseColor;
 //		else
 //		{
-//			vec4 hotColor = vec4(1.0, green(gl_Color.a) * 0.6, 0.0, 1.0);
-//			gl_FragColor = mix(hotColor, baseColor, a);
+			vec4 hotColor = vec4(1.0, green(gl_Color.a) * 0.6, 0.0, 1.0);
+			gl_FragColor = mix(hotColor, baseColor, a);
 //		}
 	}
 }
