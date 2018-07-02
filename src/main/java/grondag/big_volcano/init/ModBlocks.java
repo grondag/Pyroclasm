@@ -116,11 +116,11 @@ public class ModBlocks
         hotBlockHeightModel.setShape(ModShapes.TERRAIN_HEIGHT);
         if(Configurator.RENDER.enableAdvancedLavaRender)
         {
-            hotBlockHeightModel.setTexture(PaintLayer.BASE, ModTextures.BIGTEX_LAVA_MULTI_ZOOM);
+            hotBlockHeightModel.setTexture(PaintLayer.BASE, ModTextures.BIGTEX_BASALT_COOL_ZOOM);
             hotBlockHeightModel.setColorRGB(PaintLayer.BASE, BlockColorMapProvider.COLOR_BASALT);
             hotBlockHeightModel.setVertexProcessor(PaintLayer.BASE, VertexProcessorLavaAdvanced.INSTANCE);
             // TODO: need an overlay texture for sides
-            hotBlockHeightModel.setTexture(PaintLayer.CUT, ModTextures.BIGTEX_LAVA_MULTI_ZOOM);
+            hotBlockHeightModel.setTexture(PaintLayer.CUT, ModTextures.BIGTEX_BASALT_COOL_ZOOM);
             hotBlockHeightModel.setColorRGB(PaintLayer.CUT, BlockColorMapProvider.COLOR_BASALT);
             hotBlockHeightModel.setVertexProcessor(PaintLayer.CUT, VertexProcessorLavaAdvanced.INSTANCE); 
         }

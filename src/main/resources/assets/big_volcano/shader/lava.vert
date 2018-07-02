@@ -1,12 +1,11 @@
 #version 120
 
+uniform float time;
+uniform vec4 uvBasalt;
+uniform vec4 uvMap;
 uniform sampler2D texture;
 uniform sampler2D lightMap;
-uniform float time;
 varying vec4 light;
-uniform float uMin;
-uniform float vMin;
-uniform float uvSize;
 
 void main()
 {

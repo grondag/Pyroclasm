@@ -7,12 +7,14 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 
 import grondag.big_volcano.BigActiveVolcano;
+import grondag.big_volcano.init.ModTextures;
 import grondag.exotic_matter.block.SuperBlock;
-import grondag.exotic_matter.model.painting.PaintLayer;
 import grondag.exotic_matter.model.render.RenderLayout;
 import grondag.exotic_matter.model.render.Shaders;
 import grondag.exotic_matter.model.render.Shaders.Shader;
-import grondag.exotic_matter.model.state.ISuperModelState;
+import grondag.exotic_matter.model.render.Shaders.Shader.Uniform1f;
+import grondag.exotic_matter.model.render.Shaders.Shader.Uniform1i;
+import grondag.exotic_matter.model.render.Shaders.Shader.Uniform4f;
 import grondag.exotic_matter.model.varia.SuperDispatcher;
 import grondag.exotic_matter.model.varia.SuperDispatcher.DispatchDelegate;
 import net.minecraft.client.Minecraft;
@@ -39,7 +41,33 @@ public class HotBlockTESR extends TileEntitySpecialRenderer<HotBlockTileEntity>
     
     private static Shader lavaShader = Shaders.register(BigActiveVolcano.MODID, "lava.vert", "lava.frag");
     
+    @SuppressWarnings("unused")
+    private static Uniform4f basaltUniform = lavaShader.uniform4f("uvBasalt", u -> 
+    {
+        TextureAtlasSprite tex = ModTextures.BIGTEX_BASALT_COOL_ZOOM.getSampleSprite();
+        ((Uniform4f)u).set(tex.getMinU(), tex.getMinV(), tex.getMaxU() - tex.getMinU(), tex.getMaxV() - tex.getMinV());
+    });
+    
+    @SuppressWarnings("unused")
+    private static Uniform4f mapUniform = lavaShader.uniform4f("uvMap", u -> 
+    {
+        TextureAtlasSprite tex = ModTextures.BIGTEX_LAVA_MULTI_ZOOM.getSampleSprite();
+        ((Uniform4f)u).set(tex.getMinU(), tex.getMinV(), tex.getMaxU() - tex.getMinU(), tex.getMaxV() - tex.getMinV());
+    });
+    
+    private static Uniform1f timeUniform = lavaShader.uniform1f("time", null);
+    
+    @SuppressWarnings("unused")
+    private static Uniform1i textureUniform = lavaShader.uniform1i("texture", 
+            u -> ((Uniform1i)u).set(OpenGlHelper.defaultTexUnit - GL13.GL_TEXTURE0));
+    
+    @SuppressWarnings("unused")
+    private static Uniform1i lightMapUniform = lavaShader.uniform1i("lightMap",
+            u -> ((Uniform1i)u).set(OpenGlHelper.lightmapTexUnit - GL13.GL_TEXTURE0));
+    
     protected static @Nullable BlockRendererDispatcher blockRenderer;
+    
+    private static float lastTime;
     
     protected static void addVertexWithUV(BufferBuilder buffer, double x, double y, double z, double u, double v, int skyLight, int blockLight)
     {
@@ -96,14 +124,14 @@ public class HotBlockTESR extends TileEntitySpecialRenderer<HotBlockTileEntity>
         ForgeHooksClient.setRenderLayer(BlockRenderLayer.SOLID);
 
         lavaShader.activate();
-        lavaShader.setUniform("texture", OpenGlHelper.defaultTexUnit - GL13.GL_TEXTURE0);
-        lavaShader.setUniform("lightMap", OpenGlHelper.lightmapTexUnit - GL13.GL_TEXTURE0);
-        lavaShader.setUniform("time", grondag.exotic_matter.ClientProxy.getWorldTime());
-        ISuperModelState modelState = state.getValue(SuperBlock.MODEL_STATE);
-        TextureAtlasSprite tex = modelState.getTexture(PaintLayer.BASE).getSampleSprite();
-        lavaShader.setUniform("uMin", tex.getMinU());
-        lavaShader.setUniform("vMin", tex.getMinV());
-        lavaShader.setUniform("uvSize", tex.getMaxU() - tex.getMinU());
+        
+        final float t = grondag.exotic_matter.ClientProxy.getWorldTime();
+        if(t != lastTime)
+        {
+            timeUniform.set(t);
+            lastTime = t;
+        }
+        
         buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.BLOCK);
         
         if(blockRenderer == null)
