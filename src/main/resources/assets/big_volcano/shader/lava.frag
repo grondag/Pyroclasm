@@ -190,14 +190,17 @@ void main()
 
     float i = mapColor.b * smootherstep(0.0, 0.25, gl_Color.a);
 
-    float j = mapColor.g * smootherstep(0.25, 0.5, gl_Color.a);
-    if(j > i) i = j;
+    float j = mapColor.a * smootherstep(0.15, 0.45, gl_Color.a);
+    i = max(i, j);
+
+    j = mapColor.g * smootherstep(0.25, 0.5, gl_Color.a);
+    i = max(i, j);
 
     if(gl_Color.a > 0.5)
     {
     	float a = gl_Color.a * 2.0 - 1.0;
 		j =  a * smootherstep(0.65 - 0.65 * a * a, 0.85, mapColor.r);
-		if(j > i) i = j;
+		i = max(i, j);
     }
 
     // ax + bxx + cxxx
