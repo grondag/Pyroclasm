@@ -110,10 +110,10 @@ float tnoise (in vec2 st, float t) {
     float c = random(i + vec2(0.0, 1.0));
     float d = random(i + vec2(1.0, 1.0));
 
-    a =  0.5 + sin(a * t) * 0.5;
-    b =  0.5 + sin(b * t) * 0.5;
-    c =  0.5 + sin(c * t) * 0.5;
-    d =  0.5 + sin(d * t) * 0.5;
+    a =  0.5 + sin((0.5 + a) * t) * 0.5;
+    b =  0.5 + sin((0.5 + b) * t) * 0.5;
+    c =  0.5 + sin((0.5 + c) * t) * 0.5;
+    d =  0.5 + sin((0.5 + d) * t) * 0.5;
     // Smooth Interpolation
 
     // Cubic Hermine Curve.  Same as SmoothStep()
@@ -169,43 +169,6 @@ float blue(float kelvin)
     return (a + b * x + c * log(x)) / 255.0;
 }
 
-
-/**
- *
- */
-float crustAlpha(float translucency, float heatAlpha)
-{
-	// hottest
-	// t = 0 -> 0
-	// t = .5 -> .3
-	// t = .9 -> 1
-
-	// coolest
-	// t = .98 -> 1
-	// t = .5 -> .1
-//	float top = 1 - heatAlpha * 0.1;
-	float bottom = 1 - sqrt(heatAlpha);
-	float t = smoothstep(bottom, 1, translucency);
-	return t > 0.5 ? 0 : 1 - t;
-
-//	float coolness = 1 - heatAlpha;
-//	return 1.0 - translucency * (1 - coolness * coolness * coolness);
-//	return (1 - texAlpha) * 0.98 + 0.02;
-//	float translucency = 1 - texAlpha;
-//	return 1.0 - texAlpha * (1 - coolness * coolness * coolness);
-
-//	if(heatAlpha == 0.0)
-//		return 1.0;
-//	else if(heatAlpha >= texAlpha)
-//		return 0.0;
-//	else
-//	{
-//		return clamp(1.0 - translucency * (1 - coolness * coolness), 0.0, 1.0);
-//	}
-//		return clamp(1.0 - (1.0 - texAlpha) * heatAlpha * heatAlpha * 4.0, 0.0, 1.0);
-
-}
-
 void main()
 {
 
@@ -230,47 +193,29 @@ void main()
     float j = mapColor.g * smootherstep(0.25, 0.5, gl_Color.a);
     if(j > i) i = j;
 
-    if(gl_Color.a >= 0.5)
+    if(gl_Color.a > 0.5)
     {
-    	float a = smootherstep(0.25, 1.0, gl_Color.a);
-		j =  a * smootherstep(0.65 - 0.65 * a, 0.85, mapColor.r);
+    	float a = gl_Color.a * 2.0 - 1.0;
+		j =  a * smootherstep(0.65 - 0.65 * a * a, 0.85, mapColor.r);
 		if(j > i) i = j;
     }
 
-    float kelvin = 600 + gl_Color.a * i * i * (1000.0 + mapColor.r * 800.0 + mapColor.r * mapColor.r * 1200.0);
+    // ax + bxx + cxxx
+    // x(a + bx + cxx)
+    // x(a +x(b + cx))
+    float kelvin = 600 + gl_Color.a * i * i * mapColor.r * (200.0 + mapColor.r * ( 800.0 + mapColor.r * 4000.0));
     //kelvin += smootherstep(0.0, 1.0, i2 * gl_Color.a * gl_Color.a) * mapColor.r * 1400.0;
+
+
+    float mix = smootherstep(0.0, 0.95, i);
+
+    if(mix > 0.83)
+		kelvin *= (0.9 + tnoise(uvRel * 512.0, time * 2.0) * 0.2);
 
     // shifting the blue curve out a tad - looks better
     vec4 hotColor = vec4(1.0, green(kelvin), blue(kelvin - 1500.0), 1.0);
 
-//
-//    float gl = gl_Color.a * mapColor.r; //smoothstep(0.90 - gl_Color.a * 0.90, 0.95, mapColor.r);
-
-//
-//    if(mapColor.g > 1.0 - gl_Color.a * 0.15)
-//    	t = 1.0;
-
-
-//	float a = clamp(texColor.a + 0.5 - gl_Color.w, 0.0, 1.0);
-//
-//	if(a == 0)
-//	{
-//		vec2 seed = vec2(uv.s - uMin, uv.t - vMin) / uvSize;
-//
-//		float n1 = tnoise(seed * 256.0, time * 0.4);
-//		float n2 = tnoise(seed * 128.0, time * 0.5);
-//		float n = n1 * 0.2 + n2 * 0.2 + n1 * n2;
-//
-//		gl_FragColor = vec4(1.0, min(1.0, green(gl_Color.a)), 0.0, 1.0);
-//	}
-//	else
-//	{
-//		vec4 baseColor = vec4(texColor.rgb * gl_Color.rgb * light.rgb, 1.0);
-//		vec4 hotColor = vec4(1.0, green(gl_Color.a * 0.8), 0.0, 1.0);
-//		gl_FragColor = mix(hotColor, baseColor, 0.5 + a * 0.5);
-//	}
-
-    gl_FragColor = mix(baseColor, hotColor, smootherstep(0.0, 1.0, i));
+    gl_FragColor = mix(baseColor, hotColor, mix);
 }
 
 
