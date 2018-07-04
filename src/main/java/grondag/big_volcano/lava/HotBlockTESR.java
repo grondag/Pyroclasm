@@ -8,6 +8,7 @@ import org.lwjgl.opengl.GL13;
 
 import grondag.big_volcano.BigActiveVolcano;
 import grondag.big_volcano.init.ModTextures;
+import grondag.exotic_matter.ExoticMatter;
 import grondag.exotic_matter.block.SuperBlock;
 import grondag.exotic_matter.model.render.RenderLayout;
 import grondag.exotic_matter.model.render.Shaders;
@@ -40,6 +41,9 @@ public class HotBlockTESR extends TileEntitySpecialRenderer<HotBlockTileEntity>
     public static HotBlockTESR INSTANCE = new HotBlockTESR();
     
     private static Shader lavaShader = Shaders.register(BigActiveVolcano.MODID, "lava.vert", "lava.frag");
+    
+    private static long vertexCount = 0;
+    private static long nanoCounter = 0;
     
     @SuppressWarnings("unused")
     private static Uniform4f basaltUniform = lavaShader.uniform4f("uvBasalt", u -> 
@@ -123,14 +127,8 @@ public class HotBlockTESR extends TileEntitySpecialRenderer<HotBlockTileEntity>
         
         ForgeHooksClient.setRenderLayer(BlockRenderLayer.SOLID);
 
-        lavaShader.activate();
         
-        final float t = grondag.exotic_matter.ClientProxy.getWorldTime();
-        if(t != lastTime)
-        {
-            timeUniform.set(t);
-            lastTime = t;
-        }
+        
         
         buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.BLOCK);
         
@@ -138,9 +136,29 @@ public class HotBlockTESR extends TileEntitySpecialRenderer<HotBlockTileEntity>
             blockRenderer = Minecraft.getMinecraft().getBlockRendererDispatcher();
         
         blockRenderer.getBlockModelRenderer().renderModel(world, tesrDelegate, state, pos, buffer, true);
+        
+        vertexCount += buffer.getVertexCount();
+        
+        final float t = grondag.exotic_matter.ClientProxy.getWorldTime();
+
+        final long startNanos = System.nanoTime();
+
+        lavaShader.activate();
+        if(t != lastTime)
+        {
+            timeUniform.set(t);
+            lastTime = t;
+        }
         Tessellator.getInstance().draw();
         lavaShader.deactivate();
+        nanoCounter += System.nanoTime() - startNanos;
         
+        if(vertexCount >= 5000000)
+        {
+            ExoticMatter.INSTANCE.info("Lava draw time = %f nanos per vertex for last %d vertices", (double)nanoCounter / vertexCount, vertexCount);
+            vertexCount = 0;
+            nanoCounter = 0;
+        }
 //        if (OpenGlHelper.useVbo())
 //        {
 //            for (VertexFormatElement vertexformatelement : DefaultVertexFormats.BLOCK.getElements())
