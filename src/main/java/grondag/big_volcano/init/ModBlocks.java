@@ -128,7 +128,7 @@ public class ModBlocks
         {
             hotBlockHeightModel.setTexture(PaintLayer.BASE, ModTextures.BIGTEX_LAVA_SURFACE_ZOOM);
             hotBlockHeightModel.setColorRGB(PaintLayer.BASE, Color.WHITE);
-            hotBlockHeightModel.setBrightness(PaintLayer.BASE, 15);
+            hotBlockHeightModel.setEmissive(PaintLayer.BASE, true);
             hotBlockHeightModel.setVertexProcessor(PaintLayer.BASE, VertexProcessorLava.INSTANCE);
             hotBlockHeightModel.setTranslucent(PaintLayer.BASE, true);
             
@@ -138,7 +138,7 @@ public class ModBlocks
             
             hotBlockHeightModel.setTexture(PaintLayer.CUT, ModTextures.BIGTEX_LAVA_SURFACE_ZOOM);
             hotBlockHeightModel.setColorRGB(PaintLayer.CUT, Color.WHITE);
-            hotBlockHeightModel.setBrightness(PaintLayer.CUT, 15);
+            hotBlockHeightModel.setEmissive(PaintLayer.CUT, true);
             hotBlockHeightModel.setVertexProcessor(PaintLayer.CUT, VertexProcessorLava.INSTANCE);
             hotBlockHeightModel.setTranslucent(PaintLayer.CUT, true);
             

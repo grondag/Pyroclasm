@@ -78,7 +78,7 @@ public class HotBlockTESR extends TileEntitySpecialRenderer<HotBlockTileEntity>
         buffer.pos(x, y, z).color(0xFF, 0xFF, 0xFF, 0xFF).tex(u, v).lightmap(skyLight, blockLight).endVertex();
     }
 
-    private final DispatchDelegate tesrDelegate = SuperDispatcher.INSTANCE.delegates[RenderLayout.NONE.blockLayerFlags];
+    private final DispatchDelegate tesrDelegate = SuperDispatcher.INSTANCE.delegates[RenderLayout.NONE.ordinal];
     
     @Override
     public void render(@Nonnull HotBlockTileEntity te, double x, double y, double z, float partialTicks, int destroyStage, float alpha)

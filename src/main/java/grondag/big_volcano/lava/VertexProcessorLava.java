@@ -3,9 +3,9 @@ package grondag.big_volcano.lava;
 import grondag.exotic_matter.model.painting.PaintLayer;
 import grondag.exotic_matter.model.painting.VertexProcessor;
 import grondag.exotic_matter.model.painting.VertexProcessors;
-import grondag.exotic_matter.model.primitives.IMutablePolygon;
+import grondag.exotic_matter.model.primitives.IPaintableQuad;
+import grondag.exotic_matter.model.primitives.IPaintableVertex;
 import grondag.exotic_matter.model.primitives.QuadHelper;
-import grondag.exotic_matter.model.primitives.Vertex;
 import grondag.exotic_matter.model.state.ISuperModelState;
 import grondag.exotic_matter.terrain.IHotBlock;
 import grondag.exotic_matter.terrain.TerrainState;
@@ -39,25 +39,25 @@ public class VertexProcessorLava extends VertexProcessor
     }
 
     @Override
-    public void process(IMutablePolygon result, ISuperModelState modelState, PaintLayer paintLayer)
+    public void process(IPaintableQuad result, ISuperModelState modelState, PaintLayer paintLayer)
     {
         TerrainState flowState = modelState.getTerrainState();
 
         for(int i = 0; i < result.vertexCount(); i++)
         {
-            Vertex v = result.getVertex(i);
+            IPaintableVertex v = result.getPaintableVertex(i);
             if(v != null)
             {
                 // Subtract 0.5 to so that lower qudrant/half uses lower neighbor as low bound
                 // for heat interpolation.  Add epsilon so we don't round down ~edge points.
-                final int xMin = MathHelper.floor(v.x - 0.5f + QuadHelper.EPSILON);
-                final int zMin = MathHelper.floor(v.z - 0.5f + QuadHelper.EPSILON);
+                final int xMin = MathHelper.floor(v.x() - 0.5f + QuadHelper.EPSILON);
+                final int zMin = MathHelper.floor(v.z() - 0.5f + QuadHelper.EPSILON);
                 final int xMax = xMin + 1;
                 final int zMax = zMin + 1;
 
                 // translate into 0-1 range within respective quadrant
-                final float xDist = MathHelper.clamp(v.x * 2f - xMax, 0, 1);
-                final float zDist = MathHelper.clamp(v.z * 2f - zMax, 0, 1);
+                final float xDist = MathHelper.clamp(v.x() * 2f - xMax, 0, 1);
+                final float zDist = MathHelper.clamp(v.z() * 2f - zMax, 0, 1);
 
                 final float h00 = flowState.midHotness(xMin, zMin);
                 final float h10 = flowState.midHotness(xMax, zMin);
