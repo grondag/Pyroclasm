@@ -68,7 +68,6 @@ public class LavaBlock extends TerrainDynamicBlock
         return false;
     }
     
-    @SuppressWarnings("deprecation")
     @Override
     public void neighborChanged(@Nonnull IBlockState state, @Nonnull World worldIn, @Nonnull BlockPos pos, @Nonnull Block blockIn, @Nonnull BlockPos fromPos)
     {

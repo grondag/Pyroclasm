@@ -258,7 +258,6 @@ public class TerrainWand extends RegistratingItem
             
     }
     
-    @SuppressWarnings("deprecation")
     public EnumActionResult handleUseHeightMode(ItemStack stack, EntityPlayer playerIn, World worldIn, BlockPos pos)
     {
 

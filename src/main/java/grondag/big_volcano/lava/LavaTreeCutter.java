@@ -198,7 +198,6 @@ public class LavaTreeCutter implements ISimulationTickable, IReadWriteNBT
         
     }
     
-    @SuppressWarnings({ "deprecation", "null" })
     private Operation doSearch()
     {
         final Visit toVisit = this.toVisit.poll();

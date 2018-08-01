@@ -269,7 +269,6 @@ public class LavaTerrainHelper
         while(blocks.hasNext())
         {
             Block b = blocks.next();
-            @SuppressWarnings("deprecation")
             Material m = b.getMaterial(b.getDefaultState());
             if(m.isLiquid() || m.isReplaceable())
             {
