@@ -58,22 +58,6 @@ task deobfJar(type: Jar) {
     classifier = 'dev'
 }
 
-configurations {
-    shade
-    compile.extendsFrom shade
-}
-
-reobf {
-    jar {
-            extraLines += [ "PK: org/magicwerk/brownies/collections grondag/hard_science/shade/org/magicwerk/brownies/collections" ]
-    			extraLines += [ "PK: org/magicwerk/brownies/collections/exceptions grondag/hard_science/shade/org/magicwerk/brownies/collections/exceptions" ]
-		    extraLines += [ "PK: org/magicwerk/brownies/collections/function grondag/hard_science/shade/org/magicwerk/brownies/collections/function" ]
-		    extraLines += [ "PK: org/magicwerk/brownies/collections/helper grondag/hard_science/shade/org/magicwerk/brownies/collections/helper" ]
-		    extraLines += [ "PK: org/magicwerk/brownies/collections/helper/primitive grondag/hard_science/shade/org/magicwerk/brownies/collections/helper/primitive" ]
-		    extraLines += [ "PK: org/magicwerk/brownies/collections/primitive grondag/hard_science/shade/org/magicwerk/brownies/collections/primitive" ]
-    }
-}
-
 repositories {
 
 	maven { // CTM & TOP
@@ -101,11 +85,6 @@ repositories {
         name = "CoFH Maven"
         url = "http://maven.covers1624.net"
     }
-    
-    maven {
-        name = "refinedstorage"
-        url = "https://dl.bintray.com/raoulvdberge/dev/"
-    }
 }
 
 artifacts {
@@ -114,9 +93,6 @@ artifacts {
 }
 
 dependencies {
-    
-    deobfCompile "org.magicwerk:brownies-collections:0.9.13"
-    shade "org.magicwerk:brownies-collections:0.9.13"
     
 	deobfCompile "mezz.jei:jei_1.12.2:${jei_version}"
     deobfCompile "mcjty.theoneprobe:TheOneProbe-1.12:1.12-${top_version}"
@@ -164,10 +140,3 @@ sourceSets {
     }
 }
 
-jar {
-    configurations.shade.each { dep ->
-        from(project.zipTree(dep)){
-            exclude 'META-INF', 'META-INF/**'
-        }
-    }
-}

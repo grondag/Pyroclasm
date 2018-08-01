@@ -6,7 +6,6 @@ import grondag.big_volcano.BigActiveVolcano;
 import grondag.big_volcano.Configurator;
 import grondag.big_volcano.init.ModBlocks;
 import grondag.exotic_matter.world.WorldInfo;
-import jline.internal.Log;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Items;
 import net.minecraft.item.Item;
@@ -82,7 +81,7 @@ public class CommonEventHandler
             lastAttemptLocation = player.getPosition();
             lastAttemptTimeMillis = time;
             
-            Log.warn("player is asking for it at " + event.getPlayer().posX + " " + event.getPlayer().posZ);
+            BigActiveVolcano.INSTANCE.warn("player is asking for it at " + event.getPlayer().posX + " " + event.getPlayer().posZ);
         }
     }
     

@@ -29,7 +29,7 @@ import net.minecraftforge.fml.relauncher.SideOnly;
         name = BigActiveVolcano.MODNAME,
         version = BigActiveVolcano.VERSION,
         acceptedMinecraftVersions = "[1.12]",
-        dependencies = "after:theoneprobe, after:exotic_matter")
+        dependencies = "after:theoneprobe; after:exotic_matter")
 
 @SuppressWarnings("null")
 public class BigActiveVolcano  implements IGrondagMod

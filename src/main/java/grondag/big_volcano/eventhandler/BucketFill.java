@@ -6,8 +6,8 @@ import javax.annotation.Nullable;
 
 import com.google.gson.Gson;
 
+import grondag.big_volcano.BigActiveVolcano;
 import grondag.big_volcano.lava.LavaBlock;
-import jline.internal.Log;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.text.TextComponentString;
@@ -38,7 +38,7 @@ public class BucketFill
             }
             catch(Exception e)
             {
-                Log.warn("Unable to parse localized denial messages. Using default.");
+                BigActiveVolcano.INSTANCE.warn("Unable to parse localized denial messages. Using default.");
             }
             if(result == null) result = DEFAULT_DENIALS;
             
