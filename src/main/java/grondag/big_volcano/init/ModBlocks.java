@@ -29,7 +29,6 @@ import net.minecraftforge.fml.common.registry.GameRegistry.ObjectHolder;
 
 @Mod.EventBusSubscriber
 @ObjectHolder(BigActiveVolcano.MODID)
-@SuppressWarnings("null")
 public class ModBlocks
 {
     public static final Block volcano_block = null;

@@ -219,7 +219,6 @@ public class VolcanoStateMachine implements ISimulationTickable
      */
     private final MutableBlockPos operationPos = new MutableBlockPos();
     
-    @SuppressWarnings("null")
     public VolcanoStateMachine(VolcanoNode volcano)
     {
         this.volcano = volcano;

@@ -31,7 +31,6 @@ import net.minecraftforge.fml.relauncher.SideOnly;
         acceptedMinecraftVersions = "[1.12]",
         dependencies = "after:theoneprobe; after:exotic_matter")
 
-@SuppressWarnings("null")
 public class BigActiveVolcano  implements IGrondagMod
 {
 	public static final @Nonnull String MODID = "big_volcano";

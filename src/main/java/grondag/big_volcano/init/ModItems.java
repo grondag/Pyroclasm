@@ -11,7 +11,6 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.registry.GameRegistry.ObjectHolder;
 import net.minecraftforge.registries.IForgeRegistry;
 
-@SuppressWarnings("null")
 @Mod.EventBusSubscriber
 @ObjectHolder(BigActiveVolcano.MODID)
 public class ModItems

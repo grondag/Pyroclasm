@@ -40,7 +40,6 @@ public class CommonEventHandler
     private static long lastAttemptTimeMillis = -1;
     private static int attemptsAtTrouble = 0;
     
-    @SuppressWarnings("null")
     @SubscribeEvent
     public static void onAskingForIt(ServerChatEvent event)
     {

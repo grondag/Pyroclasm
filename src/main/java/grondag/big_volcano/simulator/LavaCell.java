@@ -200,7 +200,6 @@ public class LavaCell extends AbstractLavaCell
     }
     
     /** for the empty cell */
-    @SuppressWarnings("null")
     private LavaCell()
     {
         
@@ -902,7 +901,6 @@ public class LavaCell extends AbstractLavaCell
      * Lava in cell above transfers to this cell.
      * Otherwise returns this cell.
      */
-    @SuppressWarnings("null")
     private LavaCell checkForMergeUp()
     {
         return canMergeCells(this, this.above) ? mergeCells(this, this.above) : this;
@@ -913,7 +911,6 @@ public class LavaCell extends AbstractLavaCell
      * Lava in this cell transfers to cell below.
      * Otherwise returns this cell.
      */
-    @SuppressWarnings("null")
     private LavaCell checkForMergeDown()
     {
         return canMergeCells(this.below, this) ? mergeCells(this.below, this) : this;
@@ -1149,7 +1146,6 @@ public class LavaCell extends AbstractLavaCell
      * Adds cell at the appropriate place in the linked list of cells.
      * Used in NBT load.  Should only be used when know that cell does not overlap existing cells.
      */
-    @SuppressWarnings("null")
     public final void addCellToColumn(LavaCell newCell)
     {
         newCell.locator = this.locator;
@@ -1914,7 +1910,6 @@ public class LavaCell extends AbstractLavaCell
      * list of those connections built as needed for flow processing. Null if
      * no lava or no connections can flow from this cell.
      */
-    @SuppressWarnings("null")
     public final @Nullable Flowable getFlowChain()
     {
         // duplicating logic of getAvailableFluidUnits here as a performance optimizaiton.
@@ -1964,7 +1959,6 @@ public class LavaCell extends AbstractLavaCell
      * @param toBeAdded
      * @return
      */
-    @SuppressWarnings("null")
     private Flowable addToFlowChain(Flowable start, Flowable toBeAdded)
     {
         // if new node has the highest drop or the same drop, can 

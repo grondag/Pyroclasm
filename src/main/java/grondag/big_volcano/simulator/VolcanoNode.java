@@ -58,7 +58,6 @@ public class VolcanoNode implements IReadWriteNBT, IDirtListener, ISimulationTic
         
         private int lavaCooldownTicks;
 
-        @SuppressWarnings("null")
         private VolcanoNode(VolcanoManager volcanoManager)
         {
             this.volcanoManager = volcanoManager;
@@ -152,7 +151,6 @@ public class VolcanoNode implements IReadWriteNBT, IDirtListener, ISimulationTic
             }
         }
         
-        @SuppressWarnings("null")
         public void loadChunks(boolean shouldLoad)
         {
             int centerX = this.chunkPos().x;

@@ -74,7 +74,6 @@ public class LavaBlobManager
                     || (p.tickCreated <= firstEligibleTick && p.fluidUnits >= LavaSimulator.FLUID_UNITS_PER_LEVEL))
                 .sorted(new Comparator<ParticleInfo>() {
 
-                    @SuppressWarnings("null")
                     @Override
                     public int compare(@Nullable ParticleInfo o1, @Nullable ParticleInfo o2)
                     {

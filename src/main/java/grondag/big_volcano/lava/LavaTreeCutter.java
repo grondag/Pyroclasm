@@ -61,7 +61,6 @@ public class LavaTreeCutter implements ISimulationTickable, IReadWriteNBT
     private final PriorityQueue<Visit> toVisit = new PriorityQueue<>(
         new Comparator<Visit>() 
         {
-            @SuppressWarnings("null")
             @Override
             public int compare(Visit o1, Visit o2)
             {
