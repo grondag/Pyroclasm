@@ -3,9 +3,9 @@ package grondag.big_volcano.lava;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import grondag.big_volcano.Configurator;
 import grondag.big_volcano.simulator.LavaCell;
 import grondag.big_volcano.simulator.LavaSimulator;
+import grondag.exotic_matter.ExoticMatter;
 import grondag.exotic_matter.block.BlockSubstance;
 import grondag.exotic_matter.model.state.ISuperModelState;
 import grondag.exotic_matter.simulator.Simulator;
@@ -17,25 +17,24 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockDynamicLiquid;
 import net.minecraft.block.BlockFalling;
 import net.minecraft.block.BlockLiquid;
-import net.minecraft.block.ITileEntityProvider;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumBlockRenderType;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.Explosion;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.common.Optional;
 
-public class LavaBlock extends TerrainDynamicBlock implements ITileEntityProvider
+public class LavaBlock extends TerrainDynamicBlock
 {
-
-    public LavaBlock(String blockName, BlockSubstance substance, ISuperModelState defaultModelState, boolean isFiller)
+    protected final ISuperModelState enhancedModelState;
+    
+    public LavaBlock(String blockName, BlockSubstance substance, ISuperModelState defaultModelState, ISuperModelState enhancedModelState, boolean isFiller)
     {
         super(blockName, substance, defaultModelState, isFiller);
+        this.enhancedModelState = enhancedModelState;
         this.setTickRandomly(true);
     }
     
@@ -153,17 +152,8 @@ public class LavaBlock extends TerrainDynamicBlock implements ITileEntityProvide
     }
 
     @Override
-    @Nullable
-    public TileEntity createNewTileEntity(World worldIn, int meta)
+    public ISuperModelState getDefaultModelState()
     {
-        return new HotBlockTileEntity();
-    }
-
-    @Override
-    public EnumBlockRenderType getRenderType(IBlockState state)
-    {
-        return Configurator.RENDER.enableAdvancedLavaRender
-                ? EnumBlockRenderType.INVISIBLE
-                : EnumBlockRenderType.MODEL;
+        return ExoticMatter.proxy.isAcuityEnabled() ? this.enhancedModelState : super.getDefaultModelState();
     }
 }

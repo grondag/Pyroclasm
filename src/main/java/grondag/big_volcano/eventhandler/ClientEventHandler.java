@@ -6,8 +6,6 @@ import org.lwjgl.opengl.GL11;
 
 import grondag.big_volcano.Configurator;
 import grondag.big_volcano.lava.FXLavaBlob;
-import grondag.big_volcano.lava.HotBlockTESR;
-import grondag.big_volcano.lava.HotBlockTileEntity;
 import grondag.big_volcano.simulator.AbstractLavaCell;
 import grondag.big_volcano.simulator.CellChunk;
 import grondag.big_volcano.simulator.LavaCell;
@@ -22,9 +20,7 @@ import net.minecraft.client.renderer.RenderGlobal;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.util.math.AxisAlignedBB;
-import net.minecraftforge.client.event.ModelRegistryEvent;
 import net.minecraftforge.client.event.RenderWorldLastEvent;
-import net.minecraftforge.fml.client.registry.ClientRegistry;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.relauncher.Side;
@@ -137,13 +133,5 @@ public class ClientEventHandler
             bufferBuilder.begin(GL11.GL_LINE_STRIP, DefaultVertexFormats.POSITION_COLOR);
             RenderGlobal.drawBoundingBox(bufferBuilder, box.minX, box.minY, box.minZ, box.maxX, box.maxY, box.maxZ, 0.7F, 1f, 1f, 1f);
             tessellator.draw();
-    }
-    
-    @SubscribeEvent
-    public static void modelRegistryEvent(ModelRegistryEvent event)
-    {
-        // Bind TESR to tile entity
-        if(Configurator.RENDER.enableAdvancedLavaRender)
-            ClientRegistry.bindTileEntitySpecialRenderer(HotBlockTileEntity.class, HotBlockTESR.INSTANCE);
     }
 }

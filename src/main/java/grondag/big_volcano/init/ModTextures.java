@@ -33,6 +33,15 @@ public class ModTextures
              new TexturePaletteSpec(BigActiveVolcano.INSTANCE).withVersionCount(1).withScale(TextureScale.LARGE).withLayout(TextureLayout.SIMPLE)
              .withRotation(CONSISTENT.with(ROTATE_NONE)).withRenderIntent(TextureRenderIntent.OVERLAY_ONLY).withGroups(TextureGroup.STATIC_DETAILS));
 
+    public static final ITexturePalette BIGTEX_BASALT_HOT = TexturePaletteRegistry.addTexturePallette("basalt_hot", "basalt_hot", 
+            new TexturePaletteSpec(BIGTEX_BASALT_VERY_HOT));
+    
+    public static final ITexturePalette BIGTEX_BASALT_WARM = TexturePaletteRegistry.addTexturePallette("basalt_warm", "basalt_warm", 
+            new TexturePaletteSpec(BIGTEX_BASALT_VERY_HOT));
+    
+    public static final ITexturePalette BIGTEX_BASALT_COOLING = TexturePaletteRegistry.addTexturePallette("basalt_cooling", "basalt_cooling", 
+            new TexturePaletteSpec(BIGTEX_BASALT_VERY_HOT));
+    
     public static final ITexturePalette BIGTEX_LAVA_SURFACE = TexturePaletteRegistry.addTexturePallette("lava_surface", "lava_surface", new TexturePaletteSpec(BIGTEX_BASALT_CUT));
     public static final ITexturePalette BIGTEX_LAVA_SURFACE_ZOOM = TexturePaletteRegistry.addZoomedPallete(BIGTEX_LAVA_SURFACE);
     public static final ITexturePalette BIGTEX_LAVA_SURFACE_ZOOM_X2 = TexturePaletteRegistry.addZoomedPallete(BIGTEX_LAVA_SURFACE_ZOOM);

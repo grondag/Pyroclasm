@@ -1,7 +1,6 @@
 package grondag.big_volcano.init;
 
 import grondag.big_volcano.BigActiveVolcano;
-import grondag.big_volcano.Configurator;
 import grondag.big_volcano.lava.CoolingBasaltBlock;
 import grondag.big_volcano.lava.LavaBlock;
 import grondag.big_volcano.lava.VertexProcessorLava;
@@ -112,75 +111,99 @@ public class ModBlocks
         TerrainBlockRegistry.TERRAIN_STATE_REGISTRY.registerCubic(staticBasaltFiller, cubicBasalt);
         
         
-        final ISuperModelState hotBlockHeightModel = new ModelState();
+        ISuperModelState hotBlockHeightModel = new ModelState();
         hotBlockHeightModel.setShape(ModShapes.TERRAIN_HEIGHT);
-        if(Configurator.RENDER.enableAdvancedLavaRender)
-        {
-            hotBlockHeightModel.setTexture(PaintLayer.BASE, ModTextures.BIGTEX_BASALT_COOL_ZOOM);
-            hotBlockHeightModel.setColorRGB(PaintLayer.BASE, BlockColorMapProvider.COLOR_BASALT);
-            hotBlockHeightModel.setVertexProcessor(PaintLayer.BASE, VertexProcessorLavaAdvanced.INSTANCE);
-            // TODO: need an overlay texture for sides
-            hotBlockHeightModel.setTexture(PaintLayer.CUT, ModTextures.BIGTEX_BASALT_COOL_ZOOM);
-            hotBlockHeightModel.setColorRGB(PaintLayer.CUT, BlockColorMapProvider.COLOR_BASALT);
-            hotBlockHeightModel.setVertexProcessor(PaintLayer.CUT, VertexProcessorLavaAdvanced.INSTANCE); 
-        }
-        else
-        {
-            hotBlockHeightModel.setTexture(PaintLayer.BASE, ModTextures.BIGTEX_LAVA_SURFACE_ZOOM);
-            hotBlockHeightModel.setColorRGB(PaintLayer.BASE, Color.WHITE);
-            hotBlockHeightModel.setEmissive(PaintLayer.BASE, true);
-            hotBlockHeightModel.setVertexProcessor(PaintLayer.BASE, VertexProcessorLava.INSTANCE);
-            hotBlockHeightModel.setTranslucent(PaintLayer.BASE, true);
+        final ISuperModelState hotBlockHeightModelEnhanced = hotBlockHeightModel.clone();
             
-            hotBlockHeightModel.setTexture(PaintLayer.MIDDLE, ModTextures.BIGTEX_BASALT_VERY_HOT);
-            hotBlockHeightModel.setColorRGB(PaintLayer.MIDDLE, BlockColorMapProvider.COLOR_BASALT);
-            hotBlockHeightModel.setVertexProcessor(PaintLayer.MIDDLE, VertexProcessorLavaCrust.INSTANCE);
-            
-            hotBlockHeightModel.setTexture(PaintLayer.CUT, ModTextures.BIGTEX_LAVA_SURFACE_ZOOM);
-            hotBlockHeightModel.setColorRGB(PaintLayer.CUT, Color.WHITE);
-            hotBlockHeightModel.setEmissive(PaintLayer.CUT, true);
-            hotBlockHeightModel.setVertexProcessor(PaintLayer.CUT, VertexProcessorLava.INSTANCE);
-            hotBlockHeightModel.setTranslucent(PaintLayer.CUT, true);
-            
-            // TODO: need an overlay texture for sides
-            hotBlockHeightModel.setTexture(PaintLayer.OUTER, ModTextures.BIGTEX_BASALT_VERY_HOT);
-            hotBlockHeightModel.setColorRGB(PaintLayer.OUTER, BlockColorMapProvider.COLOR_BASALT);
-            hotBlockHeightModel.setVertexProcessor(PaintLayer.OUTER, VertexProcessorLavaCrust.INSTANCE);
-        }
-        final ISuperModelState hotBlockFillerModel = hotBlockHeightModel.clone();
-        hotBlockFillerModel.setShape(ModShapes.TERRAIN_FILLER);
+        hotBlockHeightModel.setTexture(PaintLayer.BASE, ModTextures.BIGTEX_LAVA_SURFACE_ZOOM);
+        hotBlockHeightModel.setColorRGB(PaintLayer.BASE, Color.WHITE);
+        hotBlockHeightModel.setEmissive(PaintLayer.BASE, true);
+        hotBlockHeightModel.setVertexProcessor(PaintLayer.BASE, VertexProcessorLava.INSTANCE);
+        hotBlockHeightModel.setTranslucent(PaintLayer.BASE, true);
         
-        Block dynamicLavaHeight = new LavaBlock(prefix("lava_dynamic_height"), ModSubstances.VOLCANIC_LAVA, hotBlockHeightModel, false).setCreativeTab(BigActiveVolcano.tabMod);
-        Block dynamicLavaFiller = new LavaBlock(prefix("lava_dynamic_filler"), ModSubstances.VOLCANIC_LAVA, hotBlockFillerModel, true).setCreativeTab(BigActiveVolcano.tabMod);
+        hotBlockHeightModel.setTexture(PaintLayer.MIDDLE, ModTextures.BIGTEX_BASALT_VERY_HOT);
+        hotBlockHeightModel.setColorRGB(PaintLayer.MIDDLE, BlockColorMapProvider.COLOR_BASALT);
+        hotBlockHeightModel.setVertexProcessor(PaintLayer.MIDDLE, VertexProcessorLavaCrust.INSTANCE);
+        
+        hotBlockHeightModel.setTexture(PaintLayer.CUT, ModTextures.BIGTEX_LAVA_SURFACE_ZOOM);
+        hotBlockHeightModel.setColorRGB(PaintLayer.CUT, Color.WHITE);
+        hotBlockHeightModel.setEmissive(PaintLayer.CUT, true);
+        hotBlockHeightModel.setVertexProcessor(PaintLayer.CUT, VertexProcessorLava.INSTANCE);
+        hotBlockHeightModel.setTranslucent(PaintLayer.CUT, true);
+        
+        // TODO: need an overlay texture for sides
+        hotBlockHeightModel.setTexture(PaintLayer.OUTER, ModTextures.BIGTEX_BASALT_VERY_HOT);
+        hotBlockHeightModel.setColorRGB(PaintLayer.OUTER, BlockColorMapProvider.COLOR_BASALT);
+        hotBlockHeightModel.setVertexProcessor(PaintLayer.OUTER, VertexProcessorLavaCrust.INSTANCE);
+        
+        hotBlockHeightModelEnhanced.setTexture(PaintLayer.BASE, ModTextures.BIGTEX_BASALT_COOL_ZOOM);
+        hotBlockHeightModelEnhanced.setColorRGB(PaintLayer.BASE, BlockColorMapProvider.COLOR_BASALT);
+        hotBlockHeightModelEnhanced.setVertexProcessor(PaintLayer.BASE, VertexProcessorLavaAdvanced.INSTANCE);
+        // TODO: need an overlay texture for sides
+        hotBlockHeightModelEnhanced.setTexture(PaintLayer.CUT, ModTextures.BIGTEX_BASALT_COOL_ZOOM);
+        hotBlockHeightModelEnhanced.setColorRGB(PaintLayer.CUT, BlockColorMapProvider.COLOR_BASALT);
+        hotBlockHeightModelEnhanced.setVertexProcessor(PaintLayer.CUT, VertexProcessorLavaAdvanced.INSTANCE); 
+
+        ISuperModelState hotBlockFillerModel = hotBlockHeightModel.clone();
+        hotBlockFillerModel.setShape(ModShapes.TERRAIN_FILLER);
+        final ISuperModelState hotBlockFillerModelEnhanced = hotBlockHeightModelEnhanced.clone();
+        hotBlockFillerModelEnhanced.setShape(ModShapes.TERRAIN_FILLER);
+        
+        Block dynamicLavaHeight = new LavaBlock(prefix("lava_dynamic_height"), ModSubstances.VOLCANIC_LAVA, hotBlockHeightModel, hotBlockHeightModelEnhanced, false).setCreativeTab(BigActiveVolcano.tabMod);
+        Block dynamicLavaFiller = new LavaBlock(prefix("lava_dynamic_filler"), ModSubstances.VOLCANIC_LAVA, hotBlockFillerModel, hotBlockFillerModelEnhanced, true).setCreativeTab(BigActiveVolcano.tabMod);
         event.getRegistry().register(dynamicLavaHeight);
         event.getRegistry().register(dynamicLavaFiller);
 
         TerrainBlockRegistry.TERRAIN_STATE_REGISTRY.registerFiller(dynamicLavaHeight, dynamicLavaFiller);
         
         // COOLING BASALT
-        Block dynamicCoolingBasaltHeight = new CoolingBasaltBlock("basalt_dynamic_cooling_height", ModSubstances.BASALT, hotBlockHeightModel, false).setAllowSilkHarvest(false).setCreativeTab(BigActiveVolcano.tabMod);
-        Block dynamicCoolingBasaltFiller = new CoolingBasaltBlock("basalt_dynamic_cooling_filler", ModSubstances.BASALT, hotBlockFillerModel, true).setAllowSilkHarvest(false).setCreativeTab(BigActiveVolcano.tabMod);
+        hotBlockHeightModel = hotBlockHeightModel.clone();
+        hotBlockHeightModel.setTexture(PaintLayer.MIDDLE, ModTextures.BIGTEX_BASALT_COOLING);
+        hotBlockHeightModel.setTexture(PaintLayer.OUTER, ModTextures.BIGTEX_BASALT_COOLING);
+        hotBlockFillerModel = hotBlockFillerModel.clone();
+        hotBlockFillerModel.setTexture(PaintLayer.MIDDLE, ModTextures.BIGTEX_BASALT_COOLING);
+        hotBlockFillerModel.setTexture(PaintLayer.OUTER, ModTextures.BIGTEX_BASALT_COOLING);
+        Block dynamicCoolingBasaltHeight = new CoolingBasaltBlock("basalt_dynamic_cooling_height", ModSubstances.BASALT, hotBlockHeightModel, hotBlockHeightModelEnhanced, false).setAllowSilkHarvest(false).setCreativeTab(BigActiveVolcano.tabMod);
+        Block dynamicCoolingBasaltFiller = new CoolingBasaltBlock("basalt_dynamic_cooling_filler", ModSubstances.BASALT, hotBlockFillerModel, hotBlockFillerModelEnhanced, true).setAllowSilkHarvest(false).setCreativeTab(BigActiveVolcano.tabMod);
         event.getRegistry().register(dynamicCoolingBasaltHeight);
         event.getRegistry().register(dynamicCoolingBasaltFiller);
         TerrainBlockRegistry.TERRAIN_STATE_REGISTRY.registerFiller(dynamicCoolingBasaltHeight, dynamicCoolingBasaltFiller);
 
         // WARM BASALT
-        Block dynamicWarmBasaltHeight = new CoolingBasaltBlock("basalt_dynamic_warm_height", ModSubstances.BASALT, hotBlockHeightModel, false).setAllowSilkHarvest(false).setCreativeTab(BigActiveVolcano.tabMod);
-        Block dynamicWarmBasaltFiller = new CoolingBasaltBlock("basalt_dynamic_warm_filler", ModSubstances.BASALT, hotBlockFillerModel, true).setAllowSilkHarvest(false).setCreativeTab(BigActiveVolcano.tabMod);
+        hotBlockHeightModel = hotBlockHeightModel.clone();
+        hotBlockHeightModel.setTexture(PaintLayer.MIDDLE, ModTextures.BIGTEX_BASALT_WARM);
+        hotBlockHeightModel.setTexture(PaintLayer.OUTER, ModTextures.BIGTEX_BASALT_WARM);
+        hotBlockFillerModel = hotBlockFillerModel.clone();
+        hotBlockFillerModel.setTexture(PaintLayer.MIDDLE, ModTextures.BIGTEX_BASALT_WARM);
+        hotBlockFillerModel.setTexture(PaintLayer.OUTER, ModTextures.BIGTEX_BASALT_WARM);
+        Block dynamicWarmBasaltHeight = new CoolingBasaltBlock("basalt_dynamic_warm_height", ModSubstances.BASALT, hotBlockHeightModel, hotBlockHeightModelEnhanced, false).setAllowSilkHarvest(false).setCreativeTab(BigActiveVolcano.tabMod);
+        Block dynamicWarmBasaltFiller = new CoolingBasaltBlock("basalt_dynamic_warm_filler", ModSubstances.BASALT, hotBlockFillerModel, hotBlockFillerModelEnhanced, true).setAllowSilkHarvest(false).setCreativeTab(BigActiveVolcano.tabMod);
         event.getRegistry().register(dynamicWarmBasaltHeight);
         event.getRegistry().register(dynamicWarmBasaltFiller);
         TerrainBlockRegistry.TERRAIN_STATE_REGISTRY.registerFiller(dynamicWarmBasaltHeight, dynamicWarmBasaltFiller);
         
         // HOT BASALT
-        Block dynamicHotBasaltHeight = new CoolingBasaltBlock("basalt_dynamic_hot_height", ModSubstances.BASALT, hotBlockHeightModel, false).setAllowSilkHarvest(false).setCreativeTab(BigActiveVolcano.tabMod);
-        Block dynamicHotBasaltFiller = new CoolingBasaltBlock("basalt_dynamic_hot_filler", ModSubstances.BASALT, hotBlockFillerModel, true).setAllowSilkHarvest(false).setCreativeTab(BigActiveVolcano.tabMod);
+        hotBlockHeightModel = hotBlockHeightModel.clone();
+        hotBlockHeightModel.setTexture(PaintLayer.MIDDLE, ModTextures.BIGTEX_BASALT_HOT);
+        hotBlockHeightModel.setTexture(PaintLayer.OUTER, ModTextures.BIGTEX_BASALT_HOT);
+        hotBlockFillerModel = hotBlockFillerModel.clone();
+        hotBlockFillerModel.setTexture(PaintLayer.MIDDLE, ModTextures.BIGTEX_BASALT_HOT);
+        hotBlockFillerModel.setTexture(PaintLayer.OUTER, ModTextures.BIGTEX_BASALT_HOT);
+        Block dynamicHotBasaltHeight = new CoolingBasaltBlock("basalt_dynamic_hot_height", ModSubstances.BASALT, hotBlockHeightModel, hotBlockHeightModelEnhanced, false).setAllowSilkHarvest(false).setCreativeTab(BigActiveVolcano.tabMod);
+        Block dynamicHotBasaltFiller = new CoolingBasaltBlock("basalt_dynamic_hot_filler", ModSubstances.BASALT, hotBlockFillerModel, hotBlockFillerModelEnhanced, true).setAllowSilkHarvest(false).setCreativeTab(BigActiveVolcano.tabMod);
         event.getRegistry().register(dynamicHotBasaltHeight);
         event.getRegistry().register(dynamicHotBasaltFiller);
         TerrainBlockRegistry.TERRAIN_STATE_REGISTRY.registerFiller(dynamicHotBasaltHeight, dynamicHotBasaltFiller);
         
         // VERY HOT BASALT
-        Block dynamicVeryHotBasaltHeight = new CoolingBasaltBlock("basalt_dynamic_very_hot_height", ModSubstances.BASALT, hotBlockHeightModel, false).setAllowSilkHarvest(false).setCreativeTab(BigActiveVolcano.tabMod);
-        Block dynamicVeryHotBasaltFiller = new CoolingBasaltBlock("basalt_dynamic_very_hot_filler", ModSubstances.BASALT, hotBlockFillerModel, true).setAllowSilkHarvest(false).setCreativeTab(BigActiveVolcano.tabMod);
+        hotBlockHeightModel = hotBlockHeightModel.clone();
+        hotBlockHeightModel.setTexture(PaintLayer.MIDDLE, ModTextures.BIGTEX_BASALT_VERY_HOT);
+        hotBlockHeightModel.setTexture(PaintLayer.OUTER, ModTextures.BIGTEX_BASALT_VERY_HOT);
+        hotBlockFillerModel = hotBlockFillerModel.clone();
+        hotBlockFillerModel.setTexture(PaintLayer.MIDDLE, ModTextures.BIGTEX_BASALT_VERY_HOT);
+        hotBlockFillerModel.setTexture(PaintLayer.OUTER, ModTextures.BIGTEX_BASALT_VERY_HOT);
+        Block dynamicVeryHotBasaltHeight = new CoolingBasaltBlock("basalt_dynamic_very_hot_height", ModSubstances.BASALT, hotBlockHeightModel, hotBlockHeightModelEnhanced, false).setAllowSilkHarvest(false).setCreativeTab(BigActiveVolcano.tabMod);
+        Block dynamicVeryHotBasaltFiller = new CoolingBasaltBlock("basalt_dynamic_very_hot_filler", ModSubstances.BASALT, hotBlockFillerModel, hotBlockFillerModelEnhanced, true).setAllowSilkHarvest(false).setCreativeTab(BigActiveVolcano.tabMod);
         event.getRegistry().register(dynamicVeryHotBasaltHeight);
         event.getRegistry().register(dynamicVeryHotBasaltFiller);
         TerrainBlockRegistry.TERRAIN_STATE_REGISTRY.registerFiller(dynamicVeryHotBasaltHeight, dynamicVeryHotBasaltFiller);

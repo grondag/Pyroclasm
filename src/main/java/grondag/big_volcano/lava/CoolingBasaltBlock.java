@@ -6,9 +6,9 @@ import java.util.concurrent.ThreadLocalRandom;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import grondag.big_volcano.Configurator;
 import grondag.big_volcano.init.ModBlocks;
 import grondag.big_volcano.simulator.LavaSimulator;
+import grondag.exotic_matter.ExoticMatter;
 import grondag.exotic_matter.block.BlockSubstance;
 import grondag.exotic_matter.block.ISuperBlock;
 import grondag.exotic_matter.model.state.ISuperModelState;
@@ -16,25 +16,23 @@ import grondag.exotic_matter.simulator.Simulator;
 import grondag.exotic_matter.terrain.TerrainBlockHelper;
 import grondag.exotic_matter.terrain.TerrainDynamicBlock;
 import net.minecraft.block.Block;
-import net.minecraft.block.ITileEntityProvider;
 import net.minecraft.block.state.IBlockState;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumBlockRenderType;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.BlockPos.MutableBlockPos;
 import net.minecraft.util.math.Vec3i;
 import net.minecraft.world.World;
 
-public class CoolingBasaltBlock extends TerrainDynamicBlock implements ITileEntityProvider
+public class CoolingBasaltBlock extends TerrainDynamicBlock
 {
-
+    protected final ISuperModelState enhancedModelState;
     @Nullable protected TerrainDynamicBlock nextCoolingBlock;
     protected int heatLevel = 0;
 
-    public CoolingBasaltBlock(String blockName, BlockSubstance substance, ISuperModelState defaultModelState, boolean isFiller)
+    public CoolingBasaltBlock(String blockName, BlockSubstance substance, ISuperModelState defaultModelState, ISuperModelState enhancedModelState, boolean isFiller)
     {
         super(blockName, substance, defaultModelState, isFiller);
+        this.enhancedModelState = enhancedModelState;
         this.setTickRandomly(true);
     }
 
@@ -163,19 +161,10 @@ public class CoolingBasaltBlock extends TerrainDynamicBlock implements ITileEnti
     {
         return this.heatLevel;
     }
-
-    @Override
-    @Nullable
-    public TileEntity createNewTileEntity(World worldIn, int meta)
-    {
-        return new HotBlockTileEntity();
-    }
     
     @Override
-    public EnumBlockRenderType getRenderType(IBlockState state)
+    public ISuperModelState getDefaultModelState()
     {
-        return Configurator.RENDER.enableAdvancedLavaRender
-                ? EnumBlockRenderType.INVISIBLE
-                : EnumBlockRenderType.MODEL;
+        return ExoticMatter.proxy.isAcuityEnabled() ? this.enhancedModelState : super.getDefaultModelState();
     }
 }
