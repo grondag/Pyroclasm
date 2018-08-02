@@ -1,8 +1,8 @@
 #version 120
 
 uniform float time;
-uniform vec4 uvBasalt;
-uniform vec4 uvMap;
+uniform vec4 u_BasaltTex;
+uniform vec4 u_TexMap;
 uniform sampler2D texture;
 uniform sampler2D lightMap;
 

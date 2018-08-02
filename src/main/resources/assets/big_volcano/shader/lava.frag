@@ -1,8 +1,8 @@
 #version 120
 
 uniform float time;
-uniform vec4 uvBasalt;
-uniform vec4 uvMap;
+uniform vec4 u_BasaltTex;
+uniform vec4 u_TexMap;
 uniform sampler2D texture;
 uniform sampler2D lightMap;
 varying vec4 light;
@@ -85,8 +85,8 @@ void main()
 	vec4 texColor = texture2D(texture, uvTex);
     vec4 baseColor = vec4(texColor.rgb * gl_Color.rgb * light.rgb, 1.0);
 
-    vec2 uvRel = (uvTex - uvBasalt.st) / uvBasalt.pq;
-    vec2 uvAlpa = uvRel * uvMap.pq + uvMap.st;
+    vec2 uvRel = (uvTex - u_BasaltTex.st) / u_BasaltTex.pq;
+    vec2 uvAlpa = uvRel * u_TexMap.pq + u_TexMap.st;
     vec4 mapColor = texture2D(texture, uvAlpa);
 
     // map texture channels are as follows

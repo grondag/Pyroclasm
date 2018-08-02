@@ -29,6 +29,7 @@ import net.minecraftforge.fml.common.registry.GameRegistry.ObjectHolder;
 
 @Mod.EventBusSubscriber
 @ObjectHolder(BigActiveVolcano.MODID)
+@SuppressWarnings("null")
 public class ModBlocks
 {
     public static final Block volcano_block = null;
@@ -135,11 +136,10 @@ public class ModBlocks
         hotBlockHeightModel.setColorRGB(PaintLayer.OUTER, BlockColorMapProvider.COLOR_BASALT);
         hotBlockHeightModel.setVertexProcessor(PaintLayer.OUTER, VertexProcessorLavaCrust.INSTANCE);
         
-        hotBlockHeightModelEnhanced.setTexture(PaintLayer.BASE, ModTextures.BIGTEX_BASALT_COOL_ZOOM);
+        hotBlockHeightModelEnhanced.setTexture(PaintLayer.BASE, ModTextures.BIGTEX_LAVA_MULTI_ZOOM);
         hotBlockHeightModelEnhanced.setColorRGB(PaintLayer.BASE, BlockColorMapProvider.COLOR_BASALT);
         hotBlockHeightModelEnhanced.setVertexProcessor(PaintLayer.BASE, VertexProcessorLavaAdvanced.INSTANCE);
-        // TODO: need an overlay texture for sides
-        hotBlockHeightModelEnhanced.setTexture(PaintLayer.CUT, ModTextures.BIGTEX_BASALT_COOL_ZOOM);
+        hotBlockHeightModelEnhanced.setTexture(PaintLayer.CUT, ModTextures.BIGTEX_LAVA_MULTI_ZOOM);
         hotBlockHeightModelEnhanced.setColorRGB(PaintLayer.CUT, BlockColorMapProvider.COLOR_BASALT);
         hotBlockHeightModelEnhanced.setVertexProcessor(PaintLayer.CUT, VertexProcessorLavaAdvanced.INSTANCE); 
 
