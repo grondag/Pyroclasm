@@ -1,15 +1,11 @@
 package grondag.acuity.api;
 
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
-
 /**
  * Governs how often shader uniform initializers are called.<p>
  * 
  * In all cases, this will only be called if the shader is activated
  * and the values are only uploaded if the value has changed.
  */
-@SideOnly(Side.CLIENT)
 public enum UniformUpdateFrequency
 {
     /**

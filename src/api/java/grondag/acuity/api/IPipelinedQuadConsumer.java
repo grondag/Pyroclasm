@@ -12,7 +12,6 @@ import net.minecraft.world.IBlockAccess;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
-@SideOnly(Side.CLIENT)
 public interface IPipelinedQuadConsumer extends Consumer<IPipelinedQuad>
 {
     /**
@@ -21,6 +20,7 @@ public interface IPipelinedQuadConsumer extends Consumer<IPipelinedQuad>
      * 
      * This is in lieu of the getQuads(EnumFacing) pattern used in IBakedQuad.
      */
+    @SideOnly(Side.CLIENT)
     public boolean shouldOutputSide(EnumFacing side);
     
     /**
@@ -30,22 +30,26 @@ public interface IPipelinedQuadConsumer extends Consumer<IPipelinedQuad>
      * If your model just has one big list of quads, you can simply pass them all to the consumer.
      * The consumer still checks and will skip quads not in the target layer.
      */
+    @SideOnly(Side.CLIENT)
     public @Nullable BlockRenderLayer targetLayer();
     
     /**
      * Provides access to in-world block position for model customization.
      */
+    @SideOnly(Side.CLIENT)
     public BlockPos pos();
     
     /**
      * Provides access to block world for model customization.
      */
+    @SideOnly(Side.CLIENT)
     public IBlockAccess world();
     
     /**
      * Provides access to block state for model customization.<br>
      * Is what normally is passed to IBakedModel and may be an IExtendedBlockState.
      */
+    @SideOnly(Side.CLIENT)
     public @Nullable IBlockState blockState();
     
     /**
@@ -53,6 +57,7 @@ public interface IPipelinedQuadConsumer extends Consumer<IPipelinedQuad>
      * Will be same as what normally is passed to IBakedModel but is computed
      * lazily - will not be calculated if never retrieved.
      */
+    @SideOnly(Side.CLIENT)
     public long positionRandom();
     
 }
