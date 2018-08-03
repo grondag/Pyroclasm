@@ -126,11 +126,11 @@ processResources
 sourceSets {
 	main {
 	        java {
-	            include 'grondag/**'
+	            include 'grondag/**/*'
 	        }
 	        resources
 	        {
-	        	include '**'
+	        	include '**/*'
 	        }
 	    }
     test {

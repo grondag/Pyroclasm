@@ -165,6 +165,6 @@ public class CoolingBasaltBlock extends TerrainDynamicBlock
     @Override
     public ISuperModelState getDefaultModelState()
     {
-        return ExoticMatter.proxy.isAcuityEnabled() ? this.enhancedModelState : super.getDefaultModelState();
+        return ExoticMatter.proxy.isAcuityEnabled() ? this.enhancedModelState.clone() : super.getDefaultModelState();
     }
 }

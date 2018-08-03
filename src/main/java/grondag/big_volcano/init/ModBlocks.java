@@ -113,7 +113,7 @@ public class ModBlocks
         
         ISuperModelState hotBlockHeightModel = new ModelState();
         hotBlockHeightModel.setShape(ModShapes.TERRAIN_HEIGHT);
-        final ISuperModelState hotBlockHeightModelEnhanced = hotBlockHeightModel.clone();
+        ISuperModelState hotBlockHeightModelEnhanced = hotBlockHeightModel.clone();
             
         hotBlockHeightModel.setTexture(PaintLayer.BASE, ModTextures.BIGTEX_LAVA_SURFACE_ZOOM);
         hotBlockHeightModel.setColorRGB(PaintLayer.BASE, Color.WHITE);
@@ -136,16 +136,16 @@ public class ModBlocks
         hotBlockHeightModel.setColorRGB(PaintLayer.OUTER, BlockColorMapProvider.COLOR_BASALT);
         hotBlockHeightModel.setVertexProcessor(PaintLayer.OUTER, VertexProcessorLavaCrust.INSTANCE);
         
-        hotBlockHeightModelEnhanced.setTexture(PaintLayer.BASE, ModTextures.BIGTEX_LAVA_MULTI_ZOOM);
+        hotBlockHeightModelEnhanced.setTexture(PaintLayer.BASE, ModTextures.BIGTEX_BASALT_COOL_ZOOM);
         hotBlockHeightModelEnhanced.setColorRGB(PaintLayer.BASE, BlockColorMapProvider.COLOR_BASALT);
         hotBlockHeightModelEnhanced.setVertexProcessor(PaintLayer.BASE, VertexProcessorLavaAdvanced.INSTANCE);
-        hotBlockHeightModelEnhanced.setTexture(PaintLayer.CUT, ModTextures.BIGTEX_LAVA_MULTI_ZOOM);
+        hotBlockHeightModelEnhanced.setTexture(PaintLayer.CUT, ModTextures.BIGTEX_BASALT_COOL_ZOOM);
         hotBlockHeightModelEnhanced.setColorRGB(PaintLayer.CUT, BlockColorMapProvider.COLOR_BASALT);
         hotBlockHeightModelEnhanced.setVertexProcessor(PaintLayer.CUT, VertexProcessorLavaAdvanced.INSTANCE); 
 
         ISuperModelState hotBlockFillerModel = hotBlockHeightModel.clone();
         hotBlockFillerModel.setShape(ModShapes.TERRAIN_FILLER);
-        final ISuperModelState hotBlockFillerModelEnhanced = hotBlockHeightModelEnhanced.clone();
+        ISuperModelState hotBlockFillerModelEnhanced = hotBlockHeightModelEnhanced.clone();
         hotBlockFillerModelEnhanced.setShape(ModShapes.TERRAIN_FILLER);
         
         Block dynamicLavaHeight = new LavaBlock(prefix("lava_dynamic_height"), ModSubstances.VOLCANIC_LAVA, hotBlockHeightModel, hotBlockHeightModelEnhanced, false).setCreativeTab(BigActiveVolcano.tabMod);

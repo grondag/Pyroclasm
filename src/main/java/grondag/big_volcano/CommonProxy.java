@@ -1,5 +1,8 @@
 package grondag.big_volcano;
 
+import javax.annotation.Nullable;
+
+import grondag.acuity.api.IRenderPipeline;
 import grondag.big_volcano.init.ModBlocks;
 import grondag.big_volcano.init.ModEntities;
 import grondag.big_volcano.init.ModRecipes;
@@ -31,5 +34,12 @@ public class CommonProxy
     public void spawnLavaBlobParticle(World worldIn, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed, float radius)
     {
         //client only
+    }
+
+    @Nullable
+    public IRenderPipeline lavaPipeline()
+    {
+        //populated client only
+        return null;
     }
 }

@@ -1,5 +1,6 @@
 package grondag.big_volcano.lava;
 
+import grondag.big_volcano.BigActiveVolcano;
 import grondag.exotic_matter.model.painting.PaintLayer;
 import grondag.exotic_matter.model.painting.VertexProcessor;
 import grondag.exotic_matter.model.painting.VertexProcessors;
@@ -40,6 +41,8 @@ public class VertexProcessorLavaAdvanced extends VertexProcessor
     @Override
     public void process(IPaintableQuad result, ISuperModelState modelState, PaintLayer paintLayer)
     {
+        result.setPipeline(BigActiveVolcano.proxy.lavaPipeline());
+
         TerrainState flowState = modelState.getTerrainState();
 
         final int baseColor = modelState.getColorARGB(PaintLayer.BASE) & 0xFFFFFF;

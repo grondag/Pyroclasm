@@ -29,17 +29,17 @@ public class ClientProxy extends CommonProxy
         if(ExoticMatter.proxy.isAcuityEnabled())
         {
                 lavaPipeline = grondag.exotic_matter.ClientProxy.acuity().getPipelineManager().createPipeline(
-                        TextureFormat.DOUBLE, 
+                        TextureFormat.SINGLE, 
                         "/assets/big_volcano/shader/lava.vert", 
                         "/assets/big_volcano/shader/lava.frag");
                 
-                lavaPipeline.uniform4f("u_BasaltTex", UniformUpdateFrequency.ON_LOAD,  u -> 
+                lavaPipeline.uniform4f("u_basaltTexSpec", UniformUpdateFrequency.ON_LOAD,  u -> 
                 {
                     TextureAtlasSprite tex = ModTextures.BIGTEX_BASALT_COOL_ZOOM.getSampleSprite();
                     u.set(tex.getMinU(), tex.getMinV(), tex.getMaxU() - tex.getMinU(), tex.getMaxV() - tex.getMinV());
                 });
                 
-                lavaPipeline.uniform4f("u_TexMap", UniformUpdateFrequency.ON_LOAD,  u -> 
+                lavaPipeline.uniform4f("u_lavaTexSpec", UniformUpdateFrequency.ON_LOAD,  u -> 
                 {
                     TextureAtlasSprite tex = ModTextures.BIGTEX_LAVA_MULTI_ZOOM.getSampleSprite();
                     u.set(tex.getMinU(), tex.getMinV(), tex.getMaxU() - tex.getMinU(), tex.getMaxV() - tex.getMinV());
@@ -49,8 +49,9 @@ public class ClientProxy extends CommonProxy
         }
     }
 
+    @Override
     @Nullable
-    public static IRenderPipeline lavaPipeline()
+    public IRenderPipeline lavaPipeline()
     {
         return lavaPipeline;
     }
