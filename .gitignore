@@ -19,6 +19,7 @@ gradle
 .gradle
 build
 run
+gradle.properties
 
 ## Jars
 *.jar
