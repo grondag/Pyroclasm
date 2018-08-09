@@ -127,10 +127,12 @@ sourceSets {
 	main {
 	        java {
 	            include 'grondag/**/*'
+	            exclude '*.DS_Store'
 	        }
 	        resources
 	        {
 	        	include '**/*'
+	        	exclude '*.DS_Store'
 	        }
 	    }
     test {
