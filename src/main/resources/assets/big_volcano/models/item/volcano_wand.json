@@ -1,6 +1,0 @@
-{
-    "parent": "item/handheld",
-    "textures": {
-        "layer0": "big_volcano:items/volcano_wand"
-    }
-}

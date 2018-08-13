@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "pyroclasm:basalt_cobble",
+      "data": 0
+    }
+  ],
+  "result": {
+    "item": "pyroclasm:basalt_rubble",
+    "count": 9
+  }
+}

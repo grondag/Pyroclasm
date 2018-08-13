@@ -1,8 +1,8 @@
 [
 {
-  "modid": "big_volcano",
-  "name": "Big Active Volcano",
-  "description": "You didn't like that base anyway...",
+  "modid": "pyroclasm",
+  "name": "Pyroclasm",
+  "description": "Volcanos, lava, fiery ruination. You didn't like that base anyway...",
   "version": "1.12.2-0.0.1.0",
   "mcversion": "${mcversion}",
   "url": "",

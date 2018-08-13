@@ -1,7 +1,0 @@
-{
-	"parent": "block/cube_all",
-	"textures": {
-		"all": "big_volcano:blocks/volcano",
-		"particle" : "big_volcano:blocks/volcano"
-	}
-}
