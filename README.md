@@ -1,6 +1,6 @@
 # Introduction
 
-**Big Active Volcano** is a Minecraft Mod is what you'd expect: big, dynamic volcanos that erupt and grow in your Minecraft world.
+**Pyroclasm is a Minecraft Mod about big, dynamic volcanos that erupt and grow in your Minecraft world.  They also might kill you and/or destroy your base.  Fun! 
 
 
 # Mod Packs and Support
