@@ -39,3 +39,5 @@ logs
 discarded textures
 *.nps
 /.apt_generated/
+
+gradle.properties
