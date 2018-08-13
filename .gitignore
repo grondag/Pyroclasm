@@ -41,3 +41,5 @@ discarded textures
 /.apt_generated/
 
 gradle.properties
+/gradlew
+/gradlew.bat
