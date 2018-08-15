@@ -59,6 +59,15 @@ public class Configurator
         @Comment({"Enable render of lava cell chunk bounding boxes for debug purposes.",
         "Client-side only."})
         public boolean enableLavaChunkDebugRender = false;
+        
+        @Comment({"When true, chunk rebuilds will always happen outside the main client thread. ",
+        "Normally, Minecraft will rebuild nearby chunks on the main thread, but because volcanos ",
+        "generate so many block updates, so frequently, it can cause low frame rates. ",
+        "This settting is identical the Forge setting of the same name, and even uses the Forge",
+        "implementation internally to avoid creating a redundant hook, but is enabled by default.",
+        "*** Highly recommended you leave this on. ***",
+        "Client-side only."})
+        public boolean alwaysSetupTerrainOffThread = true;
     }  
 
     ////////////////////////////////////////////////////        

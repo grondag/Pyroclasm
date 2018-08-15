@@ -2,6 +2,7 @@ package grondag.pyroclasm;
 
 import javax.annotation.Nullable;
 
+import grondag.acuity.api.IAcuityListener;
 import grondag.acuity.api.IRenderPipeline;
 import grondag.acuity.api.TextureFormat;
 import grondag.acuity.api.UniformUpdateFrequency;
@@ -11,12 +12,13 @@ import grondag.pyroclasm.lava.FXLavaBlob;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.world.World;
+import net.minecraftforge.common.ForgeModContainer;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
 @SideOnly(Side.CLIENT)
-public class ClientProxy extends CommonProxy
+public class ClientProxy extends CommonProxy implements IAcuityListener
 {
     private static @Nullable IRenderPipeline lavaPipeline = null;
     
@@ -46,6 +48,10 @@ public class ClientProxy extends CommonProxy
                 });
                 
                 lavaPipeline.finish();
+                
+                grondag.exotic_matter.ClientProxy.acuity().registerListener(this);
+                
+                this.onRenderReload();
         }
     }
 
@@ -61,5 +67,19 @@ public class ClientProxy extends CommonProxy
     {
         FXLavaBlob blob = new FXLavaBlob(Minecraft.getMinecraft().world, x, y, z, xSpeed, ySpeed, zSpeed, radius);
         Minecraft.getMinecraft().effectRenderer.addEffect(blob);
+    }
+
+    @Override
+    public void onRenderReload()
+    {
+        maintainForgeTerrainSetupConfig();
+    }
+    
+    /**
+     * See comments on config setting for explanation.
+     */
+    public static void maintainForgeTerrainSetupConfig()
+    {
+        ForgeModContainer.alwaysSetupTerrainOffThread = ForgeModContainer.alwaysSetupTerrainOffThread || Configurator.RENDER.alwaysSetupTerrainOffThread;
     }
 }

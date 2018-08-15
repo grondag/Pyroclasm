@@ -4,9 +4,11 @@ import javax.annotation.Nullable;
 
 import org.lwjgl.opengl.GL11;
 
+import grondag.acuity.Acuity;
 import grondag.exotic_matter.ClientProxy;
 import grondag.exotic_matter.simulator.Simulator;
 import grondag.pyroclasm.Configurator;
+import grondag.pyroclasm.Pyroclasm;
 import grondag.pyroclasm.lava.FXLavaBlob;
 import grondag.pyroclasm.simulator.AbstractLavaCell;
 import grondag.pyroclasm.simulator.CellChunk;
@@ -21,6 +23,9 @@ import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraftforge.client.event.RenderWorldLastEvent;
+import net.minecraftforge.common.config.Config;
+import net.minecraftforge.common.config.ConfigManager;
+import net.minecraftforge.fml.client.event.ConfigChangedEvent.PostConfigChangedEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.relauncher.Side;
@@ -133,5 +138,17 @@ public class ClientEventHandler
             bufferBuilder.begin(GL11.GL_LINE_STRIP, DefaultVertexFormats.POSITION_COLOR);
             RenderGlobal.drawBoundingBox(bufferBuilder, box.minX, box.minY, box.minZ, box.maxX, box.maxY, box.maxZ, 0.7F, 1f, 1f, 1f);
             tessellator.draw();
+    }
+    
+    @SubscribeEvent
+    public static void onPostConfigChanged(PostConfigChangedEvent event) 
+    {
+        if(event.getModID().equals("forge"))
+            grondag.pyroclasm.ClientProxy.maintainForgeTerrainSetupConfig();
+        else if(event.getModID().equals(Pyroclasm.MODID))
+        {
+            ConfigManager.sync(Pyroclasm.MODID, Config.Type.INSTANCE);
+            grondag.pyroclasm.ClientProxy.maintainForgeTerrainSetupConfig();
+        }
     }
 }
