@@ -70,7 +70,7 @@ void main()
     // shifting the blue curve out a tad - looks better
     vec4 hotColor = vec4(1.0, green(kelvin), blue(kelvin - 1500.0), 1.0);
 
-    vec4 baseColor = diffuseColor_0();
+    vec4 baseColor = diffuseColor();
     gl_FragColor = fog(mix(vec4(baseColor.rgb, 1.0), hotColor, smootherstep(0.0, 0.95, i)));
 }
 

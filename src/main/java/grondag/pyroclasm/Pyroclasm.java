@@ -33,7 +33,7 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class Pyroclasm  implements IGrondagMod
 {
-	public static final @Nonnull String MODID = "pyroclasm";
+	public static final String MODID = "pyroclasm";
 	public static final String MODNAME = "Pyroclasn";
 	public static final String VERSION = "0.0.1";
 	
@@ -63,7 +63,7 @@ public class Pyroclasm  implements IGrondagMod
     private @Nullable static Logger log;
 
     @Override
-    public Logger getLog()
+    public @Nonnull Logger getLog()
     {
         // allow access to log during unit testing or other debug scenarios
         Logger result = log;

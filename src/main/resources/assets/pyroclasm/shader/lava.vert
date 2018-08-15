@@ -5,8 +5,6 @@ uniform vec4 u_basaltTexSpec;
 // mininums and sizes for lava texture
 uniform vec4 u_lavaTexSpec;
 
-varying vec4 light;
-
 void main()
 {
 	setupVertex();
