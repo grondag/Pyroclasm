@@ -31,6 +31,7 @@ import net.minecraftforge.fml.relauncher.SideOnly;
         acceptedMinecraftVersions = "[1.12]",
         dependencies = "after:theoneprobe; after:exotic_matter")
 
+@SuppressWarnings("null")
 public class Pyroclasm  implements IGrondagMod
 {
 	public static final String MODID = "pyroclasm";

@@ -13,6 +13,7 @@ import net.minecraftforge.registries.IForgeRegistry;
 
 @Mod.EventBusSubscriber
 @ObjectHolder(Pyroclasm.MODID)
+@SuppressWarnings("null")
 public class ModItems
 {
     public static final Item basalt_rubble = null;

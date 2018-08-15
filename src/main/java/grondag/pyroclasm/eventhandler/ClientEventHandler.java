@@ -4,7 +4,6 @@ import javax.annotation.Nullable;
 
 import org.lwjgl.opengl.GL11;
 
-import grondag.acuity.Acuity;
 import grondag.exotic_matter.ClientProxy;
 import grondag.exotic_matter.simulator.Simulator;
 import grondag.pyroclasm.Configurator;
@@ -20,6 +19,7 @@ import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.RenderGlobal;
 import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.client.renderer.culling.ICamera;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraftforge.client.event.RenderWorldLastEvent;
@@ -96,7 +96,8 @@ public class ClientEventHandler
         
         AxisAlignedBB box = new AxisAlignedBB(cell.x(), cell.floorY(), cell.z(), cell.x() + 1, cell.ceilingY() + 1, cell.z() + 1);
         
-        if(ClientProxy.camera() == null || !ClientProxy.camera().isBoundingBoxInFrustum(box)) return;
+        final ICamera camera = ClientProxy.camera();
+        if(camera == null || camera.isBoundingBoxInFrustum(box)) return;
         
         
         if(cell.fluidUnits() > 0)
@@ -131,13 +132,14 @@ public class ClientEventHandler
         
         AxisAlignedBB box = new AxisAlignedBB(chunk.xStart, 0, chunk.zStart, chunk.xStart + 16, 255, chunk.zStart + 16);
         
-        if(ClientProxy.camera() == null || !ClientProxy.camera().isBoundingBoxInFrustum(box)) return;
+        final ICamera camera = ClientProxy.camera();
+        if(camera == null || camera.isBoundingBoxInFrustum(box)) return;
         
-            GlStateManager.glLineWidth(2.0F);
-            
-            bufferBuilder.begin(GL11.GL_LINE_STRIP, DefaultVertexFormats.POSITION_COLOR);
-            RenderGlobal.drawBoundingBox(bufferBuilder, box.minX, box.minY, box.minZ, box.maxX, box.maxY, box.maxZ, 0.7F, 1f, 1f, 1f);
-            tessellator.draw();
+        GlStateManager.glLineWidth(2.0F);
+        
+        bufferBuilder.begin(GL11.GL_LINE_STRIP, DefaultVertexFormats.POSITION_COLOR);
+        RenderGlobal.drawBoundingBox(bufferBuilder, box.minX, box.minY, box.minZ, box.maxX, box.maxY, box.maxZ, 0.7F, 1f, 1f, 1f);
+        tessellator.draw();
     }
     
     @SubscribeEvent

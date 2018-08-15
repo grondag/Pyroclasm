@@ -3,7 +3,6 @@ package grondag.pyroclasm.simulator;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import grondag.exotic_matter.simulator.Simulator;
@@ -34,7 +33,7 @@ public class LavaCell extends AbstractLavaCell
         @Override
         public boolean test(@Nullable LavaCell t)
         {
-            return t.isDeleted;
+            return t == null || t.isDeleted;
         }
     };
     
@@ -51,7 +50,7 @@ public class LavaCell extends AbstractLavaCell
      * The start cell in this x, z column will create this instance. 
      * All subsequent additions to the column must obtain the same instance.
      */
-    @Nonnull CellLocator locator;
+    CellLocator locator;
     
     /** 
      * Used to implement a doubly-linked list of all cells within an x,z coordinate.
@@ -202,7 +201,6 @@ public class LavaCell extends AbstractLavaCell
     /** for the empty cell */
     private LavaCell()
     {
-        
     }
     
     /** 
@@ -466,16 +464,18 @@ public class LavaCell extends AbstractLavaCell
         // intersects
         if(myDist == 0) return this;
         
-        if(this.aboveCell() != null)
+        final LavaCell above = this.above;
+        if(above != null)
         {
-            int aboveDist = this.aboveCell().distanceToY(y);
-            if(aboveDist <= myDist) return this.aboveCell().findCellNearestY(y);
+            int aboveDist = above.distanceToY(y);
+            if(aboveDist <= myDist) return above.findCellNearestY(y);
         }
         
-        if(this.belowCell() != null)
+        final LavaCell below = this.below;
+        if(below != null)
         {
-            int belowDist = this.belowCell().distanceToY(y);
-            if(belowDist < myDist) return this.belowCell().findCellNearestY(y);
+            int belowDist = below.distanceToY(y);
+            if(belowDist < myDist) return below.findCellNearestY(y);
         }
         
         // no adjacent cell is closer than this one
@@ -1059,7 +1059,7 @@ public class LavaCell extends AbstractLavaCell
      * @param isFlowBlock  True if this barrier is a full-height flow block.
      * @return Cell nearest to the barrier location, or cell above it if two are equidistant. Null if no cells remain.
      */
-    public final LavaCell addOrConfirmBarrier(int y, boolean isFlowBlock)
+    public final @Nullable LavaCell addOrConfirmBarrier(int y, boolean isFlowBlock)
     {
         /**
          * Here are the possible scenarios:
