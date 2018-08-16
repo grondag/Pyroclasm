@@ -47,15 +47,11 @@ public class ClientEventHandler
         LavaSimulator lavaSim = Simulator.instance().getNode(LavaSimulator.class);
         if(lavaSim == null) return;
         
+        final ICamera camera = ClientProxy.camera();
+        if(camera == null) return;
         
         BufferBuilder bufferBuilder = tessellator.getBuffer();
-        EntityPlayerSP player = Minecraft.getMinecraft().player;
-        
-        double d0 = player.lastTickPosX + (player.posX - player.lastTickPosX) * event.getPartialTicks();
-        double d1 = player.lastTickPosY + (player.posY - player.lastTickPosY) * event.getPartialTicks();
-        double d2 = player.lastTickPosZ + (player.posZ - player.lastTickPosZ) * event.getPartialTicks();
-
-        bufferBuilder.setTranslation(-d0, -d1, -d2);
+        bufferBuilder.setTranslation(-ClientProxy.cameraX(), -ClientProxy.cameraY(), -ClientProxy.cameraZ());
 
         GlStateManager.enableBlend();
         GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
@@ -69,7 +65,7 @@ public class ClientEventHandler
         
         if(Configurator.DEBUG.enableLavaCellDebugRender)
         {
-            lavaSim.cells.forEach(c -> renderCell(tessellator, bufferBuilder, c));
+            lavaSim.cells.forEach(c -> renderCell(camera, tessellator, bufferBuilder, c));
         }
         
         GlStateManager.enableDepth();
@@ -90,15 +86,13 @@ public class ClientEventHandler
         
     }
     
-    private static void renderCell(Tessellator tessellator, BufferBuilder bufferBuilder, @Nullable LavaCell cell)
+    private static void renderCell(ICamera camera, Tessellator tessellator, BufferBuilder bufferBuilder, @Nullable LavaCell cell)
     {
         if(cell == null) return;
         
         AxisAlignedBB box = new AxisAlignedBB(cell.x(), cell.floorY(), cell.z(), cell.x() + 1, cell.ceilingY() + 1, cell.z() + 1);
         
-        final ICamera camera = ClientProxy.camera();
-        if(camera == null || camera.isBoundingBoxInFrustum(box)) return;
-        
+        if(!camera.isBoundingBoxInFrustum(box)) return;
         
         if(cell.fluidUnits() > 0)
         {
@@ -133,7 +127,7 @@ public class ClientEventHandler
         AxisAlignedBB box = new AxisAlignedBB(chunk.xStart, 0, chunk.zStart, chunk.xStart + 16, 255, chunk.zStart + 16);
         
         final ICamera camera = ClientProxy.camera();
-        if(camera == null || camera.isBoundingBoxInFrustum(box)) return;
+        if(camera == null || !camera.isBoundingBoxInFrustum(box)) return;
         
         GlStateManager.glLineWidth(2.0F);
         

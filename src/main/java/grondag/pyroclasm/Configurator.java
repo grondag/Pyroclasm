@@ -171,7 +171,7 @@ public class Configurator
         @Comment({"When true, chunk rebuilds will always happen outside the main client thread. ",
         "Normally, Minecraft will rebuild nearby chunks on the main thread, but because volcanos ",
         "generate so many block updates, so frequently, it can cause low frame rates. ",
-        "This settting is identical to the Forge setting of the same name, and even uses the Forge",
+        "This settting is identical to the Forge setting of the same name, and even uses the Forge ",
         "implementation internally to avoid creating a redundant hook, except it is enabled by default.",
         "*** Strongly recommended you leave this on. ***",
         "Client-side only."})
