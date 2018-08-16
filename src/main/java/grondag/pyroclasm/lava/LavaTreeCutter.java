@@ -12,12 +12,14 @@ import grondag.exotic_matter.simulator.ISimulationTickable;
 import grondag.exotic_matter.varia.LongQueue;
 import grondag.exotic_matter.varia.Useful;
 import grondag.exotic_matter.world.PackedBlockPos;
+import grondag.pyroclasm.Configurator;
 import grondag.pyroclasm.init.ModBlocks;
 import it.unimi.dsi.fastutil.longs.Long2ByteMap;
 import it.unimi.dsi.fastutil.longs.Long2ByteMap.Entry;
 import it.unimi.dsi.fastutil.longs.Long2ByteOpenHashMap;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
+import net.minecraft.init.Blocks;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -52,7 +54,7 @@ public class LavaTreeCutter implements ISimulationTickable, IReadWriteNBT
     private Operation operation = Operation.IDLE;
     
     /** if search in progress, starting state of search */
-    @Nullable private IBlockState startState; 
+    private IBlockState startState = Blocks.AIR.getDefaultState(); 
     
     /** If search in progress, starting point of search 
      *  Not used during search, but is serialized if saved while search in progress. */
@@ -61,6 +63,7 @@ public class LavaTreeCutter implements ISimulationTickable, IReadWriteNBT
     private final PriorityQueue<Visit> toVisit = new PriorityQueue<>(
         new Comparator<Visit>() 
         {
+            @SuppressWarnings("null")
             @Override
             public int compare(Visit o1, Visit o2)
             {
@@ -116,16 +119,16 @@ public class LavaTreeCutter implements ISimulationTickable, IReadWriteNBT
         this.visited.clear();
         this.toVisit.clear();
         this.toClear.clear();
-        this.startState = null;
+        this.startState = Blocks.AIR.getDefaultState();
         this.startPosPacked = PackedBlockPos.NULL_POS;
     }
     
     @Override
     public void doOnTick()
     {
-     // TODO: make number of operations per tick configurable
         int used = 0;
-        while(used < 100)
+        final int max = Configurator.PERFORMANCE.maxTreeOperationsPerTick;
+        while(used < max)
         {
             switch(this.operation)
             {
@@ -310,6 +313,7 @@ public class LavaTreeCutter implements ISimulationTickable, IReadWriteNBT
                 .filter(e -> e.getByteValue() != POS_TYPE_IGNORE)
                 .sorted(new  Comparator<Long2ByteMap.Entry>() {
 
+                    @SuppressWarnings("null")
                     @Override
                     public int compare(Entry o1, Entry o2)
                     {

@@ -5,7 +5,6 @@ import javax.annotation.Nullable;
 import grondag.exotic_matter.world.WorldInfo;
 import grondag.pyroclasm.Pyroclasm;
 import grondag.pyroclasm.Configurator;
-import grondag.pyroclasm.init.ModBlocks;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Items;
 import net.minecraft.item.Item;

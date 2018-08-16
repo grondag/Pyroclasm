@@ -23,6 +23,7 @@ pyroclasm.config.max_cooling_blocks=Max Cooling Blocks
 pyroclasm.config.concurrency_threshold=Concurrency Threshold
 pyroclasm.config.perf_sample_secs=Performance Sample Seconds
 pyroclasm.config.terrain_setup_off_thread=Force Threaded Chunk Rendering
+pyroclasm.config.max_tree_ops_per_tick=Max Tree Operations / Tick
 
 pyroclasm.config.debug=Debug and Testing
 pyroclasm.config.cell_debug_render=Render Debug Lava Cells

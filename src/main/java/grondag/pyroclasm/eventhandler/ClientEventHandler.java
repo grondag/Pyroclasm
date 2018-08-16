@@ -13,8 +13,6 @@ import grondag.pyroclasm.simulator.AbstractLavaCell;
 import grondag.pyroclasm.simulator.CellChunk;
 import grondag.pyroclasm.simulator.LavaCell;
 import grondag.pyroclasm.simulator.LavaSimulator;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.RenderGlobal;

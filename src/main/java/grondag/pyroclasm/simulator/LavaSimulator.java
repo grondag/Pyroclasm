@@ -138,9 +138,7 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
                     }
                     // event not complete until we can tell cell to add lava
                     // retry - maybe validation needs to catch up
-                    //FIXME: remove message
-                    if(event.retryCount() > 2) 
-                        Pyroclasm.INSTANCE.info("Delay in validation event processing");
+                    assert event.retryCount() < 4 :"Delay in validation event processing";
                     
                     return false;
                 }

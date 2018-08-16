@@ -58,6 +58,7 @@ public class VolcanoNode implements IReadWriteNBT, IDirtListener, ISimulationTic
         
         private int lavaCooldownTicks;
 
+        @SuppressWarnings("null")
         private VolcanoNode(VolcanoManager volcanoManager)
         {
             this.volcanoManager = volcanoManager;
@@ -92,8 +93,13 @@ public class VolcanoNode implements IReadWriteNBT, IDirtListener, ISimulationTic
             this.volcanoManager.setDirty();
         }
         
+        /**
+         * Note: null not supported and will error.
+         * 
+         * {@inheritDoc}
+         */
         @Override
-        public void deserializeNBT(@Nullable NBTTagCompound nbt)
+        public void deserializeNBT(@SuppressWarnings("null") NBTTagCompound nbt)
         {
             this.weight = nbt.getInteger(NBT_VOLCANO_NODE_TAG_WEIGHT);                  
             this.height = nbt.getInteger(NBT_VOLCANO_NODE_TAG_HEIGHT);

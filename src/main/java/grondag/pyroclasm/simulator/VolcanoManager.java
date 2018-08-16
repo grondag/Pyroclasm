@@ -43,7 +43,10 @@ public class VolcanoManager implements ISimulationTickable, ISimulationTopNode
         }
     }
     
-    @Nullable World world;
+    /**
+     * Will be reliable initialized via {@link VolcanoManager#afterCreated(Simulator)}
+     */
+    @SuppressWarnings("null") World world;
     
     private final Long2ObjectMap<VolcanoNode> nodes = Long2ObjectMaps.synchronize(new Long2ObjectOpenHashMap<VolcanoNode>());
     
@@ -51,18 +54,23 @@ public class VolcanoManager implements ISimulationTickable, ISimulationTopNode
     
     private boolean isDirty = true;
     
-    private @Nullable BlueNoise noise;
+    /**
+     * Will be reliable initialized via {@link VolcanoManager#afterCreated(Simulator)}
+     */
+    @SuppressWarnings("null")
+    private BlueNoise noise;
     
+    @SuppressWarnings("null")
     @Override
     public void afterCreated(Simulator sim)
     {
         this.world = sim.getWorld();
-        this.noise = BlueNoise.create(256, 24, sim.getWorld().getSeed());
+        this.noise = BlueNoise.create(256, 24, this.world.getSeed());
     }
     
     public int dimension()
     {
-        return this.world == null ? Integer.MIN_VALUE : this.world.provider.getDimension();
+        return this.world.provider.getDimension();
     }
     
     public boolean isVolcanoChunk(Chunk chunk)

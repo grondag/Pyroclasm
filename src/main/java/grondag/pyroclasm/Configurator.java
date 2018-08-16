@@ -167,6 +167,15 @@ public class Configurator
         @RangeInt(min = 10, max = 120)
         public int performanceSampleInterval = 20;
         
+        @LangKey("pyroclasm.config.max_tree_ops_per_tick")
+        @Comment({"Maximum number of tree-cutting operations per tick. ",
+            "Higher values offer faster & more dramtic destruction of trees due to lava flows ",
+            "but also mean potentially more tick lag. Value represents a budget ",
+            "and each operation has a cost - value doesn't equate directly to block updates. ",
+            "Server-side only"})
+        @RangeInt(min = 50, max = 2000)
+        public int maxTreeOperationsPerTick = 200;
+        
         @LangKey("pyroclasm.config.terrain_setup_off_thread")
         @Comment({"When true, chunk rebuilds will always happen outside the main client thread. ",
         "Normally, Minecraft will rebuild nearby chunks on the main thread, but because volcanos ",
