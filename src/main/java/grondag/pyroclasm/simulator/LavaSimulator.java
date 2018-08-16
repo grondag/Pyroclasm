@@ -69,10 +69,10 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
     public final PerformanceCollector perfCollectorAllTick = new PerformanceCollector("Lava Simulator Whole tick");
     public final PerformanceCollector perfCollectorOnTick = new PerformanceCollector("Lava Simulator On tick");
     public final PerformanceCollector perfCollectorOffTick = new PerformanceCollector("Lava Simulator Off tick");
-    private PerformanceCounter perfOnTick = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "On-Tick", perfCollectorAllTick);
-    private PerformanceCounter perfOffTick = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Off-Tick", perfCollectorAllTick);
-    private PerformanceCounter perfParticles = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Particle Spawning", perfCollectorOnTick);
-    private PerformanceCounter perfBlockUpdate = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Block update", perfCollectorOnTick);
+    private PerformanceCounter perfOnTick = PerformanceCounter.create(Configurator.DEBUG.enablePerformanceLogging, "On-Tick", perfCollectorAllTick);
+    private PerformanceCounter perfOffTick = PerformanceCounter.create(Configurator.DEBUG.enablePerformanceLogging, "Off-Tick", perfCollectorAllTick);
+    private PerformanceCounter perfParticles = PerformanceCounter.create(Configurator.DEBUG.enablePerformanceLogging, "Particle Spawning", perfCollectorOnTick);
+    private PerformanceCounter perfBlockUpdate = PerformanceCounter.create(Configurator.DEBUG.enablePerformanceLogging, "Block update", perfCollectorOnTick);
 
     @Deprecated
     private final LavaTerrainHelper terrainHelper;
@@ -360,7 +360,7 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
      * Due to computationally intensive nature, does not do more work if game clock has advanced more than one tick.
      * To make lava flow more quickly, place more lava when clock advances.
      *
-     * Contians tasks that should occur during the server tick.
+     * Contains tasks that should occur during the server tick.
      * All tasks the require direct MC world access go here.
      * Any mutating world access should be single threaded.
      */
@@ -373,17 +373,8 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
         // Particle processing
         this.doParticles();
         
-
-        long packedChunkPos = this.chunkTracker.nextPackedChunkPosForUpdate();
-        if(packedChunkPos != 0)
-        {
-            this.itMe = true;
-            perfBlockUpdate.startRun();
-            this.cells.provideBlockUpdatesAndDoCooling(packedChunkPos);
-            perfBlockUpdate.endRun();
-            this.basaltTracker.doBasaltCooling(packedChunkPos);
-            this.itMe = false;
-        }
+        this.doChunkUpdates();
+        
         this.lavaTreeCutter.doOnTick();
         
         this.cells.validateChunks();
@@ -394,11 +385,39 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
         perfOnTick.addCount(1);
     }
 
+    private void doChunkUpdates()
+    {
+        final ChunkTracker tracker = this.chunkTracker;
+        
+        final int updateCount = Math.min(tracker.size(), Configurator.PERFORMANCE.maxChunkUpdatesPerTick);
+        
+        if(updateCount == 0) return;
+        
+        if(updateCount == 1)
+            doChunkUpdateInner(tracker.nextPackedChunkPosForUpdate());
+        else
+        {
+            for(int i = 0; i < updateCount; i++)
+            {
+                doChunkUpdateInner(tracker.nextPackedChunkPosForUpdate());
+            }
+        }
+    }
+    
+    private void doChunkUpdateInner(long packedChunkPos)
+    {
+        this.itMe = true;
+        perfBlockUpdate.startRun();
+        this.cells.provideBlockUpdatesAndDoCooling(packedChunkPos);
+        perfBlockUpdate.endRun();
+        this.basaltTracker.doBasaltCooling(packedChunkPos);
+        this.itMe = false;
+    }
     
     @Override
     public void doOffTick()
     {
-        if(Configurator.VOLCANO.enablePerformanceLogging) perfOffTick.startRun();
+        if(Configurator.DEBUG.enablePerformanceLogging) perfOffTick.startRun();
        
         // update connections as needed, handle other housekeeping, identify flowable connections
         this.connections.doCellSetup();
@@ -427,7 +446,7 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
         
         this.setDirty();
         
-        if(Configurator.VOLCANO.enablePerformanceLogging)
+        if(Configurator.DEBUG.enablePerformanceLogging)
         {
             perfOffTick.endRun();
             perfOffTick.addCount(1);
@@ -489,12 +508,12 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
 
             float onTickLoad = (float)this.perfOnTick.runTime() / Configurator.Volcano.performanceBudgetOnTickNanos;
             float totalTickLoad = ((float)this.perfOnTick.runTime() + this.perfOffTick.runTime()) / Configurator.Volcano.performanceBudgetTotalNanos;
-            float chunkLoad = this.cells.chunkCount() / (float) Configurator.VOLCANO.chunkBudget;
-            float coolingLoad = this.basaltTracker.size() / (float) Configurator.VOLCANO.coolingBlockBudget;
+            float chunkLoad = this.cells.chunkCount() / (float) Configurator.PERFORMANCE.chunkBudget;
+            float coolingLoad = this.basaltTracker.size() / (float) Configurator.PERFORMANCE.coolingBlockBudget;
             
             this.loadFactor = Math.max(Math.max(onTickLoad, totalTickLoad), Math.max(chunkLoad, coolingLoad));
             
-            if(Configurator.VOLCANO.enablePerformanceLogging) 
+            if(Configurator.DEBUG.enablePerformanceLogging) 
             {
                 perfCollectorOnTick.outputStats();
                 perfCollectorOffTick.outputStats();
@@ -508,19 +527,19 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
 
             this.connections.reportFlowTrackingIfEnabled();
 
-            if(Configurator.VOLCANO.enablePerformanceLogging) 
+            if(Configurator.DEBUG.enablePerformanceLogging) 
             {
                 Pyroclasm.INSTANCE.info("Lava chunks = %d (%f load)  basaltBlocks = %d (%f load)", 
                         this.cells.chunkCount(), chunkLoad, this.basaltTracker.size(), coolingLoad);
                 
                 Pyroclasm.INSTANCE.info("Effective load factor is %f.  (onTick = %f, totalTick = %f)", this.loadFactor, onTickLoad, totalTickLoad);
                 
-                Pyroclasm.INSTANCE.info(String.format("Time elapsed = %1$.3fs", ((float)Configurator.VOLCANO.performanceSampleInterval 
+                Pyroclasm.INSTANCE.info(String.format("Time elapsed = %1$.3fs", ((float)Configurator.PERFORMANCE.performanceSampleInterval 
                         + (now - nextStatTime) / Configurator.Volcano.performanceSampleIntervalMillis)));
 
             }
                
-            if(Configurator.VOLCANO.outputLavaCellDebugSummaries) this.cells.logDebugInfo();
+            if(Configurator.DEBUG.outputLavaCellDebugSummaries) this.cells.logDebugInfo();
             
             this.nextStatTime = now + Configurator.Volcano.performanceSampleIntervalMillis;
         }

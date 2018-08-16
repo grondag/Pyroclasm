@@ -80,6 +80,6 @@ public class ClientProxy extends CommonProxy implements IAcuityListener
      */
     public static void maintainForgeTerrainSetupConfig()
     {
-        ForgeModContainer.alwaysSetupTerrainOffThread = ForgeModContainer.alwaysSetupTerrainOffThread || Configurator.RENDER.alwaysSetupTerrainOffThread;
+        ForgeModContainer.alwaysSetupTerrainOffThread = ForgeModContainer.alwaysSetupTerrainOffThread || Configurator.PERFORMANCE.alwaysSetupTerrainOffThread;
     }
 }

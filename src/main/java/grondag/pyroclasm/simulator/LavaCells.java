@@ -58,7 +58,7 @@ public class LavaCells
         this.chunkTracker = sim.chunkTracker;
 
         // on tick
-        perfCounterValidation = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Chunk validation", sim.perfCollectorOnTick);
+        perfCounterValidation = PerformanceCounter.create(Configurator.DEBUG.enablePerformanceLogging, "Chunk validation", sim.perfCollectorOnTick);
    }
 
    public void validateChunks()
@@ -240,7 +240,7 @@ public class LavaCells
 
         this.forEach(cell -> cell.writeNBT(saveData));
         
-        if(Configurator.VOLCANO.enablePerformanceLogging)
+        if(Configurator.DEBUG.enablePerformanceLogging)
             Pyroclasm.INSTANCE.info("Saving " + saveData.size() / LavaCell.LAVA_CELL_NBT_WIDTH + " lava cells.");
         
         nbt.setIntArray(NBT_LAVA_CELLS, saveData.toIntArray());

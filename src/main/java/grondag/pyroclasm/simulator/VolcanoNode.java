@@ -212,13 +212,13 @@ public class VolcanoNode implements IReadWriteNBT, IDirtListener, ISimulationTic
                  
                  case COOLING:
                  {
-                     if(this.lavaSim.loadFactor() > Configurator.VOLCANO.cooldownTargetLoadFactor)
+                     if(this.lavaSim.loadFactor() > Configurator.PERFORMANCE.cooldownTargetLoadFactor)
                      {
                          this.lavaCooldownTicks = 0;
                      }
                      else
                      {
-                         if(this.lavaCooldownTicks++ > Configurator.VOLCANO.cooldownWaitTicks) this.stage = VolcanoStage.FLOWING;
+                         if(this.lavaCooldownTicks++ > Configurator.PERFORMANCE.cooldownWaitTicks) this.stage = VolcanoStage.FLOWING;
                      }
                      break;
                  }

@@ -27,9 +27,9 @@ public class BlockEventList
     
     public BlockEventList(int maxRetries, String nbtTagName, BlockEventHandler eventHandler, PerformanceCollector perfCollector)
     {
-        eventList = SimpleConcurrentList.create(BlockEventList.BlockEvent.class, Configurator.VOLCANO.enablePerformanceLogging, nbtTagName + " Block Events", perfCollector);
+        eventList = SimpleConcurrentList.create(BlockEventList.BlockEvent.class, Configurator.DEBUG.enablePerformanceLogging, nbtTagName + " Block Events", perfCollector);
         
-        perfCounter = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, nbtTagName + " Block Events", perfCollector);
+        perfCounter = PerformanceCounter.create(Configurator.DEBUG.enablePerformanceLogging, nbtTagName + " Block Events", perfCollector);
         
         this.maxRetries = maxRetries;
         this.nbtTagName = nbtTagName;
@@ -59,7 +59,7 @@ public class BlockEventList
             if(!this.eventList.isEmpty())
             {
                 perfCounter.startRun();
-                Simulator.SCATTER_GATHER_POOL.completeTask(this.eventList, Configurator.VOLCANO.concurrencyThreshold, e -> { if(!(e == null || e.isDeleted())) e.process(maxRetries); });
+                Simulator.SCATTER_GATHER_POOL.completeTask(this.eventList, Configurator.PERFORMANCE.concurrencyThreshold, e -> { if(!(e == null || e.isDeleted())) e.process(maxRetries); });
                 perfCounter.addCount(this.eventList.size());
                 this.eventList.removeSomeDeletedItems(EVENT_REMOVAL_PREDICATE);
                 perfCounter.endRun();

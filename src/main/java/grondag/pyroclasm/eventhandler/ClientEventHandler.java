@@ -42,7 +42,7 @@ public class ClientEventHandler
         
         FXLavaBlob.doDeferredRenders(tessellator);
         
-        if(!(Configurator.RENDER.enableLavaCellDebugRender || Configurator.RENDER.enableLavaChunkDebugRender)) return;
+        if(!(Configurator.DEBUG.enableLavaCellDebugRender || Configurator.DEBUG.enableLavaChunkDebugRender)) return;
         
         LavaSimulator lavaSim = Simulator.instance().getNode(LavaSimulator.class);
         if(lavaSim == null) return;
@@ -67,14 +67,14 @@ public class ClientEventHandler
         GlStateManager.enablePolygonOffset();
         GlStateManager.doPolygonOffset(-1, -1);
         
-        if(Configurator.RENDER.enableLavaCellDebugRender)
+        if(Configurator.DEBUG.enableLavaCellDebugRender)
         {
             lavaSim.cells.forEach(c -> renderCell(tessellator, bufferBuilder, c));
         }
         
         GlStateManager.enableDepth();
         
-        if(Configurator.RENDER.enableLavaChunkDebugRender)
+        if(Configurator.DEBUG.enableLavaChunkDebugRender)
         {
             for(Object c : lavaSim.cells.allChunks().toArray()) { renderCellChunk(tessellator, bufferBuilder, (CellChunk)c); }
         }

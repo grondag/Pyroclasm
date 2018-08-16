@@ -62,7 +62,7 @@ public class LavaConnections extends AbstractLavaConnections
         
         Flowable[] inputs = this.toProcess.toArray();
         
-        if(inputs.length < Configurator.VOLCANO.concurrencyThreshold / 2)
+        if(inputs.length < Configurator.PERFORMANCE.concurrencyThreshold / 2)
         {
             this.stepCounter.startRun();
             this.stepCounter.addCount(processStepToCompletion(inputs, this.stepIndex, f -> f.doStep()));

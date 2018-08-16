@@ -1375,7 +1375,7 @@ public class LavaCell extends AbstractLavaCell
                 || this.isCoolingDisabled 
                 || this.isDeleted 
                 || this.isValidationNeeded()
-                || simTickIndex - this.lastFlowTick < Configurator.VOLCANO.lavaCoolingTicks) 
+                || simTickIndex - this.lastFlowTick < Configurator.LAVA.lavaCoolingTicks) 
             return false;
         
         int adjacentHotCount = 0;
@@ -1443,7 +1443,7 @@ public class LavaCell extends AbstractLavaCell
     @SideOnly(Side.CLIENT)
     public final float activityLevel()
     {
-        return Math.max(0, 1f - ((float) (Simulator.currentTick() - this.lastFlowTick)) / Configurator.VOLCANO.lavaCoolingTicks);
+        return Math.max(0, 1f - ((float) (Simulator.currentTick() - this.lastFlowTick)) / Configurator.LAVA.lavaCoolingTicks);
     }
     
     /** 
@@ -1878,7 +1878,7 @@ public class LavaCell extends AbstractLavaCell
             
             if(units == 0) return;
             
-            if(f > Configurator.VOLCANO.lavaCoolingFlowThreshold || (f > Configurator.Volcano.lavaCoolingPressuredFlowThreshold && units > this.volumeUnits()))
+            if(f > Configurator.LAVA.lavaKeepaliveFlowThreshold || (f > Configurator.Volcano.lavaCoolingPressuredKeepaliveThreshold && units > this.volumeUnits()))
             {
                 this.lastFlowTick = Simulator.currentTick();
             }
@@ -1901,7 +1901,7 @@ public class LavaCell extends AbstractLavaCell
     {
         if(this.fluidUnits() == 0) return;
         this.lastFlowTick = Math.min(Simulator.currentTick(), 
-                this.lastFlowTick + ThreadLocalRandom.current().nextInt(Configurator.VOLCANO.lavaCoolingPropagationMin, Configurator.VOLCANO.lavaCoolingPropagationMax));
+                this.lastFlowTick + ThreadLocalRandom.current().nextInt(Configurator.LAVA.lavaCoolingPropagationMin, Configurator.LAVA.lavaCoolingPropagationMax));
     }
     
 

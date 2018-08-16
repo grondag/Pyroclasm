@@ -22,12 +22,12 @@ public abstract class AbstractLavaConnections
     {
         super();
         this.sim = sim;
-        setupCounter = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Connection Setup", sim.perfCollectorOffTick);
-        stepCounter = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Flow Step - Server Thread", sim.perfCollectorOffTick);
+        setupCounter = PerformanceCounter.create(Configurator.DEBUG.enablePerformanceLogging, "Connection Setup", sim.perfCollectorOffTick);
+        stepCounter = PerformanceCounter.create(Configurator.DEBUG.enablePerformanceLogging, "Flow Step - Server Thread", sim.perfCollectorOffTick);
         
-        parallelStepCounter = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Flow Step - Multi-threaded", sim.perfCollectorOffTick);
+        parallelStepCounter = PerformanceCounter.create(Configurator.DEBUG.enablePerformanceLogging, "Flow Step - Multi-threaded", sim.perfCollectorOffTick);
         
-        this.toProcess = SimpleConcurrentList.create(Flowable.class, Configurator.VOLCANO.enablePerformanceLogging, "Connection Processing", sim.perfCollectorOffTick);
+        this.toProcess = SimpleConcurrentList.create(Flowable.class, Configurator.DEBUG.enablePerformanceLogging, "Connection Processing", sim.perfCollectorOffTick);
     }
 
 
@@ -55,7 +55,7 @@ public abstract class AbstractLavaConnections
 
     public final void reportFlowTrackingIfEnabled()
     {
-        if(Configurator.VOLCANO.enableFlowTracking)
+        if(Configurator.DEBUG.enableFlowTracking)
         {
             for(int i = 0; i < 8; i++)
             {
@@ -92,14 +92,14 @@ public abstract class AbstractLavaConnections
     protected void doStep()
     {
         int startingCount = 0;
-        if(Configurator.VOLCANO.enableFlowTracking)
+        if(Configurator.DEBUG.enableFlowTracking)
         {    
             startingCount = this.stepCounter.runCount();
         }
         
         this.doStepInner();
         
-        if(Configurator.VOLCANO.enableFlowTracking)
+        if(Configurator.DEBUG.enableFlowTracking)
         { 
             this.flowCounts[stepIndex] += (this.stepCounter.runCount() - startingCount);
             this.flowTotals[stepIndex] += LavaConnection.totalFlow.sumThenReset();

@@ -3,7 +3,51 @@ itemGroup.pyroclasm=Pyroclasm
 misc.denials=["Absolutely not.","Nope.","Not happening","Doctor No sends his regards.","You must be joking.","I made a list of things that aren\u0027t going to happen, and what you just tried is on it.","Nice try.","That\u0027s not going to work.","DENIED!"]
 
 #CONFIG LABELS
-config.volcano=Volcano Settings
+pyroclasm.config.general=Pyroclasm Configuration
+
+pyroclasm.config.substance=Material Properties
+pyroclasm.config.basalt_material=Basalt Material
+pyroclasm.config.lava_material=Lava Material
+pyroclasm.config.destroyed_blocks=Destructable Blocks
+pyroclasm.config.safe_blocks=Safe Blocks
+
+pyroclasm.config.performance=Performance Tuning
+pyroclasm.config.max_chunk_updates_per_tick=Max Chunk Updates / Tick
+pyroclasm.config.cooldown_target_load_factor=Target Load Factor
+pyroclasm.config.cooldown_wait_ticks=Cooldown Wait Ticks
+pyroclasm.config.total_tick_budget=Total Tick Budget
+pyroclasm.config.on_tick_budget=On-Tick Budget
+pyroclasm.config.max_lava_chunks=Max Lava Chunks
+pyroclasm.config.max_cooling_blocks=Max Cooling Blocks
+pyroclasm.config.concurrency_threshold=Concurrency Threshold
+pyroclasm.config.perf_sample_secs=Performance Sample Seconds
+pyroclasm.config.terrain_setup_off_thread=Force Threaded Chunk Rendering
+
+pyroclasm.config.debug=Debug and Testing
+pyroclasm.config.cell_debug_render=Render Debug Lava Cells
+pyroclasm.config.chunk_debug_render=Render Debug Lava Chunks
+pyroclasm.config.enable_perf_log=Log Performance Statistics
+pyroclasm.config.enable_flow_tracking=Enable Flow Tracking
+pyroclasm.config.enable_cell_stats=Enable Cell Statistics
+pyroclasm.config.enable_chunk_trace=Enable Lava Chunk Tracing
+
+pyroclasm.config.lava=Lava and Basalt Settings
+pyroclasm.config.lava_cooling_ticks=Lava Cooling Ticks
+pyroclasm.config.basalt_cooling_ticks=Basalt Cooling Ticks
+pyroclasm.config.min_cooling_propagation_ticks=Min Cooling Propagation Ticks
+pyroclasm.config.max_cooling_propagation_ticks=Max Cooling Propagation Ticks
+pyroclasm.config.lava_keepalive_flow_threshold=Keepalive Flow Threshold
+pyroclasm.config.lava_flow_reversal_threshold=Flow Reversal Threshold
+
+pyroclasm.config.volcano=Volcano Settings
+pyroclasm.config.lava_blocks_per_second=Max Lava Blocks / Sec
+pyroclasm.config.max_y_level=Max Volcano Height
+pyroclasm.config.mound_blocks_per_tick=Mound Blocks / Tick
+pyroclasm.config.mound_radius=Mound Radius
+pyroclasm.config.min_dormant_ticks=Min Dormant Ticks 
+pyroclasm.config.max_dormant_ticks=Max Dormant Ticks
+pyroclasm.config.max_lava_projectiles=Max Lava Projectiles
+
 
 #BLOCKS
 tile.pyroclasm:basalt_cobble.name=Basalt Cobblestone

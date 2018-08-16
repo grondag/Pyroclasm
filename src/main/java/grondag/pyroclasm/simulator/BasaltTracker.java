@@ -38,7 +38,7 @@ public class BasaltTracker
     
     private void coolBlocks(Long2IntOpenHashMap targets)
     {
-        int lastEligibleBasaltCoolingTick = Simulator.currentTick() - Configurator.VOLCANO.basaltCoolingTicks;
+        int lastEligibleBasaltCoolingTick = Simulator.currentTick() - Configurator.LAVA.basaltCoolingTicks;
 
         ObjectIterator<Entry> it = targets.long2IntEntrySet().fastIterator();
         while(it.hasNext())
@@ -84,7 +84,7 @@ public class BasaltTracker
     {
         this.world = world;
         this.chunkTracker = chunkTracker;
-        this.perfCounter = PerformanceCounter.create(Configurator.VOLCANO.enablePerformanceLogging, "Basalt cooling", perfCollector);
+        this.perfCounter = PerformanceCounter.create(Configurator.DEBUG.enablePerformanceLogging, "Basalt cooling", perfCollector);
     }
     
     protected void doBasaltCooling(long packedChunkPos)
@@ -141,7 +141,7 @@ public class BasaltTracker
     
     public void serializeNBT(NBTTagCompound nbt)
     {
-        if(Configurator.VOLCANO.enablePerformanceLogging)
+        if(Configurator.DEBUG.enablePerformanceLogging)
             Pyroclasm.INSTANCE.info("Saving " + this.size + " cooling basalt blocks.");
         
         

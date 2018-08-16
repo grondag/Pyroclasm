@@ -151,7 +151,7 @@ public class LavaBlobManager
 
     public void writeToNBT(NBTTagCompound nbt)
     {
-        if(Configurator.VOLCANO.enablePerformanceLogging)
+        if(Configurator.DEBUG.enablePerformanceLogging)
             Pyroclasm.INSTANCE.info("Saving " + map.size() + " lava entities.");
         
         int[] saveData = new int[map.size() * NBT_SAVE_DATA_WIDTH];

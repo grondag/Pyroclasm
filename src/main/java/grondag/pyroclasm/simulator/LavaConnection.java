@@ -115,7 +115,7 @@ public class LavaConnection
             if(this.direction == FlowDirection.ONE_TO_TWO) 
             {
                 // don't allow switch of direction unless something substantial to flow
-                if(surface2 - surface1 < Configurator.VOLCANO.lavaFlowReversalThreshold) return false;
+                if(surface2 - surface1 < Configurator.LAVA.lavaFlowReversalThreshold) return false;
                 
                 // don't allow switch of direction in same tick
                 this.direction = FlowDirection.NONE;
@@ -326,7 +326,7 @@ public class LavaConnection
           fromCell.changeFluidUnits(-flow);
           toCell.changeFluidUnits(flow);
           fromCell.outputThisTick += flow;
-          if(Configurator.VOLCANO.enableFlowTracking) totalFlow.add(flow);
+          if(Configurator.DEBUG.enableFlowTracking) totalFlow.add(flow);
         }
         
         /** 
