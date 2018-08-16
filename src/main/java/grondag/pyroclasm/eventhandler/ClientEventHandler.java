@@ -63,7 +63,15 @@ public class ClientEventHandler
         
         if(Configurator.DEBUG.enableLavaCellDebugRender)
         {
-            lavaSim.cells.forEach(c -> renderCell(camera, tessellator, bufferBuilder, c));
+            //FIXME: avoid NPE in concurrency
+            try
+            {
+                lavaSim.cells.forEach(c -> renderCell(camera, tessellator, bufferBuilder, c));
+            }
+            catch(Exception e)
+            {
+                Pyroclasm.INSTANCE.warn("Ignoring exception in debug render", e);
+            }
         }
         
         GlStateManager.enableDepth();

@@ -168,6 +168,8 @@ public class VolcanoStateMachine implements ISimulationTickable
     
     private double blobChance = 0;
     
+    private final Random myRandom = new Random();
+    
     /**
      * List of bore cells at volcano floor, from center out. Will be
      * empty until {@link #setupFind()} has fully finished.
@@ -194,31 +196,11 @@ public class VolcanoStateMachine implements ISimulationTickable
     private int maxCeilingLevel;
     
     /**
-     * At the end of the current {@link #flow()} iteration through all bore cells
-     * this is the total of lava units in all bore cells <em>before</em> the addition of
-     * any lava added this pass.  Used with {@link #totalBoreUnitsLastPass} to 
-     * detect if lava is flowing out of the bore.
-     */
-    private long totalBoreUnitsThisPass = 0;
-    
-    /**
-     * Total lava units added to bore cells during this iteration of {@link #flow()}.
-     * Used at the end of the pass to compute {@link #totalBoreUnitsLastPass}
-     */
-    private long lavaAddeddThisPass = 0;
-    
-    /**
-     * Value of {@link #totalBoreUnitsThisPass} plus lava added ({@link #lavaAddeddThisPass} 
-     * at the end of the previous {@link #flow()} pass.
-     */
-    private long totalBoreUnitsLastPass = 0;
-    
-    
-    /**
      * For use only in operation methods, which do not call into each other and are not re-entrant.
      */
     private final MutableBlockPos operationPos = new MutableBlockPos();
     
+    @SuppressWarnings("null")
     public VolcanoStateMachine(VolcanoNode volcano)
     {
         this.volcano = volcano;
@@ -226,8 +208,6 @@ public class VolcanoStateMachine implements ISimulationTickable
         this.lavaSim = Simulator.instance().getNode(LavaSimulator.class);
         this.center = volcano.blockPos();
     }
-    
-     
 
     //TODO: make confiurable
     private final static int OPERATIONS_PER_TICK = 64;
@@ -236,8 +216,6 @@ public class VolcanoStateMachine implements ISimulationTickable
     public void doOnTick()
     {
         this.lavaRemainingThisPass = Configurator.VOLCANO.lavaBlocksPerSecond * LavaSimulator.FLUID_UNITS_PER_BLOCK / 20;
-        
-        final Random r = ThreadLocalRandom.current();
         
         for(int i = 0; i < OPERATIONS_PER_TICK; i++)
         {
@@ -269,7 +247,7 @@ public class VolcanoStateMachine implements ISimulationTickable
                     break;
 
                 case FLOW:
-                    this.operation = flow(r);
+                    this.operation = flow();
                     break;
 
                 case MELT_CHECK:
@@ -443,7 +421,7 @@ public class VolcanoStateMachine implements ISimulationTickable
         }        
     }
 
-    private Operation flow(Random r)
+    private Operation flow()
     {
         if(this.offsetIndex >= MAX_BORE_OFFSET) 
         {
@@ -451,45 +429,9 @@ public class VolcanoStateMachine implements ISimulationTickable
             offsetIndex = 0;
         }
 
-        if(this.offsetIndex == 0)
-        {
-            this.lavaAddeddThisPass = 0;
-            this.totalBoreUnitsThisPass = 0;
-        }
         
-        if(this.blobChance > 0 && lavaRemainingThisPass > 0)
-        {
-            final int blobCount = r.nextInt(4) + r.nextInt(4) + r.nextInt(4);
-            if(EntityLavaBlob.getLiveParticleCount() + blobCount <= Configurator.VOLCANO.maxLavaEntities && Math.abs(r.nextGaussian()) < blobChance)
-            {
-                final LavaCell center = getBoreCell(0);
-                if(center != null && center.isOpenToSky())
-                {
-                    for(int i = 0; i < blobCount; i++)
-                    {
-                        final double dx = (r.nextDouble() - 0.5) * 2;
-                        final double dz = (r.nextDouble() - 0.5) * 2;
-                        final int units = Math.max(LavaSimulator.FLUID_UNITS_PER_HALF_BLOCK, 
-                                r.nextInt(LavaSimulator.FLUID_UNITS_PER_BLOCK) 
-                                + r.nextInt(LavaSimulator.FLUID_UNITS_PER_BLOCK) 
-                                + r.nextInt(LavaSimulator.FLUID_UNITS_PER_BLOCK));
-                        EntityLavaBlob blob = new EntityLavaBlob(
-                                this.world, 
-                                units, 
-                                center.x(), 
-                                center.worldSurfaceY() + 1,
-                                center.z(), 
-                                dx,
-                                Math.max(.75, r.nextGaussian() * 0.1 + 1),
-                                dz);
-                        this.world.spawnEntity(blob);
-                        this.lavaRemainingThisPass -= units;
-                    }
-                    blobChance = Math.max(0.001, blobChance / 2);
-                }
-                else blobChance = 0;
-            }
-        }
+        if(lavaRemainingThisPass > 0)
+            doBlobs();
         
         LavaCell cell = this.getBoreCell(offsetIndex++);
         
@@ -500,8 +442,6 @@ public class VolcanoStateMachine implements ISimulationTickable
             return Operation.SETUP_CLEAR_AND_FILL;
         }
         
-        this.totalBoreUnitsThisPass += cell.fluidUnits();
-        
         if(cell.worldSurfaceLevel() < cell.ceilingLevel())
         {
             // cell has room, add lava if available
@@ -509,7 +449,6 @@ public class VolcanoStateMachine implements ISimulationTickable
             {
                 final int amount = Math.min(LavaSimulator.FLUID_UNITS_PER_LEVEL, lavaRemainingThisPass);
                 this.lavaRemainingThisPass -= amount;
-                this.lavaAddeddThisPass += amount;
                 cell.addLava(amount);
             }
         }
@@ -542,20 +481,52 @@ public class VolcanoStateMachine implements ISimulationTickable
         {
             // if we've gone past the last offset, can go to next stage
             offsetIndex = 0;
-            
-            boolean didFlowThisPass = this.lavaAddeddThisPass > 0;
-            boolean didLeakageHappen = this.totalBoreUnitsThisPass < this.totalBoreUnitsLastPass;
-            
-            this.totalBoreUnitsLastPass = this.totalBoreUnitsThisPass + this.lavaAddeddThisPass;
-            this.totalBoreUnitsThisPass = 0;
-            this.lavaAddeddThisPass = 0;
 
-            return didFlowThisPass || didLeakageHappen ? Operation.FLOW : Operation.FIND_WEAKNESS;
+            // if used up all the lava, continue flowing, otherwise too constrained - mound or explode
+            return this.lavaRemainingThisPass == 0 ? Operation.FLOW : Operation.FIND_WEAKNESS;
         }
         else
         {
             return Operation.FLOW;
         }   
+    }
+    
+    private void doBlobs()
+    {
+        final LavaCell center = getBoreCell(0);
+        if(center == null || !center.isOpenToSky() || center.worldSurfaceY() < 64)
+        {
+            return;
+        }
+        
+        final Random r = myRandom;
+        final int blobCount = r.nextInt(4) + r.nextInt(4) + r.nextInt(4);
+        if(EntityLavaBlob.getLiveParticleCount() + blobCount <= Configurator.VOLCANO.maxLavaEntities && Math.abs(r.nextDouble()) < blobChance)
+        {
+            for(int i = 0; i < blobCount; i++)
+            {
+                final double dx = (r.nextDouble() - 0.5) * 2;
+                final double dz = (r.nextDouble() - 0.5) * 2;
+                final int units = Math.max(LavaSimulator.FLUID_UNITS_PER_HALF_BLOCK, 
+                        r.nextInt(LavaSimulator.FLUID_UNITS_PER_BLOCK) 
+                        + r.nextInt(LavaSimulator.FLUID_UNITS_PER_BLOCK) 
+                        + r.nextInt(LavaSimulator.FLUID_UNITS_PER_BLOCK));
+                EntityLavaBlob blob = new EntityLavaBlob(
+                        this.world, 
+                        units, 
+                        center.x(), 
+                        center.worldSurfaceY() + 1,
+                        center.z(), 
+                        dx,
+                        Math.max(.75, r.nextGaussian() * 0.1 + 1),
+                        dz);
+                this.world.spawnEntity(blob);
+                this.lavaRemainingThisPass -= units;
+            }
+            blobChance = 0;
+        }
+        else
+            blobChance  += 0.01;
     }
   
     private Operation meltCheck()
@@ -731,7 +702,6 @@ public class VolcanoStateMachine implements ISimulationTickable
             int z = (int) Math.round(this.center.getZ() + distance * Math.sin(angle));
             int y = this.world.getHeight(x, z);
             
-            //TODO: consider mutable block pos here?
             while(y > 0 && LavaTerrainHelper.canLavaDisplace(world.getBlockState(findPos.setPos(x, y - 1, z))))
             {
                 y--;
@@ -754,7 +724,6 @@ public class VolcanoStateMachine implements ISimulationTickable
             int z = best.getZ() + Useful.getDistanceSortedCircularOffset(i).getZ();
             int y = this.world.getHeight(x, z);
             
-            //TODO: consider mutable block pos?
             while(y > 0 && LavaTerrainHelper.canLavaDisplace(world.getBlockState(findPos.setPos(x, y - 1, z))))
             {
                 y--;

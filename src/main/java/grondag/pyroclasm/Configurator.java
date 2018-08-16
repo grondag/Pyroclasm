@@ -197,6 +197,12 @@ public class Configurator
     public static class Debug
     {
 
+        @LangKey("pyroclasm.config.disable_performance_throttling")
+        @Comment({"Disable simulation performance auto-throttling. *** EXTREME CAUTION ***",
+            "Allows volcana/lava to crush your server. Useful for performance profiling.",
+        "Sever-side only."})
+        public boolean disablePerformanceThrottle = false;
+        
         @LangKey("pyroclasm.config.cell_debug_render")
         @Comment({"Enable render of lava cell bounding boxes for debug purposes.",
         "Client-side only."})
@@ -279,6 +285,16 @@ public class Configurator
             "Smaller numbers will allow lava to fully equalize levels before lava hardens but may take longer."})
         @RangeInt(min = 2, max = 1000)
         public int lavaFlowReversalThreshold = 250;
+
+        @LangKey("pyroclasm.config.lava_pressure_factor")
+        @RequiresMcRestart
+        @Comment({"Excess lava in a cell above it's normal volume is multiplied by this. ",
+            "factor to compute an effective fluid surface for determining flow. ",
+            "Larger numbers mean the fluid is less compressible which is more realistic. ",
+            "Smaller numbers result in faster flow through long tunnels and faster convergence ",
+            "to equilibirum pressure surface in complex shapes with narrow junctions."})
+        @RangeInt(min = 1, max = 20)
+        public int pressureFactor = 5;
     }
     
     ////////////////////////////////////////////////////        
@@ -361,6 +377,11 @@ public class Configurator
             peformanceSampleIntervalNanos = (long)performanceSampleIntervalMillis * 1000000;
             performanceBudgetOnTickNanos = peformanceSampleIntervalNanos * PERFORMANCE.onTickProcessingBudget / 100;
             performanceBudgetTotalNanos = peformanceSampleIntervalNanos * PERFORMANCE.totalProcessingBudget / 100;
+            if(DEBUG.disablePerformanceThrottle)
+            {
+                performanceBudgetOnTickNanos = Long.MAX_VALUE;
+                performanceBudgetTotalNanos = Long.MAX_VALUE;
+            }
 
             if(VOLCANO.maxDormantTicks <= VOLCANO.minDormantTicks)
             {
