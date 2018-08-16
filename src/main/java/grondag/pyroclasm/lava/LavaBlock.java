@@ -8,6 +8,7 @@ import grondag.exotic_matter.block.BlockSubstance;
 import grondag.exotic_matter.model.state.ISuperModelState;
 import grondag.exotic_matter.simulator.Simulator;
 import grondag.exotic_matter.terrain.TerrainDynamicBlock;
+import grondag.pyroclasm.Configurator;
 import grondag.pyroclasm.simulator.LavaCell;
 import grondag.pyroclasm.simulator.LavaSimulator;
 import mcjty.theoneprobe.api.IProbeHitData;
@@ -38,6 +39,20 @@ public class LavaBlock extends TerrainDynamicBlock
         this.setTickRandomly(true);
     }
     
+    
+    
+    @Override
+    public final int getLightValue(IBlockState state)
+    {
+        return Configurator.SUBSTANCES.lavaLightLevel;
+    }
+
+    @Override
+    public final int getLightValue(IBlockState state, IBlockAccess world, BlockPos pos)
+    {
+        return Configurator.SUBSTANCES.lavaLightLevel;
+    }
+
     @Override
     public boolean isBurning(IBlockAccess world, BlockPos pos)
     {
@@ -123,6 +138,9 @@ public class LavaBlock extends TerrainDynamicBlock
     public void addProbeInfo(@Nullable ProbeMode mode, @Nullable IProbeInfo probeInfo, @Nullable EntityPlayer player, @Nullable World world, @Nullable IBlockState blockState, @Nullable IProbeHitData data)
     {
         super.addProbeInfo(mode, probeInfo, player, world, blockState, data);
+        if(data == null || probeInfo == null)
+            return;
+        
         LavaSimulator sim = Simulator.instance().getNode(LavaSimulator.class);
         if(sim != null) 
         {

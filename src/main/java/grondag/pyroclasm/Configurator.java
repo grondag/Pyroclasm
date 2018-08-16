@@ -43,10 +43,19 @@ public class Configurator
         @LangKey("pyroclasm.config.lava_material")
         public SubstanceConfig volcanicLava = new SubstanceConfig(-1, BlockHarvestTool.SHOVEL, 3, 2000, 0.75).setBurning().withPathNodeType(ConfigPathNodeType.LAVA);
 
+        @LangKey("pyroclasm.config.lava_light_level")
+        @Comment({"Light level emitted by fully-molten volcanic lava.",
+            "Larger numbers can harm performance by triggering many lighting updates.",
+            "The default is a balance between performance and aestheics.",
+            "For best performance, choose zero.",
+            "Note: changes will not be visible until chunks containing lava are relit due to other events."})
+        @RangeInt(min = 0, max = 15)
+        public int lavaLightLevel = 4;
+        
         @LangKey("pyroclasm.config.destroyed_blocks")
         @Comment({"Blocks that will be destroyed on contact by volcanic lava.",
             "Blocks should be listed in modname:blockname format.",
-            "At this time, metadata and NBT values cannot be specified."})
+        "At this time, metadata and NBT values cannot be specified."})
         public String[] blocksDestroyedByVolcanicLava = {
                 "minecraft:sponge", 
                 "minecraft:stone_pressure_plate",

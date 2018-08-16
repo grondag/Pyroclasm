@@ -8,6 +8,7 @@ pyroclasm.config.general=Pyroclasm Configuration
 pyroclasm.config.substance=Material Properties
 pyroclasm.config.basalt_material=Basalt Material
 pyroclasm.config.lava_material=Lava Material
+pyroclasm.config.lava_light_level=Lava Light Level
 pyroclasm.config.destroyed_blocks=Destructable Blocks
 pyroclasm.config.safe_blocks=Safe Blocks
 
