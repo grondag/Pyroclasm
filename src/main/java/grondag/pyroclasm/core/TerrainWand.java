@@ -8,6 +8,8 @@ import grondag.exotic_matter.terrain.TerrainBlockHelper;
 import grondag.exotic_matter.terrain.TerrainDynamicBlock;
 import grondag.exotic_matter.terrain.TerrainState;
 import grondag.exotic_matter.terrain.TerrainStaticBlock;
+import grondag.exotic_matter.terrain.TerrainWorldAdapter;
+import grondag.exotic_matter.world.PackedBlockPos;
 import grondag.pyroclasm.init.ModBlocks;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
@@ -327,17 +329,19 @@ public class TerrainWand extends RegistratingItem
         AxisAlignedBB axisalignedbb = targetState.getSelectedBoundingBox(worldIn, targetPos);
         if(!worldIn.checkNoEntityCollision(axisalignedbb.offset(pos), playerIn)) return EnumActionResult.FAIL;
 
-        worldIn.setBlockState(targetPos, targetState);
+        TerrainWorldAdapter twa = new TerrainWorldAdapter(worldIn);
+        long packedTargetPos = PackedBlockPos.pack(targetPos);
+        twa.setBlockState(packedTargetPos, targetState);
 
-        TerrainBlockHelper.adjustFillIfNeeded(worldIn, targetPos);
-        TerrainBlockHelper.adjustFillIfNeeded(worldIn, targetPos.east());
-        TerrainBlockHelper.adjustFillIfNeeded(worldIn, targetPos.west());
-        TerrainBlockHelper.adjustFillIfNeeded(worldIn, targetPos.north());
-        TerrainBlockHelper.adjustFillIfNeeded(worldIn, targetPos.south());
-        TerrainBlockHelper.adjustFillIfNeeded(worldIn, targetPos.north().east());
-        TerrainBlockHelper.adjustFillIfNeeded(worldIn, targetPos.south().east());
-        TerrainBlockHelper.adjustFillIfNeeded(worldIn, targetPos.north().west());
-        TerrainBlockHelper.adjustFillIfNeeded(worldIn, targetPos.south().west());
+        TerrainBlockHelper.adjustFillIfNeeded(twa, packedTargetPos);
+        TerrainBlockHelper.adjustFillIfNeeded(twa, PackedBlockPos.east(packedTargetPos));
+        TerrainBlockHelper.adjustFillIfNeeded(twa, PackedBlockPos.west(packedTargetPos));
+        TerrainBlockHelper.adjustFillIfNeeded(twa, PackedBlockPos.north(packedTargetPos));
+        TerrainBlockHelper.adjustFillIfNeeded(twa, PackedBlockPos.south(packedTargetPos));
+        TerrainBlockHelper.adjustFillIfNeeded(twa, PackedBlockPos.add(packedTargetPos, -1, 0, -1));
+        TerrainBlockHelper.adjustFillIfNeeded(twa, PackedBlockPos.add(packedTargetPos, -1, 0, 1));
+        TerrainBlockHelper.adjustFillIfNeeded(twa, PackedBlockPos.add(packedTargetPos, 1, 0, -1));
+        TerrainBlockHelper.adjustFillIfNeeded(twa, PackedBlockPos.add(packedTargetPos, 1, 0, 1));
 
         worldIn.playSound((double)((float)targetPos.getX() + 0.5F), 
                 (double)((float)targetPos.getY() + 0.5F), 

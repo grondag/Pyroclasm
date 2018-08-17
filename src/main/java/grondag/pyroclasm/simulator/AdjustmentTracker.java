@@ -5,6 +5,7 @@ import java.util.function.Predicate;
 import javax.annotation.Nullable;
 
 import grondag.exotic_matter.block.ISuperBlock;
+import grondag.exotic_matter.terrain.TerrainWorldAdapter;
 import grondag.exotic_matter.terrain.TerrainBlockHelper;
 import grondag.exotic_matter.terrain.TerrainStaticBlock;
 import grondag.exotic_matter.world.PackedBlockPos;
@@ -14,7 +15,6 @@ import grondag.pyroclasm.lava.LavaTerrainHelper;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
 
 /**
  * Tracks positions that require adjustment (filler block addition or remove, static-to-dynamic conversion)
@@ -121,22 +121,23 @@ public class AdjustmentTracker
     /**
      * Member instance should be fine here because not re-entrant.
      */
-    private BlockPos.MutableBlockPos targetPos = new BlockPos.MutableBlockPos();
+    private final BlockPos.MutableBlockPos targetPos = new BlockPos.MutableBlockPos();
+    
+    private final TerrainWorldAdapter twa = new TerrainWorldAdapter();
     
     /** returns true an update occured */
     private boolean adjustFillIfNeeded(final long packedBlockPos, LavaSimulator sim)
     {
-        final World world = sim.world;
+        final TerrainWorldAdapter world = this.twa; 
+        world.prepare(sim.world);
         
-        PackedBlockPos.unpackTo(packedBlockPos, targetPos);
-        
-        IBlockState baseState = world.getBlockState(targetPos);
+        final IBlockState baseState = world.getBlockState(packedBlockPos);
         
         if(baseState.getBlock() == ModBlocks.basalt_cut)
         {
-            if( !TerrainBlockHelper.shouldBeFullCube(baseState, world, targetPos))
+            if( !world.terrainState(baseState, packedBlockPos).isFullCube())
             {
-                world.setBlockState(targetPos.toImmutable(), ModBlocks.basalt_cool_dynamic_height.getDefaultState().withProperty(ISuperBlock.META, baseState.getValue(ISuperBlock.META)));
+                world.setBlockState(packedBlockPos, ModBlocks.basalt_cool_dynamic_height.getDefaultState().withProperty(ISuperBlock.META, baseState.getValue(ISuperBlock.META)));
                 return true;
             }
             else
@@ -146,9 +147,9 @@ public class AdjustmentTracker
         }
         else if(baseState.getBlock() == ModBlocks.basalt_cool_dynamic_height)
         {
-            if(TerrainBlockHelper.shouldBeFullCube(baseState, world, targetPos))
+            if(world.terrainState(baseState, packedBlockPos).isFullCube())
             {
-                world.setBlockState(targetPos.toImmutable(), ModBlocks.basalt_cut.getDefaultState().withProperty(ISuperBlock.META, baseState.getValue(ISuperBlock.META)));
+                world.setBlockState(packedBlockPos, ModBlocks.basalt_cut.getDefaultState().withProperty(ISuperBlock.META, baseState.getValue(ISuperBlock.META)));
                 return true;
             }
             else
@@ -157,14 +158,15 @@ public class AdjustmentTracker
             }
         }
         
-        IBlockState newState = TerrainBlockHelper.adjustFillIfNeeded(world, targetPos, ADJUSTMENT_PREDICATE);
+        IBlockState newState = TerrainBlockHelper.adjustFillIfNeeded(world, PackedBlockPos.unpack(packedBlockPos), ADJUSTMENT_PREDICATE);
         
         if(newState == null)
         {
             // replace static flow height blocks with dynamic version
+            // this won't affect our adjustment state cache in any meaningful way
             if(baseState.getBlock() instanceof TerrainStaticBlock)
             {
-                ((TerrainStaticBlock)baseState.getBlock()).makeDynamic(baseState, world, targetPos.toImmutable());
+                ((TerrainStaticBlock)baseState.getBlock()).makeDynamic(baseState, sim.world, PackedBlockPos.unpack(packedBlockPos));
                 return true;
             }
             else
@@ -173,7 +175,8 @@ public class AdjustmentTracker
             }
         }
         
-        if(baseState.getBlock().isWood(world, targetPos))
+        PackedBlockPos.unpackTo(packedBlockPos, targetPos);
+        if(baseState.getBlock().isWood(sim.world, targetPos))
         {
             sim.lavaTreeCutter.queueTreeCheck(PackedBlockPos.up(packedBlockPos));
         }
