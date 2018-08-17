@@ -159,6 +159,7 @@ public class VolcanoStateMachine implements ISimulationTickable
     private final LavaSimulator lavaSim;
     
     private int lavaRemainingThisPass = 0;
+    private int lavaPerCellThisPass = 0;
     
     private final World world;
     
@@ -215,8 +216,6 @@ public class VolcanoStateMachine implements ISimulationTickable
     @Override
     public void doOnTick()
     {
-        this.lavaRemainingThisPass = Configurator.VOLCANO.lavaBlocksPerSecond * LavaSimulator.FLUID_UNITS_PER_BLOCK / 20;
-        
         for(int i = 0; i < OPERATIONS_PER_TICK; i++)
         {
             switch(this.operation)
@@ -428,7 +427,11 @@ public class VolcanoStateMachine implements ISimulationTickable
             assert false : "Improper initialization or cleanup in volcano state machine. Restarting.";
             offsetIndex = 0;
         }
-
+        else if(this.offsetIndex == 0)
+        {
+            this.lavaRemainingThisPass = Configurator.VOLCANO.lavaBlocksPerSecond * LavaSimulator.FLUID_UNITS_PER_BLOCK / 20;
+            this.lavaPerCellThisPass = lavaRemainingThisPass / MAX_BORE_OFFSET + 1;
+        }
         
         if(lavaRemainingThisPass > 0)
             doBlobs();
@@ -447,7 +450,7 @@ public class VolcanoStateMachine implements ISimulationTickable
             // cell has room, add lava if available
             if(lavaRemainingThisPass > 0)
             {
-                final int amount = Math.min(LavaSimulator.FLUID_UNITS_PER_LEVEL, lavaRemainingThisPass);
+                final int amount = Math.min(lavaPerCellThisPass, lavaRemainingThisPass);
                 this.lavaRemainingThisPass -= amount;
                 cell.addLava(amount);
             }
