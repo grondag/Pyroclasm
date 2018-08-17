@@ -12,6 +12,7 @@ import grondag.exotic_matter.varia.SimpleUnorderedArrayList;
 import grondag.exotic_matter.world.PackedBlockPos;
 import grondag.pyroclasm.Configurator;
 import grondag.pyroclasm.init.ModBlocks;
+import grondag.pyroclasm.lava.LavaTreeCutter;
 import grondag.pyroclasm.simulator.LavaConnection.Flowable;
 import io.netty.util.internal.ThreadLocalRandom;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
@@ -1799,8 +1800,6 @@ public class LavaCell extends AbstractLavaCell
             this.clearRefreshRange();
         }
         
-        final World world = sim.world;
-        
         if(shouldGenerate)
         {
             final boolean hasLava = !this.isEmpty();
@@ -1808,26 +1807,26 @@ public class LavaCell extends AbstractLavaCell
             final int x = this.locator.x;
             final int z = this.locator.z;
             
-            final AdjustmentTracker tracker = new AdjustmentTracker();
-            
             final BlockPos.MutableBlockPos pos = updatePos.get();
+            
+            final AdjustmentTracker tracker = sim.adjustmentTracker;
             
             for(int y = bottomY; y <= topY; y++)
             {
                 pos.setPos(x, y, z);
                 
-                IBlockState priorState = world.getBlockState(pos);
+                IBlockState priorState = tracker.getBlockState(pos);
                 
                 if(hasLava && y == currentSurfaceY)
                 {
                     // partial or full lava block
-                    world.setBlockState(pos.toImmutable(), 
+                    tracker.setBlockState(pos, 
                             TerrainBlockHelper.stateWithDiscreteFlowHeight(ModBlocks.lava_dynamic_height.getDefaultState(), currentVisible - currentSurfaceY * TerrainState.BLOCK_LEVELS_INT));
                 
                     tracker.setAdjustmentNeededAround(x, y, z);
                     tracker.excludeAdjustmentNeededAt(x, y, z);
                     
-                    if(priorState.getBlock().isWood(world, pos))
+                    if(priorState.getBlock().isWood(tracker, pos))
                     {
                         sim.lavaTreeCutter.queueTreeCheck(PackedBlockPos.pack(x, y + 1, z));
                     }
@@ -1835,7 +1834,7 @@ public class LavaCell extends AbstractLavaCell
                 else if(hasLava && y < currentSurfaceY)
                 {
                     // full lava block
-                    world.setBlockState(pos.toImmutable(), 
+                    tracker.setBlockState(pos, 
                             TerrainBlockHelper.stateWithDiscreteFlowHeight(ModBlocks.lava_dynamic_height.getDefaultState(), TerrainState.BLOCK_LEVELS_INT));
                     
                     tracker.setAdjustmentNeededAround(x, y, z);
@@ -1846,15 +1845,13 @@ public class LavaCell extends AbstractLavaCell
                     // don't want to clear non-air blocks if they did not contain lava - let falling particles do that
                     if(priorState.getBlock() == ModBlocks.lava_dynamic_height)
                     {
-                        world.setBlockState(pos.toImmutable(), Blocks.AIR.getDefaultState());
+                        tracker.setBlockState(pos, Blocks.AIR.getDefaultState());
                         
                         // difference here is that we allow fillers in the block being set
                         tracker.setAdjustmentNeededAround(x, y, z);
                     }
                 }
             }
-            
-            tracker.doAdjustments(sim);
         }
     }
     

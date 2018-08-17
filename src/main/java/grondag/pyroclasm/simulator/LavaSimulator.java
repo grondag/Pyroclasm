@@ -78,6 +78,7 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
     private final LavaTerrainHelper terrainHelper;
     public final LavaBlobManager particleManager;
     private final BasaltTracker basaltTracker;
+    final AdjustmentTracker adjustmentTracker = new AdjustmentTracker();
     
     public final ChunkTracker chunkTracker = new ChunkTracker();
     public final World world;
@@ -85,7 +86,7 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
 
     public final LavaCells cells = new LavaCells(this);
     public final AbstractLavaConnections connections = new LavaConnections(this);
-    public final LavaTreeCutter lavaTreeCutter;
+    final LavaTreeCutter lavaTreeCutter;
 
     private boolean isDirty;
     
@@ -406,7 +407,9 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
     {
         this.itMe = true;
         perfBlockUpdate.startRun();
+        this.adjustmentTracker.prepare(this.world);
         this.cells.provideBlockUpdatesAndDoCooling(packedChunkPos);
+        this.adjustmentTracker.doAdjustments(this);
         perfBlockUpdate.endRun();
         this.basaltTracker.doBasaltCooling(packedChunkPos);
         this.itMe = false;
