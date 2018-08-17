@@ -1,6 +1,7 @@
 package grondag.pyroclasm.simulator;
 
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 
 import javax.annotation.Nullable;
@@ -81,6 +82,12 @@ public class LavaCell extends AbstractLavaCell
      * Will be {@value #NEVER_REPORTED} if that method has not yet been called.
      */
     private int lastVisibleLevel = NEVER_REPORTED; 
+    
+    /**
+     * When level changes are small, block updates may be deferred. This tracks the delta
+     * block update in levels if the change was deferred during the last call to {@link #provideBlockUpdateIfNeeded(LavaSimulator)}.
+     */
+    private int deferredChangeDelta = 0;
     
     
     /** true if this cell should remain loaded */
@@ -1762,6 +1769,9 @@ public class LavaCell extends AbstractLavaCell
         }
     };
     
+//    private static AtomicInteger deferAttempts = new AtomicInteger();
+//    private static AtomicInteger deferSuccess = new AtomicInteger();
+    
     /**
      * Assumes block updates will be applied to world/worldBuffer before any more world interaction occurs.
      * Consistent with this expectations, it sets lastVisibleLevel = currentVisibleLevel.
@@ -1782,15 +1792,7 @@ public class LavaCell extends AbstractLavaCell
         int bottomY = 256;
         int topY = -1;
         boolean shouldGenerate = false;
-        
-        if(lastVisible != currentVisible)
-        {
-            shouldGenerate = true;
-            int lastSurfaceY = Math.max(this.floorY(), getYFromCeilingLevel(lastVisible));
-            bottomY = Math.min(lastSurfaceY, currentSurfaceY);
-            topY = Math.max(lastSurfaceY, currentSurfaceY);
-            this.lastVisibleLevel = currentVisible;
-        }
+        final int floor = this.floorLevel();
         
         if(this.hasRefreshRange())
         {
@@ -1798,6 +1800,41 @@ public class LavaCell extends AbstractLavaCell
             bottomY = Math.min(bottomY, this.refreshBottomY);
             topY = Math.max(topY, this.refreshTopY);
             this.clearRefreshRange();
+        }
+        
+        final int delta = currentVisible - lastVisible;
+        if(delta != 0)
+        {
+            // can defer if following conditions are true
+            // Not refereshing already due to range refresh 
+            // AND change is small
+            // AND (change in opposite direction of last deferred change
+            //          OR did not defer last time)
+            // AND cell is not transitioning to/from an empty state
+            if(     !shouldGenerate
+                    && lastVisible > floor 
+                    && currentVisible > floor 
+                    && Math.abs(delta) < 3
+                    && (deferredChangeDelta == 0 || (deferredChangeDelta > 0) != (delta > 0)))
+            {
+                deferredChangeDelta = delta;
+//                deferSuccess.incrementAndGet();
+            }
+            else
+            {
+                shouldGenerate = true;
+                int lastSurfaceY = Math.max(this.floorY(), getYFromCeilingLevel(lastVisible));
+                bottomY = Math.min(lastSurfaceY, currentSurfaceY);
+                topY = Math.max(lastSurfaceY, currentSurfaceY);
+                this.lastVisibleLevel = currentVisible;
+            }
+            
+//            if(deferAttempts.incrementAndGet() == 10000)
+//            {
+//                System.out.println("Deferral rate = " + (deferSuccess.get() * 100 / 10000));
+//                deferSuccess.set(0);
+//                deferAttempts.set(0);
+//            }
         }
         
         if(shouldGenerate)
