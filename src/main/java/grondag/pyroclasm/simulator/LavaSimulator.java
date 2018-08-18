@@ -82,7 +82,6 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
     
     public final ChunkTracker chunkTracker = new ChunkTracker();
     public final World world;
-    
 
     public final LavaCells cells = new LavaCells(this);
     public final AbstractLavaConnections connections = new LavaConnections(this);

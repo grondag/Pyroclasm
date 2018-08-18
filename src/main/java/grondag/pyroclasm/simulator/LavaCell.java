@@ -6,6 +6,7 @@ import java.util.function.Predicate;
 
 import javax.annotation.Nullable;
 
+import grondag.exotic_matter.block.SuperBlockWorldAccess;
 import grondag.exotic_matter.simulator.Simulator;
 import grondag.exotic_matter.terrain.TerrainBlockHelper;
 import grondag.exotic_matter.terrain.TerrainState;
@@ -1619,8 +1620,7 @@ public class LavaCell extends AbstractLavaCell
         BlockPos.MutableBlockPos pos = flowFloorPos.get();
         pos.setPos(this.x(), y, this.z());
         IBlockState blockState = world.getBlockState(pos);
-        TerrainState tState = TerrainBlockHelper.getTerrainState(blockState, world, pos);
-        
+        TerrainState tState = SuperBlockWorldAccess.access(world).terrainState(blockState, pos);
         return tState.retentionLevels() * LavaSimulator.FLUID_UNITS_PER_LEVEL;
     }
     

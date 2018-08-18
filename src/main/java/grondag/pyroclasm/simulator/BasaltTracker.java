@@ -2,6 +2,8 @@ package grondag.pyroclasm.simulator;
 
 import javax.annotation.Nullable;
 
+import grondag.exotic_matter.block.ISuperBlockAccess;
+import grondag.exotic_matter.block.SuperBlockWorldAccess;
 import grondag.exotic_matter.concurrency.PerformanceCollector;
 import grondag.exotic_matter.concurrency.PerformanceCounter;
 import grondag.exotic_matter.serialization.NBTDictionary;
@@ -32,6 +34,7 @@ public class BasaltTracker
     
     private final PerformanceCounter perfCounter;
     private final  World world;
+    private final ISuperBlockAccess access;
     private final ChunkTracker chunkTracker;
     
     private int size = 0;
@@ -52,7 +55,7 @@ public class BasaltTracker
                 Block block = state.getBlock();
                 if(block instanceof CoolingBasaltBlock)
                 {
-                    switch(((CoolingBasaltBlock)block).tryCooling(world, pos, state))
+                    switch(((CoolingBasaltBlock)block).tryCooling(world, access, pos, state))
                     {
                         case PARTIAL:
                             // will be ready to cool again after delay
@@ -83,6 +86,7 @@ public class BasaltTracker
     public BasaltTracker(PerformanceCollector perfCollector, World world, ChunkTracker chunkTracker)
     {
         this.world = world;
+        this.access = SuperBlockWorldAccess.access(world);
         this.chunkTracker = chunkTracker;
         this.perfCounter = PerformanceCounter.create(Configurator.DEBUG.enablePerformanceLogging, "Basalt cooling", perfCollector);
     }

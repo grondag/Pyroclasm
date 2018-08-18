@@ -9,9 +9,9 @@ import javax.annotation.Nullable;
 import grondag.exotic_matter.ExoticMatter;
 import grondag.exotic_matter.block.BlockSubstance;
 import grondag.exotic_matter.block.ISuperBlock;
+import grondag.exotic_matter.block.ISuperBlockAccess;
 import grondag.exotic_matter.model.state.ISuperModelState;
 import grondag.exotic_matter.simulator.Simulator;
-import grondag.exotic_matter.terrain.TerrainBlockHelper;
 import grondag.exotic_matter.terrain.TerrainDynamicBlock;
 import grondag.pyroclasm.init.ModBlocks;
 import grondag.pyroclasm.simulator.LavaSimulator;
@@ -51,18 +51,18 @@ public class CoolingBasaltBlock extends TerrainDynamicBlock
     /**
      * Cools this block if ready and returns true if successful.
      */
-    public CoolingResult tryCooling(World worldIn, BlockPos pos, final IBlockState state)
+    public CoolingResult tryCooling(World worldIn, ISuperBlockAccess access, BlockPos pos, final IBlockState state)
     {
         TerrainDynamicBlock nextBlock = this.nextCoolingBlock;
         if(nextBlock == null) return CoolingResult.INVALID;
         
         if(state.getBlock() == this)
         {
-            if(canCool(worldIn, pos, state))
+            if(canCool(access, pos, state))
             {
                 if(this.nextCoolingBlock == ModBlocks.basalt_cool_dynamic_height)
                 {
-                    if( TerrainBlockHelper.shouldBeFullCube(state, worldIn, pos))
+                    if(access.terrainState(state, pos).isFullCube())
                     {
                         worldIn.setBlockState(pos, ModBlocks.basalt_cut.getDefaultState().withProperty(ISuperBlock.META, state.getValue(ISuperBlock.META)));
                     }
@@ -106,9 +106,9 @@ public class CoolingBasaltBlock extends TerrainDynamicBlock
     
     /** True if no adjacent blocks are hotter than me and at least four adjacent blocks are cooler.
      * Occasionally can cool if only three are cooler. */
-    public boolean canCool(World worldIn, BlockPos pos, IBlockState state)
+    public boolean canCool(ISuperBlockAccess worldIn, BlockPos pos, IBlockState state)
     {
-        if(TerrainBlockHelper.shouldBeFullCube(state, worldIn, pos)) return true;
+        if(worldIn.terrainState(state, pos).isFullCube()) return true;
         
         int chances = 0;
         
