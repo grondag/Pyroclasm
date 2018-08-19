@@ -36,10 +36,7 @@ public class LavaBlock extends TerrainDynamicBlock
     {
         super(blockName, substance, defaultModelState, isFiller);
         this.enhancedModelState = enhancedModelState;
-        this.setTickRandomly(true);
     }
-    
-    
     
     @Override
     public final int getLightValue(IBlockState state)

@@ -33,7 +33,6 @@ public class CoolingBasaltBlock extends TerrainDynamicBlock
     {
         super(blockName, substance, defaultModelState, isFiller);
         this.enhancedModelState = enhancedModelState;
-        this.setTickRandomly(true);
     }
 
     public static enum CoolingResult
@@ -146,14 +145,6 @@ public class CoolingBasaltBlock extends TerrainDynamicBlock
         this.nextCoolingBlock = nextCoolingBlock;
         this.heatLevel = heatLevel;
         return this;
-    }
-
-    @Override
-    public void randomTick(@Nonnull World worldIn, @Nonnull BlockPos pos, @Nonnull IBlockState state, @Nonnull Random random)
-    {
-        // Gather orphaned blocks
-        LavaSimulator sim = Simulator.instance().getNode(LavaSimulator.class);
-        if(sim != null) sim.registerCoolingBlock(worldIn, pos);
     }
 
     @Override
