@@ -78,7 +78,7 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
     private final LavaTerrainHelper terrainHelper;
     public final LavaBlobManager particleManager;
     private final BasaltTracker basaltTracker;
-    final AdjustmentTracker adjustmentTracker = new AdjustmentTracker();
+    final AdjustmentTracker adjustmentTracker;
     
     public final ChunkTracker chunkTracker = new ChunkTracker();
     public final World world;
@@ -189,7 +189,7 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
         this.terrainHelper = new LavaTerrainHelper(this.world);        
         this.particleManager = new LavaBlobManager();
         this.basaltTracker = new BasaltTracker(perfCollectorOnTick, this.world, this.chunkTracker);
-        
+        this.adjustmentTracker = new AdjustmentTracker(this);
     }
     
     /**
@@ -371,9 +371,13 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
         // Particle processing
         this.doParticles();
         
+        this.adjustmentTracker.prepare(this.world);
+        
         this.doChunkUpdates();
         
         this.lavaTreeCutter.doOnTick();
+        
+        // this part doesn't use tracker - uses world directly
         
         this.cells.validateChunks();
         
@@ -406,9 +410,7 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
     {
         this.itMe = true;
         perfBlockUpdate.startRun();
-        this.adjustmentTracker.prepare(this.world);
         this.cells.provideBlockUpdatesAndDoCooling(packedChunkPos);
-        this.adjustmentTracker.doAdjustments(this);
         perfBlockUpdate.endRun();
         this.basaltTracker.doBasaltCooling(packedChunkPos);
         this.itMe = false;

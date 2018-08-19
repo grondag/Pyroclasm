@@ -486,7 +486,7 @@ public class VolcanoStateMachine implements ISimulationTickable
             offsetIndex = 0;
 
             // if used up all the lava, continue flowing, otherwise too constrained - mound or explode
-            return this.lavaRemainingThisPass == 0 ? Operation.FLOW : Operation.FIND_WEAKNESS;
+            return this.lavaRemainingThisPass <= 0 ? Operation.FLOW : Operation.FIND_WEAKNESS;
         }
         else
         {

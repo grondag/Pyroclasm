@@ -34,7 +34,6 @@ public class BasaltTracker
     
     private final PerformanceCounter perfCounter;
     private final  World world;
-    private final ISuperBlockAccess access;
     private final ChunkTracker chunkTracker;
     
     private int size = 0;
@@ -42,7 +41,7 @@ public class BasaltTracker
     private void coolBlocks(Long2IntOpenHashMap targets)
     {
         int lastEligibleBasaltCoolingTick = Simulator.currentTick() - Configurator.LAVA.basaltCoolingTicks;
-
+        final ISuperBlockAccess access = SuperBlockWorldAccess.access(world);
         ObjectIterator<Entry> it = targets.long2IntEntrySet().fastIterator();
         while(it.hasNext())
         {
@@ -83,10 +82,10 @@ public class BasaltTracker
         
     }
     
+    @SuppressWarnings("null")
     public BasaltTracker(PerformanceCollector perfCollector, World world, ChunkTracker chunkTracker)
     {
         this.world = world;
-        this.access = SuperBlockWorldAccess.access(world);
         this.chunkTracker = chunkTracker;
         this.perfCounter = PerformanceCounter.create(Configurator.DEBUG.enablePerformanceLogging, "Basalt cooling", perfCollector);
     }

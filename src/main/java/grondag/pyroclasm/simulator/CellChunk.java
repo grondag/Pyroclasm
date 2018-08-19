@@ -534,17 +534,14 @@ public class CellChunk
             {
                 cell.provideBlockUpdateIfNeeded(sim);
                 
-                // necessary because cell may be deleted by cooling
-                // and would no longer have a reference to the next cell
-                LavaCell nextCell = cell.aboveCell();
-                
                 if(enableCooling &&  cell.canCool(tick))
-                {
                     coolTargets.add(cell);
-                }
-                cell = nextCell;
+
+                cell = cell.aboveCell();
             }
         }
+        
+        sim.adjustmentTracker.applyUpdates();
         
         if(!coolTargets.isEmpty()) coolTargets.forEach(cell -> sim.coolCell(cell));
         

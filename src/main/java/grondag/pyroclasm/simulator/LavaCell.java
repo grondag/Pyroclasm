@@ -1859,9 +1859,6 @@ public class LavaCell extends AbstractLavaCell
                     // partial or full lava block
                     tracker.setBlockState(pos, 
                             TerrainBlockHelper.stateWithDiscreteFlowHeight(ModBlocks.lava_dynamic_height.getDefaultState(), currentVisible - currentSurfaceY * TerrainState.BLOCK_LEVELS_INT));
-                
-                    tracker.setAdjustmentNeededAround(x, y, z);
-                    tracker.excludeAdjustmentNeededAt(x, y, z);
                     
                     if(priorState.getBlock().isWood(tracker, pos))
                     {
@@ -1873,9 +1870,6 @@ public class LavaCell extends AbstractLavaCell
                     // full lava block
                     tracker.setBlockState(pos, 
                             TerrainBlockHelper.stateWithDiscreteFlowHeight(ModBlocks.lava_dynamic_height.getDefaultState(), TerrainState.BLOCK_LEVELS_INT));
-                    
-                    tracker.setAdjustmentNeededAround(x, y, z);
-                    tracker.excludeAdjustmentNeededAt(x, y, z);
                 }
                 else
                 {
@@ -1883,9 +1877,6 @@ public class LavaCell extends AbstractLavaCell
                     if(priorState.getBlock() == ModBlocks.lava_dynamic_height)
                     {
                         tracker.setBlockState(pos, Blocks.AIR.getDefaultState());
-                        
-                        // difference here is that we allow fillers in the block being set
-                        tracker.setAdjustmentNeededAround(x, y, z);
                     }
                 }
             }
