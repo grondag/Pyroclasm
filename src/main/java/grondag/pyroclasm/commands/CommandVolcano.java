@@ -12,6 +12,8 @@ public class CommandVolcano extends CommandTreeBase
         this.addSubcommand(new CommandStatus());
         this.addSubcommand(new CommandWake());
         this.addSubcommand(new CommandSleep());
+        this.addSubcommand(new CommandSuspend());
+        this.addSubcommand(new CommandResume());
     }
     
     @Override

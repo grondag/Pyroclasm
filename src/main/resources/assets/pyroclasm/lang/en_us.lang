@@ -91,16 +91,25 @@ texture.basalt_very_hot=Very Hot Basalt
 texture.basalt_hint=Basalt Hint
 
 #COMMANDS
-commands.volcano.usage=Use /volcano <status | mark | unmark | wake | pause | sleep> 
+commands.volcano.usage=Use /volcano <status | mark | wake | sleep | suspend | resume> 
 commands.volcano.mark.usage=Marks all nearby volcanos by placing a pillar of blocks
 commands.volcano.dimension_disabled=Volcanos not enabled in this dimension
+commands.volcano.status.usage=Reports information on nearby volcanos
 commands.volcano.status_header=Volcanos within 64 chunks
 commands.volcano.status=Distance: %d  X: %d  Z: %d  Status: %s
+commands.volcano.wake.usage=Causes the nearest volcano to become active
 commands.volcano.wake.already_awake=Nearest volcano is already awake
 commands.volcano.wake.fail=No volcano found nearby or was unable to wake it up
 commands.volcano.wake.success=Successfully activated volcano located at x=%d, z=%d
+commands.volcano.sleep.usage=Causes nearest active volcano to become dormant
 commands.volcano.sleep.no_active_found=No active volcano found nearby
 commands.volcano.sleep.fail=Unable to put nearest volcano to sleep.  Reason unknown.
 commands.volcano.sleep.success=Successfully quieted volcano located at x=%d, z=%d
+commands.volcano.mark.usage=Marks nearby volcanos by placing pillars of glass blocks (WIP)
+commands.volcano.suspend.usage=Pauses all lava and volcano processing until game restart or /volcano resume
+commands.volcano.suspend.success=All lava and volcano processing is suspended until game restart. Use /volcano resume to undo.
+commands.volcano.resume.usage=Continue lava and volcano processing paused by /volcano suspend
+commands.volcano.resume.success=Lava and volcano processing is resuming.
+
 
 

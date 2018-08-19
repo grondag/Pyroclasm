@@ -65,6 +65,7 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
     public static final int FLUID_UNITS_PER_TICK = FLUID_UNITS_PER_BLOCK / 20;
     public static final int MIN_FLOW_UNITS = 2;
 
+    public static boolean isSuspended = false;
     
     public final PerformanceCollector perfCollectorAllTick = new PerformanceCollector("Lava Simulator Whole tick");
     public final PerformanceCollector perfCollectorOnTick = new PerformanceCollector("Lava Simulator On tick");
@@ -365,6 +366,9 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
     @Override
     public void doOnTick()
     {
+        if(isSuspended)
+            return;
+        
         this.doStats();
         perfOnTick.startRun();
         
@@ -419,6 +423,9 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
     @Override
     public void doOffTick()
     {
+        if(isSuspended)
+            return;
+
         if(Configurator.DEBUG.enablePerformanceLogging) perfOffTick.startRun();
        
         // update connections as needed, handle other housekeeping, identify flowable connections

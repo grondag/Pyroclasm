@@ -210,6 +210,9 @@ public class VolcanoManager implements ISimulationTickable, ISimulationTopNode
     @Override
     public void doOnTick()
     {
+        if(LavaSimulator.isSuspended)
+            return;
+
         if(!this.activeNodes.isEmpty())
         {
             for(VolcanoNode node : this.activeNodes.values())
@@ -226,6 +229,8 @@ public class VolcanoManager implements ISimulationTickable, ISimulationTopNode
     @Override
     public void doOffTick()
     {
+        if(LavaSimulator.isSuspended)
+            return;
         
         if(this.activeNodes.isEmpty())
         {
