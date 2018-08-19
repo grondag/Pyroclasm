@@ -50,7 +50,7 @@ public class Configurator
             "For best performance, choose zero.",
             "Note: changes will not be visible until chunks containing lava are relit due to other events."})
         @RangeInt(min = 0, max = 15)
-        public int lavaLightLevel = 4;
+        public int lavaLightLevel = 0;
         
         @LangKey("pyroclasm.config.destroyed_blocks")
         @Comment({"Blocks that will be destroyed on contact by volcanic lava.",
@@ -341,8 +341,8 @@ public class Configurator
         @LangKey("pyroclasm.config.max_lava_projectiles")
         @Comment({"Maximum number of flying/falling volcalnic lava entities that may be in the world simultaneously.",
             "Higher numbers may provide more responsive flowing and better realism but can create lag."})
-        @RangeInt(min = 10, max = 200)
-        public int maxLavaEntities = 20;
+        @RangeInt(min = 0, max = 200)
+        public int maxLavaEntities = 10;
 
         /** Contains block objects configured to be destroyed by lava */
         public static final IdentityHashMap<Block, Block> blocksDestroyedByLava = new IdentityHashMap<Block, Block>();
