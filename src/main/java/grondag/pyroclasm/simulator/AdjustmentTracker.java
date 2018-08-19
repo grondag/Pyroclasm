@@ -102,13 +102,15 @@ public class AdjustmentTracker extends TerrainWorldAdapter
         {
             heightBlocks.add(pos);
             if(isSurface)
+            {
+                surfaceBlocks.add(pos);
                 checkAboveOldHeightBlock(pos);
+            }
         });
     }
 
     /**
-     * Tracks filler blocks if found, and also adds to potential
-     * surface list if block is at the (old) surface.
+     * Tracks filler blocks if found.
      */
     private void checkAboveOldHeightBlock(long packedBlockPos)
     {
@@ -117,7 +119,6 @@ public class AdjustmentTracker extends TerrainWorldAdapter
         
         if(!TerrainBlockHelper.isFlowHeight(firstAbove))
         {
-            surfaceBlocks.add(packedBlockPos);
             if(TerrainBlockHelper.isFlowFiller(firstAbove))
             {
                 oldFillerBlocks.add(up);
@@ -225,7 +226,7 @@ public class AdjustmentTracker extends TerrainWorldAdapter
         // this won't affect our terrain state cache in any meaningful way
         else if(block instanceof TerrainStaticBlock)
         {
-            IBlockState newState = ((TerrainStaticBlock)block).dynamicState(baseState, this.world, PackedBlockPos.unpack(packedBlockPos));
+            IBlockState newState = ((TerrainStaticBlock)block).dynamicState(baseState, this, PackedBlockPos.unpack(packedBlockPos));
             if(newState != baseState)
                 setBlockState(packedBlockPos, newState, false);
         }
@@ -315,6 +316,7 @@ public class AdjustmentTracker extends TerrainWorldAdapter
         
         for(long l : pendingUpdates)
         {
+            //TODO: check if worth comparing to old world state before applying - do we have any reversions internal to our process?
             IBlockState newState = this.blockStates.get(l);
             if(newState != null)
             {
