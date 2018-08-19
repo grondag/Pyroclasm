@@ -15,6 +15,7 @@ import it.unimi.dsi.fastutil.longs.LongIterator;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
+import net.minecraft.init.Blocks;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.BlockPos.MutableBlockPos;
 import net.minecraft.world.World;
@@ -64,13 +65,23 @@ public class AdjustmentTracker extends TerrainWorldAdapter
     @Override
     protected final void onBlockStateChange(long packedBlockPos, IBlockState oldBlockState, IBlockState newBlockState)
     {
+        // don't trust the old state passed in - could already reflect update
+        oldBlockState = oldWorld.getBlockState(packedBlockPos);
         final boolean isNewHeight = TerrainBlockHelper.isFlowHeight(newBlockState.getBlock());
         final boolean isOldHeight = TerrainBlockHelper.isFlowHeight(oldBlockState.getBlock());
         
-        if(isOldHeight && (!isNewHeight 
-                || TerrainBlockHelper.getFlowHeightFromState(newBlockState) != TerrainBlockHelper.getFlowHeightFromState(oldBlockState)))
+        if(isOldHeight)
         {
             trackOldHeightChange(packedBlockPos);
+            if(!isNewHeight) 
+                // add block below to surface checks - may be new surface
+                surfaceBlocks.add(PackedBlockPos.down(packedBlockPos));
+
+//            // confirm height changed and then track if so
+//            else if(TerrainBlockHelper.getFlowHeightFromState(newBlockState) != TerrainBlockHelper.getFlowHeightFromState(oldBlockState))
+//            {
+//                trackOldHeightChange(packedBlockPos);
+//            }
         }
         
         if(isNewHeight)
@@ -149,7 +160,7 @@ public class AdjustmentTracker extends TerrainWorldAdapter
         
         handleSurfaceUpdates();
         
-        //TODO: remove remaining old filler blocks
+        removeOrphanFillers();
         
         applyPendingUpdateToWorld();
     }
@@ -254,11 +265,11 @@ public class AdjustmentTracker extends TerrainWorldAdapter
         if(!LavaTerrainHelper.canLavaDisplace(state1))
             return;
         
-        ISuperBlock fillBlock = (ISuperBlock) TerrainBlockRegistry.TERRAIN_STATE_REGISTRY.getFillerBlock(block0);
+        Block fillBlock =TerrainBlockRegistry.TERRAIN_STATE_REGISTRY.getFillerBlock(block0);
         if(fillBlock == null)
             return;
         
-        IBlockState update = ((Block)fillBlock).getDefaultState().withProperty(ISuperBlock.META, 0);
+        IBlockState update = fillBlock.getDefaultState().withProperty(ISuperBlock.META, 0);
         if(update != state1)
             setBlockState(pos1, update, false);
         this.oldFillerBlocks.rem(pos1);
@@ -271,11 +282,28 @@ public class AdjustmentTracker extends TerrainWorldAdapter
             if(!LavaTerrainHelper.canLavaDisplace(state2))
                 return;
             
-            update = ((Block)fillBlock).getDefaultState().withProperty(ISuperBlock.META, 1);
+            update = fillBlock.getDefaultState().withProperty(ISuperBlock.META, 1);
             if(update != state2)
                 setBlockState(pos2, update, false);
             
             this.oldFillerBlocks.rem(pos2);
+        }
+    }
+    
+    private final void  removeOrphanFillers()
+    {
+        if(oldFillerBlocks.isEmpty())
+            return;
+        
+        LongIterator it = oldFillerBlocks.iterator();
+        while(it.hasNext())
+        {
+            long fillerPos = it.nextLong();
+            if(this.pendingUpdates.contains(fillerPos))
+                continue;
+            
+            if(TerrainBlockHelper.isFlowFiller(getBlockState(fillerPos).getBlock()))
+                this.setBlockState(fillerPos, Blocks.AIR.getDefaultState());
         }
     }
     
