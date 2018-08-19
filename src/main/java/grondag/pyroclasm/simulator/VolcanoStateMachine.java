@@ -496,6 +496,12 @@ public class VolcanoStateMachine implements ISimulationTickable
     
     private void doBlobs()
     {
+        final int maxBlobs = Configurator.VOLCANO.maxLavaEntities;
+        final int currentBlobs = EntityLavaBlob.getLiveParticleCount();
+        
+        if(maxBlobs >= currentBlobs)
+            return;
+        
         final LavaCell center = getBoreCell(0);
         if(center == null || !center.isOpenToSky() || center.worldSurfaceY() < 64)
         {
@@ -503,9 +509,11 @@ public class VolcanoStateMachine implements ISimulationTickable
         }
         
         final Random r = myRandom;
-        final int blobCount = r.nextInt(4) + r.nextInt(4) + r.nextInt(4);
-        if(EntityLavaBlob.getLiveParticleCount() + blobCount <= Configurator.VOLCANO.maxLavaEntities && Math.abs(r.nextDouble()) < blobChance)
+        
+        if(Math.abs(r.nextDouble()) < blobChance)
         {
+            final int blobCount = Math.min(maxBlobs - currentBlobs, r.nextInt(4) + r.nextInt(4) + r.nextInt(4));
+            
             for(int i = 0; i < blobCount; i++)
             {
                 final double dx = (r.nextDouble() - 0.5) * 2;
