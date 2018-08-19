@@ -36,6 +36,7 @@ public class CommandStatus extends CommandBase
         return "commands.volcano.status.usage";
     }
 
+    @SuppressWarnings("null")
     @Override
     public void execute(MinecraftServer server, ICommandSender sender, String[] args) throws CommandException
     {

@@ -33,6 +33,7 @@ public class CommandSleep extends CommandBase
         return "commands.volcano.sleep.usage";
     }
 
+    @SuppressWarnings("null")
     @Override
     public void execute(MinecraftServer server, ICommandSender sender, String[] args) throws CommandException
     {

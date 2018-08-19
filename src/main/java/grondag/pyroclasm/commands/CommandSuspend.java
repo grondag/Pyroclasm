@@ -1,16 +1,9 @@
 package grondag.pyroclasm.commands;
 
-import grondag.exotic_matter.simulator.Simulator;
-import grondag.pyroclasm.Pyroclasm;
 import grondag.pyroclasm.simulator.LavaSimulator;
-import grondag.pyroclasm.simulator.VolcanoManager;
-import grondag.pyroclasm.simulator.VolcanoNode;
 import net.minecraft.command.CommandBase;
-import net.minecraft.command.CommandException;
 import net.minecraft.command.ICommandSender;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
 import net.minecraftforge.server.command.TextComponentHelper;
 
 public class CommandSuspend extends CommandBase

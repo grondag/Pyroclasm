@@ -1,9 +1,7 @@
 package grondag.pyroclasm.lava;
 
-import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import grondag.exotic_matter.ExoticMatter;
@@ -11,10 +9,8 @@ import grondag.exotic_matter.block.BlockSubstance;
 import grondag.exotic_matter.block.ISuperBlock;
 import grondag.exotic_matter.block.ISuperBlockAccess;
 import grondag.exotic_matter.model.state.ISuperModelState;
-import grondag.exotic_matter.simulator.Simulator;
 import grondag.exotic_matter.terrain.TerrainDynamicBlock;
 import grondag.pyroclasm.init.ModBlocks;
-import grondag.pyroclasm.simulator.LavaSimulator;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.util.EnumFacing;

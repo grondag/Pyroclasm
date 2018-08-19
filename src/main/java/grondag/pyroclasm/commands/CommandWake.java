@@ -33,6 +33,7 @@ public class CommandWake extends CommandBase
         return "commands.volcano.wake.usage";
     }
 
+    @SuppressWarnings("null")
     @Override
     public void execute(MinecraftServer server, ICommandSender sender, String[] args) throws CommandException
     {
