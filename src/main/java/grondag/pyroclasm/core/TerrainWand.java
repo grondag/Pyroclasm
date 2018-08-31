@@ -56,11 +56,10 @@ public class TerrainWand extends RegistratingItem
         if(!worldIn.isRemote)
         {
             TerrainMode newMode = TerrainMode.STATE;
-            NBTTagCompound tag;
+            NBTTagCompound tag = stack.getTagCompound();
 
-            if(stack.hasTagCompound())
+            if(tag != null)
             {
-                tag = stack.getTagCompound();
                 if(tag.getString(MODE_TAG).equals(TerrainMode.STATE.name()))
                 {
                     newMode = TerrainMode.HEIGHT;
@@ -82,6 +81,7 @@ public class TerrainWand extends RegistratingItem
         return new ActionResult<ItemStack>(EnumActionResult.SUCCESS, stack);
     }    
 
+    @SuppressWarnings("null")
     public TerrainMode getMode(ItemStack itemStackIn)
     {
         if(itemStackIn.hasTagCompound() && itemStackIn.getTagCompound().getString(MODE_TAG).equals(TerrainMode.STATE.name()))
