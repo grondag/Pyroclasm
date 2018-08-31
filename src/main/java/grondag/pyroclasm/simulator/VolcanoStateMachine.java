@@ -499,7 +499,7 @@ public class VolcanoStateMachine implements ISimulationTickable
         final int maxBlobs = Configurator.VOLCANO.maxLavaEntities;
         final int currentBlobs = EntityLavaBlob.getLiveParticleCount();
         
-        if(maxBlobs >= currentBlobs)
+        if(currentBlobs >= maxBlobs)
             return;
         
         final LavaCell center = getBoreCell(0);
