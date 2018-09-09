@@ -118,7 +118,6 @@ public class ModBlocks
         hotBlockHeightModel.setColorRGB(PaintLayer.BASE, Color.WHITE);
         hotBlockHeightModel.setEmissive(PaintLayer.BASE, true);
         hotBlockHeightModel.setVertexProcessor(PaintLayer.BASE, VertexProcessorLava.INSTANCE);
-        hotBlockHeightModel.setTranslucent(PaintLayer.BASE, true);
         
         hotBlockHeightModel.setTexture(PaintLayer.MIDDLE, ModTextures.BIGTEX_BASALT_VERY_HOT);
         hotBlockHeightModel.setColorRGB(PaintLayer.MIDDLE, BlockColorMapProvider.COLOR_BASALT);
@@ -128,7 +127,6 @@ public class ModBlocks
         hotBlockHeightModel.setColorRGB(PaintLayer.CUT, Color.WHITE);
         hotBlockHeightModel.setEmissive(PaintLayer.CUT, true);
         hotBlockHeightModel.setVertexProcessor(PaintLayer.CUT, VertexProcessorLava.INSTANCE);
-        hotBlockHeightModel.setTranslucent(PaintLayer.CUT, true);
         
         // TODO: need an overlay texture for sides
         hotBlockHeightModel.setTexture(PaintLayer.OUTER, ModTextures.BIGTEX_BASALT_VERY_HOT);
