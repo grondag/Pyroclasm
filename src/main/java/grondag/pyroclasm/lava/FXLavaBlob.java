@@ -5,6 +5,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import org.lwjgl.opengl.GL11;
 
+import grondag.acuity.RunTimer;
 import grondag.exotic_matter.model.render.QuadBakery;
 import grondag.exotic_matter.varia.SimpleUnorderedArrayList;
 import net.minecraft.client.Minecraft;
@@ -157,6 +158,7 @@ public class FXLavaBlob extends Particle
     
     public static void doDeferredRenders(Tessellator tessellator)
     {
+//        RunTimer.TIMER_200.start();
         if(renderBlobs.isEmpty()) return;
         
         GL11.glPushAttrib(GL11.GL_LIGHTING_BIT);
@@ -179,6 +181,7 @@ public class FXLavaBlob extends Particle
         GL11.glPopAttrib();
         
         renderBlobs.clear();
+//        RunTimer.TIMER_200.finish();
     }
     
     @Override

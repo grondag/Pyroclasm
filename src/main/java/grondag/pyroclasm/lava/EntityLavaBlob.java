@@ -224,46 +224,65 @@ public class EntityLavaBlob extends Entity
         return true;
     }
 
+    //TODO:  remove
+//    private static final ThreadLocal<RunTimer> timer = new ThreadLocal<RunTimer>()
+//    {
+//        @Override
+//        protected RunTimer initialValue()
+//        {
+//            return new RunTimer(2000);
+//        }
+//    };
+    
     @Override
     public void onUpdate()
     {
-        if(this.ticksExisted > 600)
-        {
-            Pyroclasm.INSTANCE.info("Ancient lava particle died of old age.");
-            this.setDead();
-            return;
-        }
-        
-        // If inside lava, release to lava simulator.
-        // This can happen somewhat frequently because another particle landed or lava flowed around us.
-        Block block = this.world.getBlockState(this.getPosition()).getBlock();
-        
-        if(block == ModBlocks.lava_dynamic_height || block == ModBlocks.lava_dynamic_filler )
-        {
-            this.land();
-            return;
-        }
-        
-        super.onUpdate();
-        
-        this.impactNearbyEntities();
-        
-        this.prevPosX = this.posX;
-        this.prevPosY = this.posY;
-        this.prevPosZ = this.posZ;
-
-        this.motionY -= 0.03999999910593033D;
-
-        this.move(MoverType.SELF, this.motionX, this.motionY, this.motionZ);
-
-        this.motionX *= 0.9800000190734863D;
-        this.motionY *= 0.9800000190734863D;
-        this.motionZ *= 0.9800000190734863D;
-
-        this.emitParticles();
-        
-        if (this.onGround) this.land();
-        
+//        try
+//        {
+//            timer.get().start();
+            
+            if(this.ticksExisted > 600)
+            {
+                Pyroclasm.INSTANCE.info("Ancient lava particle died of old age.");
+                this.setDead();
+                return;
+            }
+            
+            // If inside lava, release to lava simulator.
+            // This can happen somewhat frequently because another particle landed or lava flowed around us.
+            Block block = this.world.getBlockState(this.getPosition()).getBlock();
+            
+            if(block == ModBlocks.lava_dynamic_height || block == ModBlocks.lava_dynamic_filler )
+            {
+                this.land();
+                return;
+            }
+            
+            super.onUpdate();
+            
+            this.impactNearbyEntities();
+            
+            this.prevPosX = this.posX;
+            this.prevPosY = this.posY;
+            this.prevPosZ = this.posZ;
+    
+            this.motionY -= 0.03999999910593033D;
+    
+            this.move(MoverType.SELF, this.motionX, this.motionY, this.motionZ);
+    
+            this.motionX *= 0.9800000190734863D;
+            this.motionY *= 0.9800000190734863D;
+            this.motionZ *= 0.9800000190734863D;
+    
+            this.emitParticles();
+            
+            if (this.onGround) 
+                this.land();
+//        }
+//        finally
+//        {
+//            timer.get().finish();
+//        }
     }
     
     private double pX = Double.MAX_VALUE;
