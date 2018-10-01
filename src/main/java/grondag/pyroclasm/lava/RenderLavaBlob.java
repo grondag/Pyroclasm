@@ -43,7 +43,8 @@ public class RenderLavaBlob extends Render<EntityLavaBlob>
         return TEXTURE;
     }
 
-    public static IRenderFactory<EntityLavaBlob> factory() {
+    public static IRenderFactory<EntityLavaBlob> factory()
+    {
         return manager -> new RenderLavaBlob(manager);
     }
 }
