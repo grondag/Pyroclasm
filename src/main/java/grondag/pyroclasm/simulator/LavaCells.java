@@ -254,7 +254,7 @@ public class LavaCells
         int[] saveData = nbt.getIntArray(NBT_LAVA_CELLS);
         
         //confirm correct size
-        if(saveData == null || saveData.length % LavaCell.LAVA_CELL_NBT_WIDTH != 0)
+        if(saveData.length % LavaCell.LAVA_CELL_NBT_WIDTH != 0)
         {
             Pyroclasm.INSTANCE.warn("Invalid save data loading lava simulator. Lava blocks may not be updated properly.");
         }

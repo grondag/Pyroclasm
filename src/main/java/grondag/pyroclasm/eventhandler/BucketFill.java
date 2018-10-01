@@ -49,6 +49,7 @@ public class BucketFill
     /**
      * Troll user if they attempt to put volcanic lava in a bucket.
      */
+    @SuppressWarnings("null")
     @SubscribeEvent(priority = EventPriority.HIGH) 
     public static void onFillBucket(FillBucketEvent event)
     {

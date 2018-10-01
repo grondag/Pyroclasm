@@ -5,7 +5,6 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import org.lwjgl.opengl.GL11;
 
-import grondag.acuity.RunTimer;
 import grondag.exotic_matter.model.render.QuadBakery;
 import grondag.exotic_matter.varia.SimpleUnorderedArrayList;
 import net.minecraft.client.Minecraft;

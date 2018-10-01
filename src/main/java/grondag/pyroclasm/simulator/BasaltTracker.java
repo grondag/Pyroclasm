@@ -82,7 +82,6 @@ public class BasaltTracker
         
     }
     
-    @SuppressWarnings("null")
     public BasaltTracker(PerformanceCollector perfCollector, World world, ChunkTracker chunkTracker)
     {
         this.world = world;

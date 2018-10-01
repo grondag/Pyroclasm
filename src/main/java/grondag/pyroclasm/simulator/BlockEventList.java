@@ -96,7 +96,7 @@ public class BlockEventList
         int[] saveData = nbt.getIntArray(this.nbtTagName);
         
         //confirm correct size
-        if(saveData == null || saveData.length % BlockEvent.NBT_WIDTH != 0)
+        if(saveData.length % BlockEvent.NBT_WIDTH != 0)
         {
             Pyroclasm.INSTANCE.warn("Invalid save data loading block events with tag " + nbtTagName + ". Lava blocks may not be updated properly.");
         }
