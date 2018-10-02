@@ -256,7 +256,7 @@ public class Configurator
         @LangKey("pyroclasm.config.basalt_cooling_ticks")
         @Comment({"Minimum number of ticks needed for basalt to cool from one stage to another."})
         @RangeInt(min = 1, max = 20000)
-        public int basaltCoolingTicks = 20;
+        public int basaltCoolingTicks = 40;
         
         @LangKey("pyroclasm.config.min_cooling_propagation_ticks")
         @Comment({"Once lava starts cooling, the minimum number of ticks (inclusive) an interior block has to wait after",
@@ -309,7 +309,7 @@ public class Configurator
         @LangKey("pyroclasm.config.lava_blocks_per_second")
         @Comment("Volume of lava ejected from bore, in full blocks per second.  Does not include proectile lava volume.")
         @RangeInt(min = 1, max = 64)
-        public int lavaBlocksPerSecond = 8;
+        public int lavaBlocksPerSecond = 16;
         
         @LangKey("pyroclasm.config.max_y_level")
         @Comment("Y-orthogonalAxis build limit at which Volcano becomes permanently dormant.")
@@ -342,7 +342,7 @@ public class Configurator
         @Comment({"Maximum number of flying/falling volcalnic lava entities that may be in the world simultaneously.",
             "Higher numbers may provide more responsive flowing and better realism but can create lag."})
         @RangeInt(min = 0, max = 200)
-        public int maxLavaEntities = 10;
+        public int maxLavaEntities = 4;
 
         /** Contains block objects configured to be destroyed by lava */
         public static final IdentityHashMap<Block, Block> blocksDestroyedByLava = new IdentityHashMap<Block, Block>();
