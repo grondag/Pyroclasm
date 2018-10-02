@@ -22,6 +22,7 @@ import net.minecraft.util.math.Vec3i;
 public class VolcanoNode implements IReadWriteNBT, IDirtListener, ISimulationTickable
     {
         static final String NBT_VOLCANO_NODE_TAG_LAST_ACTIVATION_TICK = NBTDictionary.claim("volcLastTick");
+        static final String NBT_VOLCANO_NODE_TAG_COOLDOWN_TICKS = NBTDictionary.claim("volcCooldownTicks");
         static final String NBT_VOLCANO_NODE_TAG_POSITION  = NBTDictionary.claim("volPos");
         static final String NBT_VOLCANO_NODE_TAG_STAGE = NBTDictionary.claim("volcStage");
         static final String NBT_VOLCANO_NODE_TAG_HEIGHT = NBTDictionary.claim("volcHeight");
@@ -106,6 +107,7 @@ public class VolcanoNode implements IReadWriteNBT, IDirtListener, ISimulationTic
             this.stage = VolcanoStage.values()[nbt.getInteger(NBT_VOLCANO_NODE_TAG_STAGE)];
             this.position = PackedChunkPos.unpackChunkPos(nbt.getLong(NBT_VOLCANO_NODE_TAG_POSITION));
             this.lastActivationTick = nbt.getInteger(NBT_VOLCANO_NODE_TAG_LAST_ACTIVATION_TICK);
+            this.lavaCooldownTicks = nbt.getInteger(NBT_VOLCANO_NODE_TAG_COOLDOWN_TICKS);
             if(this.stage.isActive) this.loadChunks(true);
         }
 
@@ -119,6 +121,7 @@ public class VolcanoNode implements IReadWriteNBT, IDirtListener, ISimulationTic
                 nbt.setInteger(NBT_VOLCANO_NODE_TAG_STAGE, this.stage.ordinal());
                 nbt.setLong(NBT_VOLCANO_NODE_TAG_POSITION, PackedChunkPos.getPackedChunkPos(this.position));
                 nbt.setInteger(NBT_VOLCANO_NODE_TAG_LAST_ACTIVATION_TICK, this.lastActivationTick);
+                nbt.setInteger(NBT_VOLCANO_NODE_TAG_COOLDOWN_TICKS, this.lavaCooldownTicks);
             }
         }
         
