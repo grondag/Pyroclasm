@@ -468,9 +468,8 @@ public class VolcanoStateMachine implements ISimulationTickable
             {
                 cell.setValidationNeeded(true);
                 
-                //FIXME: remove
-                Pyroclasm.INSTANCE.info("found block %s in bore @ %d, %d, %d that wasn't part of cell.  Cells not getting updated when bore is cleared.", 
-                        blockState.toString(), cell.x(), cell.ceilingY() + 1, cell.z() );
+//                Pyroclasm.INSTANCE.info("found block %s in bore @ %d, %d, %d that wasn't part of cell.  Cells not getting updated when bore is cleared.", 
+//                        blockState.toString(), cell.x(), cell.ceilingY() + 1, cell.z() );
             }
             else
             {
@@ -582,8 +581,7 @@ public class VolcanoStateMachine implements ISimulationTickable
             // have opened up cell to a height above the current max.
             offsetIndex = 0;
             
-            //FIXME: remove
-            Pyroclasm.INSTANCE.info("Switching from %s to %s", this.operation.toString(), Operation.UPDATE_BORE_LIMITS.toString());
+//            Pyroclasm.INSTANCE.info("Switching from %s to %s", this.operation.toString(), Operation.UPDATE_BORE_LIMITS.toString());
             
             return Operation.UPDATE_BORE_LIMITS;
         }
