@@ -339,10 +339,16 @@ public class Configurator
         public int maxDormantTicks = 200;
 
         @LangKey("pyroclasm.config.max_lava_projectiles")
-        @Comment({"Maximum number of flying/falling volcalnic lava entities that may be in the world simultaneously.",
+        @Comment({"Maximum number of flying/falling volcanic lava entities that may be in the world simultaneously.",
             "Higher numbers may provide more responsive flowing and better realism but can create lag."})
         @RangeInt(min = 0, max = 200)
         public int maxLavaEntities = 4;
+
+        @LangKey("pyroclasm.config.ops_per_tick")
+        @Comment({"Maximum number of operations each tick for clearing the volcano bore, spouting lava, etc.",
+            "Higher numbers make volcanos more dynamic.  Try smaller numbers if volcano may be causing lag."})
+        @RangeInt(min = 16, max = 512)
+        public int operationsPerTick = 64;
 
         /** Contains block objects configured to be destroyed by lava */
         public static final IdentityHashMap<Block, Block> blocksDestroyedByLava = new IdentityHashMap<Block, Block>();

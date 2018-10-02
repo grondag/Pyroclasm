@@ -49,6 +49,7 @@ pyroclasm.config.mound_radius=Mound Radius
 pyroclasm.config.min_dormant_ticks=Min Dormant Ticks 
 pyroclasm.config.max_dormant_ticks=Max Dormant Ticks
 pyroclasm.config.max_lava_projectiles=Max Lava Projectiles
+pyroclasm.config.ops_per_tick=Volcano Operations Per Tick
 
 
 #BLOCKS

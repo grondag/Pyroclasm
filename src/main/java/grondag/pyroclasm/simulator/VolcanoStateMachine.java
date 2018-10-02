@@ -210,13 +210,12 @@ public class VolcanoStateMachine implements ISimulationTickable
         this.center = volcano.blockPos();
     }
 
-    //TODO: make confiurable
-    private final static int OPERATIONS_PER_TICK = 64;
-    
     @Override
     public void doOnTick()
     {
-        for(int i = 0; i < OPERATIONS_PER_TICK; i++)
+        final int opsPerTick = Configurator.VOLCANO.operationsPerTick;
+        
+        for(int i = 0; i < opsPerTick; i++)
         {
             switch(this.operation)
             {
