@@ -1986,6 +1986,8 @@ public class LavaCell extends AbstractLavaCell
     {
         // if new node has the highest drop or the same drop, can 
         // simply make it the new head
+        
+        //FIXME: NPEs here
         if(toBeAdded.drop >= start.drop)
         {
             toBeAdded.nextToFlow = start;

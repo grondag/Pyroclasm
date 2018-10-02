@@ -146,6 +146,9 @@ public class LavaCells
      */
     public @Nullable LavaCell getEntryCell(int x, int z)
     {
+        // FIXME: array out of bounds in Long2ObjectOpenHashMap.get()
+        // probably because map has been resized in a different thread and is applying wrong mask.
+        // Need to handle or use a concurrent collection
         CellChunk chunk = cellChunks.get(PackedChunkPos.getPackedChunkPosFromBlockXZ(x, z));
         return chunk == null ? null : chunk.getEntryCell(x, z);
     }
