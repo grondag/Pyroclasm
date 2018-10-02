@@ -224,23 +224,9 @@ public class EntityLavaBlob extends Entity
         return true;
     }
 
-    //TODO:  remove
-//    private static final ThreadLocal<RunTimer> timer = new ThreadLocal<RunTimer>()
-//    {
-//        @Override
-//        protected RunTimer initialValue()
-//        {
-//            return new RunTimer(2000);
-//        }
-//    };
-    
     @Override
     public void onUpdate()
     {
-//        try
-//        {
-//            timer.get().start();
-            
             if(this.ticksExisted > 600)
             {
                 Pyroclasm.INSTANCE.info("Ancient lava particle died of old age.");
@@ -278,11 +264,6 @@ public class EntityLavaBlob extends Entity
             
             if (this.onGround) 
                 this.land();
-//        }
-//        finally
-//        {
-//            timer.get().finish();
-//        }
     }
     
     private double pX = Double.MAX_VALUE;
