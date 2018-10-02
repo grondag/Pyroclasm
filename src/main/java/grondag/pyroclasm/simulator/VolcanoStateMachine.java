@@ -197,6 +197,11 @@ public class VolcanoStateMachine implements ISimulationTickable
     private int maxCeilingLevel;
     
     /**
+     * Enforces the mounding limit
+     */
+    private int pushCount = 0;
+    
+    /**
      * For use only in operation methods, which do not call into each other and are not re-entrant.
      */
     private final MutableBlockPos operationPos = new MutableBlockPos();
@@ -214,6 +219,8 @@ public class VolcanoStateMachine implements ISimulationTickable
     public void doOnTick()
     {
         final int opsPerTick = Configurator.VOLCANO.operationsPerTick;
+        final int maxPush = Configurator.VOLCANO.moundBlocksPerTick;
+        pushCount = 0;
         
         for(int i = 0; i < opsPerTick; i++)
         {
@@ -261,6 +268,8 @@ public class VolcanoStateMachine implements ISimulationTickable
                     break;
 
                 case PUSH_BLOCKS:
+                    if(pushCount >= maxPush)
+                        return;
                     this.operation = pushBlocks();
                     break;
                     
@@ -619,7 +628,10 @@ public class VolcanoStateMachine implements ISimulationTickable
         }
         
         if(this.pushBlock(this.operationPos.setPos(cell.x(), cell.ceilingY() + 1, cell.z())))
+        {
             cell.setValidationNeeded(true);
+            pushCount++;
+        }
       
         if(this.offsetIndex >= MAX_BORE_OFFSET)
         {

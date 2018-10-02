@@ -320,7 +320,7 @@ public class Configurator
         @LangKey("pyroclasm.config.mound_blocks_per_tick")
         @Comment("Number of blocks per tick that can be cleared by volcano mounding. Values above 1 are mostly useful for testing.")
         @RangeInt(min = 1, max = 64)
-        public int moundBlocksPerTick = 64;
+        public int moundBlocksPerTick = 1;
 
         @LangKey("pyroclasm.config.mound_radius")
         @Comment("Radius of one standard deviation, in blocks, for underground volcano mounding.")
