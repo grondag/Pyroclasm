@@ -236,6 +236,12 @@ public class Configurator
         @Comment({"If true, volcano simulation will output cell chunk creation, load and unload.",
             "Will cause significant log spam so should only be enabled for debug and testing."})
         public boolean enableLavaCellChunkTrace = false;
+
+        @LangKey("pyroclasm.config.enable_volcano_trace")
+        @Comment({"If true, will log state changes in volcano state machine. ",
+            "Only works if running Java with assertions enabled using -ea JVM parameter.",
+            "Will cause significant log spam so should only be enabled for debug and testing."})
+        public boolean traceVolcaneStateMachine = false;
     }
     
     ////////////////////////////////////////////////////        

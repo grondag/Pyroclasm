@@ -71,80 +71,6 @@ import net.minecraft.world.World;
  */
 public class VolcanoStateMachine implements ISimulationTickable
 {
-    private static enum Operation
-    {
-        /**
-         * Removes vanilla lava in bore and converts nearby vanilla lava to obsian. 
-         * Mostly for aesthetic reasons.
-         * Transitions to {@link #SETUP_CLEAR_AND_FILL}.
-         */
-        SETUP_CONVERT_LAVA,
-        
-        /**
-         * Ensures bottom of bore is lava.
-         * Transitions to {@link #SETUP_WAIT_FOR_CELLS_0}.
-         */
-        SETUP_CLEAR_AND_FILL,
-        
-        
-        /**
-         * After initial lava placement, wait a couple ticks for simulator to catch up and generate cells
-         */
-        SETUP_WAIT_FOR_CELLS_0,
-        SETUP_WAIT_FOR_CELLS_1,
-        
-        /**
-         * Populates the list of bore cells and ensures they are all
-         * set to non-cooling. When complete, followed by {@link #UPDATE_BORE_LIMITS}.
-         */
-        SETUP_FIND_CELLS,
-        
-        /**
-         * Iterate through bore cells and determine the current
-         * min/max ceilings of bore cells.  Transitions to {@link #FLOW} when complete.
-         */
-        UPDATE_BORE_LIMITS,
-        
-        /**
-         * Add lava to bore cells, at the configure rate of max flow.
-         * Will  continue to flow until one of two things happens..
-         * 
-         * 1) Lava rises to the level of min ceiling and remains there, 
-         * in which case will switch to {@link #MELT_CHECK}.
-         * 
-         * 2) All cells remain full through a complete pass and no room
-         * remains for more lava, in which case it transition to {@link #FIND_WEAKNESS}.
-         */
-        FLOW,
-        
-        /**
-         * Looks for any solid bore cells above the current lava level
-         * but within the current max and turns them into lava.  
-         * Transitions to {@link #UPDATE_BORE_LIMITS} when done.
-         */
-        MELT_CHECK,
-        
-        
-        /**
-         * Happens after bore found to be holding pressure, looks
-         * for any weak points along the bore.  If found, transitions
-         * to {@link #EXPLODE}, otherwise transitions to {@link #PUSH_BLOCKS}.
-         */
-        FIND_WEAKNESS,
-        
-        /**
-         * Orchestrates an explosion at the weak point found during
-         * {@link #FIND_WEAKNESS} and then transitions to {@link #UPDATE_BORE_LIMITS}.
-         */
-        EXPLODE,
-        
-        /**
-         * Pushes all bore cells up one block and then transitions to
-         * {@link #UPDATE_BORE_LIMITS}.
-         */
-        PUSH_BLOCKS
-    }
-    
     private static final int BORE_RADIUS = 5;
     
     private static final int MAX_BORE_OFFSET = Useful.getLastDistanceSortedOffsetIndex(BORE_RADIUS);
@@ -165,7 +91,7 @@ public class VolcanoStateMachine implements ISimulationTickable
     
     private final BlockPos center;
     
-    private Operation operation = Operation.SETUP_CONVERT_LAVA;
+    private VolcanoOperation operation = VolcanoOperation.SETUP_CONVERT_LAVA;
     
     private double blobChance = 0;
     
@@ -215,12 +141,27 @@ public class VolcanoStateMachine implements ISimulationTickable
         this.center = volcano.blockPos();
     }
 
+    /** used for tracing only */
+    VolcanoOperation lastOp;
+    
+    private boolean traceOpChange()
+    {
+        if(Configurator.DEBUG.traceVolcaneStateMachine && lastOp != this.operation)
+        {
+            Pyroclasm.INSTANCE.info("Volcano state change from %s to %s", lastOp.toString(), this.operation.toString());
+            lastOp = this.operation;
+        }
+        return true;
+    }
+    
     @Override
     public void doOnTick()
     {
         final int opsPerTick = Configurator.VOLCANO.operationsPerTick;
         final int maxPush = Configurator.VOLCANO.moundBlocksPerTick;
         pushCount = 0;
+        
+        lastOp = this.operation;
         
         for(int i = 0; i < opsPerTick; i++)
         {
@@ -232,15 +173,15 @@ public class VolcanoStateMachine implements ISimulationTickable
                     
                 case SETUP_CLEAR_AND_FILL:
                     this.operation = setupClear();
-                    if(this.operation == Operation.SETUP_WAIT_FOR_CELLS_0) return;
+                    if(this.operation == VolcanoOperation.SETUP_WAIT_FOR_CELLS_0) return;
                     break;
                     
                 case SETUP_WAIT_FOR_CELLS_0:
-                    this.operation = Operation.SETUP_WAIT_FOR_CELLS_1;
+                    this.operation = VolcanoOperation.SETUP_WAIT_FOR_CELLS_1;
                     return;
                     
                 case SETUP_WAIT_FOR_CELLS_1:
-                    this.operation = Operation.SETUP_FIND_CELLS;
+                    this.operation = VolcanoOperation.SETUP_FIND_CELLS;
                     return;
                     
                 case SETUP_FIND_CELLS:
@@ -277,6 +218,7 @@ public class VolcanoStateMachine implements ISimulationTickable
                     assert false : "Invalid volcano state";
                     break;
             }
+            assert traceOpChange();
         }
     }
 
@@ -293,7 +235,7 @@ public class VolcanoStateMachine implements ISimulationTickable
      * and lava should begin flowing returns true. If more
      * work remains and clearing should continue next tick returns false.
      */
-    private Operation setupClear()
+    private VolcanoOperation setupClear()
     {
         
         // handle any kind of improper clean up or initialization
@@ -322,12 +264,12 @@ public class VolcanoStateMachine implements ISimulationTickable
         {
             // if we've gone past the last offset, can go to next stage
             offsetIndex = 0;
-            return Operation.SETUP_WAIT_FOR_CELLS_0;
+            return VolcanoOperation.SETUP_WAIT_FOR_CELLS_0;
             
         }
         else
         {
-            return Operation.SETUP_CLEAR_AND_FILL;
+            return VolcanoOperation.SETUP_CLEAR_AND_FILL;
         }
                 
     }
@@ -352,7 +294,7 @@ public class VolcanoStateMachine implements ISimulationTickable
         return result;
     }
     
-    private Operation setupFind()
+    private VolcanoOperation setupFind()
     {
         
         if(this.offsetIndex >= MAX_BORE_OFFSET) 
@@ -367,7 +309,7 @@ public class VolcanoStateMachine implements ISimulationTickable
         {
             Pyroclasm.INSTANCE.warn("Unable to find lava cell for volcano bore when expected.  Reverting to initial setup.");
             this.offsetIndex = 0;
-            return Operation.SETUP_CLEAR_AND_FILL;
+            return VolcanoOperation.SETUP_CLEAR_AND_FILL;
         }
         
         
@@ -376,16 +318,16 @@ public class VolcanoStateMachine implements ISimulationTickable
             // if we've gone past the last offset, can go to next stage
             offsetIndex = 0;
 
-            return Operation.UPDATE_BORE_LIMITS;
+            return VolcanoOperation.UPDATE_BORE_LIMITS;
         }
         else
         {
-            return Operation.SETUP_FIND_CELLS;
+            return VolcanoOperation.SETUP_FIND_CELLS;
         }
         
     }
     
-    private Operation updateBoreLimits()
+    private VolcanoOperation updateBoreLimits()
     {
         if(this.offsetIndex >= MAX_BORE_OFFSET) 
         {
@@ -399,7 +341,7 @@ public class VolcanoStateMachine implements ISimulationTickable
         {
             Pyroclasm.INSTANCE.warn("Volcano bore cell missing, Returning to setup");
             this.offsetIndex = 0;
-            return Operation.SETUP_CLEAR_AND_FILL;
+            return VolcanoOperation.SETUP_CLEAR_AND_FILL;
         }
         
         int l = cell.ceilingLevel();
@@ -418,17 +360,15 @@ public class VolcanoStateMachine implements ISimulationTickable
             // if we've gone past the last offset, can go to next stage
             offsetIndex = 0;
             
-            Pyroclasm.INSTANCE.info("Switching from %s to %s", this.operation.toString(), Operation.FLOW.toString());
-
-            return Operation.FLOW;
+            return VolcanoOperation.FLOW;
         }
         else
         {
-            return Operation.UPDATE_BORE_LIMITS;
+            return VolcanoOperation.UPDATE_BORE_LIMITS;
         }        
     }
 
-    private Operation flow()
+    private VolcanoOperation flow()
     {
         if(this.offsetIndex >= MAX_BORE_OFFSET) 
         {
@@ -450,7 +390,7 @@ public class VolcanoStateMachine implements ISimulationTickable
         {
             Pyroclasm.INSTANCE.warn("Volcano bore cell missing, Returning to setup");
             this.offsetIndex = 0;
-            return Operation.SETUP_CLEAR_AND_FILL;
+            return VolcanoOperation.SETUP_CLEAR_AND_FILL;
         }
         
         if(cell.worldSurfaceLevel() < cell.ceilingLevel())
@@ -482,7 +422,7 @@ public class VolcanoStateMachine implements ISimulationTickable
             else
             {
                 offsetIndex = 0;
-                return Operation.MELT_CHECK;
+                return VolcanoOperation.MELT_CHECK;
             }
         }
         
@@ -493,11 +433,11 @@ public class VolcanoStateMachine implements ISimulationTickable
             offsetIndex = 0;
 
             // if used up all the lava, continue flowing, otherwise too constrained - mound or explode
-            return this.lavaRemainingThisPass <= 0 ? Operation.FLOW : Operation.FIND_WEAKNESS;
+            return this.lavaRemainingThisPass <= 0 ? VolcanoOperation.FLOW : VolcanoOperation.FIND_WEAKNESS;
         }
         else
         {
-            return Operation.FLOW;
+            return VolcanoOperation.FLOW;
         }   
     }
     
@@ -547,7 +487,7 @@ public class VolcanoStateMachine implements ISimulationTickable
             blobChance  += 0.01;
     }
   
-    private Operation meltCheck()
+    private VolcanoOperation meltCheck()
     {
         if(this.offsetIndex >= MAX_BORE_OFFSET) 
         {
@@ -561,13 +501,16 @@ public class VolcanoStateMachine implements ISimulationTickable
         {
             Pyroclasm.INSTANCE.warn("Volcano bore cell missing, Returning to setup");
             this.offsetIndex = 0;
-            return Operation.SETUP_CLEAR_AND_FILL;
+            return VolcanoOperation.SETUP_CLEAR_AND_FILL;
         }
         
         if(cell.ceilingLevel() < this.maxCeilingLevel && cell.worldSurfaceLevel() == cell.ceilingLevel())
         {
             MutableBlockPos pos = this.operationPos.setPos(cell.x(), cell.ceilingY() + 1, cell.z());
             IBlockState priorState = this.lavaSim.world.getBlockState(pos);
+            
+            // Block above cell should not be displace-able but 
+            // check in case cell validation hasn't caught up with world...
             if(!LavaTerrainHelper.canLavaDisplace(priorState))
             {
                 if(this.maxCeilingLevel < LavaSimulator.LEVELS_PER_BLOCK * 255)
@@ -589,28 +532,28 @@ public class VolcanoStateMachine implements ISimulationTickable
             // have opened up cell to a height above the current max.
             offsetIndex = 0;
             
-//            Pyroclasm.INSTANCE.info("Switching from %s to %s", this.operation.toString(), Operation.UPDATE_BORE_LIMITS.toString());
-            
-            return Operation.UPDATE_BORE_LIMITS;
+            return VolcanoOperation.UPDATE_BORE_LIMITS;
         }
         else
         {
-            return Operation.MELT_CHECK;
+            return VolcanoOperation.MELT_CHECK;
         }   
     }
 
-
-    private Operation findWeakness()
+    private VolcanoOperation findWeakness()
     {
-        return Operation.PUSH_BLOCKS;
+        return VolcanoOperation.PUSH_BLOCKS;
     }
 
-    private Operation explode()
+    private VolcanoOperation explode()
     {
-        return Operation.EXPLODE;
+        //TODO: implement and use in findWeakness
+        // For now, never called but reroute to push blocks
+        // in case I am stupid later.
+        return VolcanoOperation.PUSH_BLOCKS;
     }
 
-    private Operation pushBlocks()
+    private VolcanoOperation pushBlocks()
     {
         if(this.offsetIndex >= MAX_BORE_OFFSET) 
         {
@@ -624,7 +567,7 @@ public class VolcanoStateMachine implements ISimulationTickable
         {
             Pyroclasm.INSTANCE.warn("Volcano bore cell missing, Returning to setup");
             this.offsetIndex = 0;
-            return Operation.SETUP_CLEAR_AND_FILL;
+            return VolcanoOperation.SETUP_CLEAR_AND_FILL;
         }
         
         if(this.pushBlock(this.operationPos.setPos(cell.x(), cell.ceilingY() + 1, cell.z())))
@@ -637,13 +580,11 @@ public class VolcanoStateMachine implements ISimulationTickable
         {
             offsetIndex = 0;
             
-            Pyroclasm.INSTANCE.info("Switching from %s to %s", this.operation.toString(), Operation.UPDATE_BORE_LIMITS.toString());
-            
-            return Operation.UPDATE_BORE_LIMITS;
+            return VolcanoOperation.UPDATE_BORE_LIMITS;
         }
         else
         {
-            return Operation.PUSH_BLOCKS;
+            return VolcanoOperation.PUSH_BLOCKS;
         }   
     }
     
@@ -761,7 +702,7 @@ public class VolcanoStateMachine implements ISimulationTickable
     /**
      * Removes vanilla lava inside bore and converts lava around it to obsidian.
      */
-    private Operation convertLava()
+    private VolcanoOperation convertLava()
     {
         // handle any kind of improper clean up or initialization
         if(this.offsetIndex >= MAX_CONVERSION_OFFSET) 
@@ -794,17 +735,17 @@ public class VolcanoStateMachine implements ISimulationTickable
             
             if(++y < MAX_CONVERSION_Y)
             {
-                return Operation.SETUP_CONVERT_LAVA;
+                return VolcanoOperation.SETUP_CONVERT_LAVA;
             }
             else
             {
                 this.y = 0;
-                return Operation.SETUP_CLEAR_AND_FILL;
+                return VolcanoOperation.SETUP_CLEAR_AND_FILL;
             }
         }
         else
         {
-            return Operation.SETUP_CONVERT_LAVA;
+            return VolcanoOperation.SETUP_CONVERT_LAVA;
         }
     }
 }
