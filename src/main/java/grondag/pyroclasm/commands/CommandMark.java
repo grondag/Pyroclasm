@@ -5,6 +5,7 @@ import java.util.Map;
 import grondag.exotic_matter.simulator.Simulator;
 import grondag.pyroclasm.Pyroclasm;
 import grondag.pyroclasm.core.VolcanoStage;
+import grondag.pyroclasm.init.ModBlocks;
 import grondag.pyroclasm.simulator.VolcanoManager;
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.CommandException;
@@ -47,14 +48,11 @@ public class CommandMark extends CommandBase
             {
                 BlockPos pos = entry.getKey();
                 
-                for(int y = 255; y > 64; y--)
+                for(int y = 0; y < 256; y++)
                 {
                     BlockPos target = new BlockPos(pos.getX(), y, pos.getZ());
                     if(world.isAirBlock(target))
-                    {
-                        world.setBlockState(target, Blocks.STAINED_GLASS.getDefaultState());
-                    }
-                    else break;
+                        world.setBlockState(target, ModBlocks.volcano_marker.getDefaultState());
                 }
             }
         }
