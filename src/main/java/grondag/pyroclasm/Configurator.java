@@ -320,6 +320,7 @@ public class Configurator
         @LangKey("pyroclasm.config.max_y_level")
         @Comment("Y-orthogonalAxis build limit at which Volcano becomes permanently dormant.")
         @RangeInt(min = 128, max = 255)
+        @RequiresMcRestart
         public int maxYLevel = 147; 
 
         @LangKey("pyroclasm.config.mound_blocks_per_tick")

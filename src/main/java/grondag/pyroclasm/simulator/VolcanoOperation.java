@@ -4,10 +4,10 @@ public enum VolcanoOperation
 {
     /**
      * Removes vanilla lava in bore and converts nearby vanilla lava to obsian. 
-     * Mostly for aesthetic reasons.
+     * Mostly for aesthetic reasons. Also scans for open spots for blocks pushed out of bore.
      * Transitions to {@link #SETUP_CLEAR_AND_FILL}.
      */
-    SETUP_CONVERT_LAVA,
+    SETUP_CONVERT_LAVA_AND_SCAN,
     
     /**
      * Ensures bottom of bore is lava.
