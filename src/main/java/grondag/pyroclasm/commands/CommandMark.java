@@ -2,18 +2,18 @@ package grondag.pyroclasm.commands;
 
 import java.util.Map;
 
+import grondag.exotic_matter.network.PacketHandler;
 import grondag.exotic_matter.simulator.Simulator;
+import grondag.exotic_matter.world.PackedBlockPos;
 import grondag.pyroclasm.Pyroclasm;
 import grondag.pyroclasm.core.VolcanoStage;
-import grondag.pyroclasm.init.ModBlocks;
 import grondag.pyroclasm.simulator.VolcanoManager;
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.CommandException;
 import net.minecraft.command.ICommandSender;
-import net.minecraft.init.Blocks;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
 
 public class CommandMark extends CommandBase
 {
@@ -42,19 +42,16 @@ public class CommandMark extends CommandBase
     {
         try
         {
+            EntityPlayerMP player = (EntityPlayerMP) sender.getCommandSenderEntity();
             VolcanoManager vm = Simulator.instance().getNode(VolcanoManager.class);
-            World world = sender.getEntityWorld();
-            for(Map.Entry<BlockPos, VolcanoStage> entry : vm.nearbyVolcanos(sender.getPosition()).entrySet())
+            Map<BlockPos, VolcanoStage> near = vm.nearbyVolcanos(sender.getPosition());
+            long[] data = new long[near.size()];
+            int i = 0;
+            for(Map.Entry<BlockPos, VolcanoStage> entry : near.entrySet())
             {
-                BlockPos pos = entry.getKey();
-                
-                for(int y = 0; y < 256; y++)
-                {
-                    BlockPos target = new BlockPos(pos.getX(), y, pos.getZ());
-                    if(world.isAirBlock(target))
-                        world.setBlockState(target, ModBlocks.volcano_marker.getDefaultState());
-                }
+                data[i++] = PackedBlockPos.pack(entry.getKey());
             }
+            PacketHandler.CHANNEL.sendTo(new PacketUpdateVolcanoMarks(data), player);
         }
         catch(Exception e)
         {

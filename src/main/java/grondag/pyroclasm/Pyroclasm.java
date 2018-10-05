@@ -7,8 +7,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import grondag.exotic_matter.IGrondagMod;
+import grondag.exotic_matter.network.PacketHandler;
 import grondag.exotic_matter.simulator.Simulator;
 import grondag.pyroclasm.commands.CommandVolcano;
+import grondag.pyroclasm.commands.PacketUpdateVolcanoMarks;
 import grondag.pyroclasm.init.ModItems;
 import grondag.pyroclasm.simulator.LavaSimulator;
 import grondag.pyroclasm.simulator.VolcanoManager;
@@ -59,6 +61,9 @@ public class Pyroclasm  implements IGrondagMod
     {
         Simulator.register(VolcanoManager.class);
         Simulator.register(LavaSimulator.class);
+        
+        PacketHandler.registerMessage(PacketUpdateVolcanoMarks.class, PacketUpdateVolcanoMarks.class, Side.CLIENT);
+
     }
 
     private @Nullable static Logger log;

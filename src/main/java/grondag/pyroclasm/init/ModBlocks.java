@@ -18,7 +18,6 @@ import grondag.pyroclasm.lava.LavaBlock;
 import grondag.pyroclasm.lava.VertexProcessorLava;
 import grondag.pyroclasm.lava.VertexProcessorLavaAdvanced;
 import grondag.pyroclasm.lava.VertexProcessorLavaCrust;
-import grondag.pyroclasm.simulator.VolcanoMarkerBlock;
 import net.minecraft.block.Block;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -51,8 +50,6 @@ public class ModBlocks
     public static final Block lava_dynamic_height = null;
     public static final Block lava_dynamic_filler = null;
     
-    public static final Block volcano_marker = null;
-    
     private static String prefix(String baseName)
     {
         return Pyroclasm.INSTANCE.prefixResource(baseName);
@@ -61,8 +58,6 @@ public class ModBlocks
     @SubscribeEvent
     public static void registerBlocks(RegistryEvent.Register<Block> event) 
     {
-        event.getRegistry().register(new VolcanoMarkerBlock());
-        
         ISuperModelState workingModel = new ModelState();
         
         workingModel.setShape(ModShapes.CUBE);

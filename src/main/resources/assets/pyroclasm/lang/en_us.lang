@@ -107,7 +107,8 @@ commands.volcano.sleep.usage=Causes nearest active volcano to become dormant
 commands.volcano.sleep.no_active_found=No active volcano found nearby
 commands.volcano.sleep.fail=Unable to put nearest volcano to sleep.  Reason unknown.
 commands.volcano.sleep.success=Successfully quieted volcano located at x=%d, z=%d
-commands.volcano.mark.usage=Marks nearby volcanos by placing pillars of glass blocks (WIP)
+commands.volcano.mark.usage=Renders location of nearby volcanos (for admins and testing)
+commands.volcano.unmark.usage=Turns off volcano location rendering enabled by /volcano mark
 commands.volcano.suspend.usage=Pauses all lava and volcano processing until game restart or /volcano resume
 commands.volcano.suspend.success=All lava and volcano processing is suspended until game restart. Use /volcano resume to undo.
 commands.volcano.resume.usage=Continue lava and volcano processing paused by /volcano suspend

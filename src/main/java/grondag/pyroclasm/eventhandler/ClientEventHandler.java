@@ -6,8 +6,10 @@ import org.lwjgl.opengl.GL11;
 
 import grondag.exotic_matter.ClientProxy;
 import grondag.exotic_matter.simulator.Simulator;
+import grondag.exotic_matter.world.PackedBlockPos;
 import grondag.pyroclasm.Configurator;
 import grondag.pyroclasm.Pyroclasm;
+import grondag.pyroclasm.commands.VolcanoMarks;
 import grondag.pyroclasm.lava.FXLavaBlob;
 import grondag.pyroclasm.simulator.AbstractLavaCell;
 import grondag.pyroclasm.simulator.CellChunk;
@@ -38,47 +40,61 @@ public class ClientEventHandler
     {
         Tessellator tessellator = Tessellator.getInstance();
         
+        // NB: particles don't need camera offset because particle manager computes it
+        // each pass from the view point entity and stores them in the particle instances (I think)
+        // see the interPos__  members of the particle class...
         FXLavaBlob.doDeferredRenders(tessellator);
         
-        if(!(Configurator.DEBUG.enableLavaCellDebugRender || Configurator.DEBUG.enableLavaChunkDebugRender)) return;
-        
-        LavaSimulator lavaSim = Simulator.instance().getNode(LavaSimulator.class);
-        if(lavaSim == null) return;
+        long marks[] = VolcanoMarks.getMarks();
+        if(marks.length == 0)
+            return;
         
         final ICamera camera = ClientProxy.camera();
         if(camera == null) return;
         
         BufferBuilder bufferBuilder = tessellator.getBuffer();
         bufferBuilder.setTranslation(-ClientProxy.cameraX(), -ClientProxy.cameraY(), -ClientProxy.cameraZ());
-
-        GlStateManager.enableBlend();
+        
         GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
+        GlStateManager.enableBlend();
         GlStateManager.disableTexture2D();
         GlStateManager.depthMask(false);
-        GlStateManager.disableDepth();
-        
         // prevent z-fighting
         GlStateManager.enablePolygonOffset();
         GlStateManager.doPolygonOffset(-1, -1);
         
-        if(Configurator.DEBUG.enableLavaCellDebugRender)
-        {
-            //FIXME: avoid NPE in concurrency
-            try
-            {
-                lavaSim.cells.forEach(c -> renderCell(camera, tessellator, bufferBuilder, c));
-            }
-            catch(Exception e)
-            {
-                Pyroclasm.INSTANCE.warn("Ignoring exception in debug render", e);
-            }
-        }
+        renderMarks(camera, tessellator, bufferBuilder, marks);
         
-        GlStateManager.enableDepth();
-        
-        if(Configurator.DEBUG.enableLavaChunkDebugRender)
+
+        if((Configurator.DEBUG.enableLavaCellDebugRender || Configurator.DEBUG.enableLavaChunkDebugRender))
         {
-            for(Object c : lavaSim.cells.allChunks().toArray()) { renderCellChunk(tessellator, bufferBuilder, (CellChunk)c); }
+            
+            LavaSimulator lavaSim = Simulator.instance().getNode(LavaSimulator.class);
+            if(lavaSim != null)
+            {
+                GlStateManager.disableDepth();
+                
+                if(Configurator.DEBUG.enableLavaCellDebugRender)
+                {
+                    //FIXME: avoid NPE in concurrency
+                    try
+                    {
+                        lavaSim.cells.forEach(c -> renderCell(camera, tessellator, bufferBuilder, c));
+                    }
+                    catch(Exception e)
+                    {
+                        Pyroclasm.INSTANCE.warn("Ignoring exception in debug render", e);
+                    }
+                }
+                
+                GlStateManager.enableDepth();
+                
+                if(Configurator.DEBUG.enableLavaChunkDebugRender)
+                {
+                    for(Object c : lavaSim.cells.allChunks().toArray()) { renderCellChunk(tessellator, bufferBuilder, (CellChunk)c); }
+                }
+            
+            }
         }
         
         bufferBuilder.setTranslation(0, 0, 0);
@@ -89,9 +105,25 @@ public class ClientEventHandler
         GlStateManager.enableTexture2D();
         GlStateManager.disableBlend();
         GlStateManager.enableAlpha();
-        
     }
     
+    private static void renderMarks(ICamera camera, Tessellator tessellator, BufferBuilder bufferBuilder, long[] marks)
+    {
+        for(long pos : marks)
+        {   
+            final int x = PackedBlockPos.getX(pos);
+            final int z = PackedBlockPos.getZ(pos);
+            
+            AxisAlignedBB box = new AxisAlignedBB(x - 4, 0, z - 4, x + 5, 256, z + 5);
+            
+//            if(!camera.isBoundingBoxInFrustum(box)) continue;
+            
+            bufferBuilder.begin(GL11.GL_TRIANGLE_STRIP, DefaultVertexFormats.POSITION_COLOR);
+            RenderGlobal.addChainedFilledBoxVertices(bufferBuilder, box.minX, box.minY, box.minZ, box.maxX, box.maxY, box.maxZ, 1.0f, 0.7f, 0.1f, 0.5f);
+            tessellator.draw();
+        }
+    }
+
     private static void renderCell(ICamera camera, Tessellator tessellator, BufferBuilder bufferBuilder, @Nullable LavaCell cell)
     {
         if(cell == null) return;
