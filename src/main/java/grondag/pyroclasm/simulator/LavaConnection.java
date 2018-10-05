@@ -324,6 +324,14 @@ public class LavaConnection
         private void executeFlow(int flow)
         {
           fromCell.changeFluidUnits(-flow);
+          // TODO: reimplement falling lava
+          // Old way was to create entities via LavaBlobManager
+          // For falling lava that's too heavy and doesn't exploit fact that
+          // particles only need to go down.  Should instead just update the 
+          // cell content and then send packets to the client that spawn particles.
+          //
+          // For now just add to cell level and don't do any visual effect.
+//          toCell.addLavaAtY(fromCell.worldSurfaceY(), flow);
           toCell.changeFluidUnits(flow);
           fromCell.outputThisTick += flow;
           if(Configurator.DEBUG.enableFlowTracking) totalFlow.add(flow);

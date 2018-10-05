@@ -62,6 +62,9 @@ public class EntityLavaBlob extends Entity
         return this.id;
     }
 
+    // FIXME: gets out of synch if entity lifecycle is abnormal
+    // and is never decremented, causing blobs to stop spawning
+    // Could instead have blobs check in each tick and not persist.
     /**
      * Server side count of particles still living
      */
