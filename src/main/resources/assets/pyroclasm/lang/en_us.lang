@@ -5,6 +5,9 @@ misc.denials=["Absolutely not.","Nope.","Not happening","Doctor No sends his reg
 #CONFIG LABELS
 pyroclasm.config.general=Pyroclasm Configuration
 
+pyroclasm.config.render=Visual Appearance
+pyroclasm.config.large_texture_scale=Large Texture Scale
+
 pyroclasm.config.substance=Material Properties
 pyroclasm.config.basalt_material=Basalt Material
 pyroclasm.config.lava_material=Lava Material

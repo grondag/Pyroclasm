@@ -28,6 +28,23 @@ public class Configurator
         Volcano.recalcDerived();
     }
 
+    ////////////////////////////////////////////////////
+    // RENDER
+    ////////////////////////////////////////////////////
+    @LangKey("pyroclasm.config.render")
+    @Comment("Visual Appearance.")
+    public static Render RENDER = new Render();
+    
+    public static class Render
+    {
+        @LangKey("pyroclasm.config.large_texture_scale")
+        @Comment({"If true, basalt and lava textures span 32 blocks, resulting in large cracks.",
+            "If false, same textures are scale to span 16 blocks. Purely an aesthetic choice. ",
+            "HD texture pack is recommended when set to true. Client-side only."})
+        @RequiresMcRestart
+        public boolean largeTextureScale = false;
+    }
+    
     ////////////////////////////////////////////////////        
     // SUBSTANCES
     ////////////////////////////////////////////////////
