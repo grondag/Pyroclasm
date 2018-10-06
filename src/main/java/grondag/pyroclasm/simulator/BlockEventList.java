@@ -3,15 +3,13 @@ package grondag.pyroclasm.simulator;
 import java.util.Arrays;
 import java.util.function.Predicate;
 
-import javax.annotation.Nullable;
-
 import grondag.exotic_matter.concurrency.PerformanceCollector;
 import grondag.exotic_matter.concurrency.PerformanceCounter;
 import grondag.exotic_matter.concurrency.SimpleConcurrentList;
 import grondag.exotic_matter.simulator.Simulator;
 import grondag.exotic_matter.world.PackedBlockPos;
-import grondag.pyroclasm.Pyroclasm;
 import grondag.pyroclasm.Configurator;
+import grondag.pyroclasm.Pyroclasm;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.math.BlockPos;
 
@@ -124,7 +122,7 @@ public class BlockEventList
     private static final Predicate<BlockEvent> EVENT_REMOVAL_PREDICATE = new Predicate<BlockEvent>()
     {
         @Override
-        public boolean test(@Nullable BlockEvent t)
+        public boolean test(@SuppressWarnings("null") BlockEvent t)
         {
             return t.isDeleted();
         }

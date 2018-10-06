@@ -16,6 +16,7 @@ import grondag.exotic_matter.simulator.persistence.ISimulationTopNode;
 import grondag.exotic_matter.varia.BlueNoise;
 import grondag.exotic_matter.varia.Useful;
 import grondag.exotic_matter.world.PackedChunkPos;
+import grondag.pyroclasm.commands.VolcanoCommandException;
 import grondag.pyroclasm.core.VolcanoStage;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMaps;

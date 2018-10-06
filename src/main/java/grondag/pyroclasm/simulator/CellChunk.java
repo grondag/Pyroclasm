@@ -195,7 +195,8 @@ public class CellChunk
                     if(entryCell != null && entryCell.isValidationNeeded())
                     {
                         entryCell = builder.updateCellStack(cells, chunk, entryCell, this.xStart + x, this.zStart + z);
-                        entryCell.setValidationNeeded(false);
+                        if(entryCell != null)
+                            entryCell.setValidationNeeded(false);
                         this.setEntryCell(x, z, entryCell);
                     }
                 }

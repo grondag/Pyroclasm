@@ -1711,7 +1711,7 @@ public class LavaCell extends AbstractLavaCell
         return this.locator.z;
     }
     
-    public final @Nullable LavaCell firstCell()
+    public final LavaCell firstCell()
     {
         LavaCell result = this.locator.firstCell;
         if(result == null)

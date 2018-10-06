@@ -1,4 +1,4 @@
-package grondag.pyroclasm.simulator;
+package grondag.pyroclasm.commands;
 
 @SuppressWarnings("serial")
 public class VolcanoCommandException extends Exception
