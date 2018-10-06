@@ -73,7 +73,6 @@ tile.pyroclasm:basalt_dynamic_very_hot_height.name=Very Hot Basalt
 tile.pyroclasm:basalt_dynamic_very_hot_filler.name=Very Hot Basalt (Filler)
 tile.pyroclasm:lava_dynamic_height.name=Volcanic Lava
 tile.pyroclasm:lava_dynamic_filler.name=Volcanic Lava (Filler)
-tile.pyroclasm:block_volcano.name=Volcano Root
 
 #SUBSTANCES
 material.basalt=Basalt

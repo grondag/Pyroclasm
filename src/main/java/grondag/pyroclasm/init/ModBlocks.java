@@ -167,8 +167,8 @@ public class ModBlocks
         hotBlockFillerModel = hotBlockFillerModel.clone();
         hotBlockFillerModel.setTexture(PaintLayer.MIDDLE, texCooling);
         hotBlockFillerModel.setTexture(PaintLayer.OUTER, texCooling);
-        Block dynamicCoolingBasaltHeight = new CoolingBasaltBlock("basalt_dynamic_cooling_height", ModSubstances.BASALT, hotBlockHeightModel, hotBlockHeightModelEnhanced, false).setAllowSilkHarvest(false).setCreativeTab(Pyroclasm.tabMod);
-        Block dynamicCoolingBasaltFiller = new CoolingBasaltBlock("basalt_dynamic_cooling_filler", ModSubstances.BASALT, hotBlockFillerModel, hotBlockFillerModelEnhanced, true).setAllowSilkHarvest(false).setCreativeTab(Pyroclasm.tabMod);
+        Block dynamicCoolingBasaltHeight = new CoolingBasaltBlock(prefix("basalt_dynamic_cooling_height"), ModSubstances.BASALT, hotBlockHeightModel, hotBlockHeightModelEnhanced, false).setAllowSilkHarvest(false).setCreativeTab(Pyroclasm.tabMod);
+        Block dynamicCoolingBasaltFiller = new CoolingBasaltBlock(prefix("basalt_dynamic_cooling_filler"), ModSubstances.BASALT, hotBlockFillerModel, hotBlockFillerModelEnhanced, true).setAllowSilkHarvest(false).setCreativeTab(Pyroclasm.tabMod);
         event.getRegistry().register(dynamicCoolingBasaltHeight);
         event.getRegistry().register(dynamicCoolingBasaltFiller);
         TerrainBlockRegistry.TERRAIN_STATE_REGISTRY.registerFiller(dynamicCoolingBasaltHeight, dynamicCoolingBasaltFiller);
@@ -180,8 +180,8 @@ public class ModBlocks
         hotBlockFillerModel = hotBlockFillerModel.clone();
         hotBlockFillerModel.setTexture(PaintLayer.MIDDLE, texWarm);
         hotBlockFillerModel.setTexture(PaintLayer.OUTER, texWarm);
-        Block dynamicWarmBasaltHeight = new CoolingBasaltBlock("basalt_dynamic_warm_height", ModSubstances.BASALT, hotBlockHeightModel, hotBlockHeightModelEnhanced, false).setAllowSilkHarvest(false).setCreativeTab(Pyroclasm.tabMod);
-        Block dynamicWarmBasaltFiller = new CoolingBasaltBlock("basalt_dynamic_warm_filler", ModSubstances.BASALT, hotBlockFillerModel, hotBlockFillerModelEnhanced, true).setAllowSilkHarvest(false).setCreativeTab(Pyroclasm.tabMod);
+        Block dynamicWarmBasaltHeight = new CoolingBasaltBlock(prefix("basalt_dynamic_warm_height"), ModSubstances.BASALT, hotBlockHeightModel, hotBlockHeightModelEnhanced, false).setAllowSilkHarvest(false).setCreativeTab(Pyroclasm.tabMod);
+        Block dynamicWarmBasaltFiller = new CoolingBasaltBlock(prefix("basalt_dynamic_warm_filler"), ModSubstances.BASALT, hotBlockFillerModel, hotBlockFillerModelEnhanced, true).setAllowSilkHarvest(false).setCreativeTab(Pyroclasm.tabMod);
         event.getRegistry().register(dynamicWarmBasaltHeight);
         event.getRegistry().register(dynamicWarmBasaltFiller);
         TerrainBlockRegistry.TERRAIN_STATE_REGISTRY.registerFiller(dynamicWarmBasaltHeight, dynamicWarmBasaltFiller);
@@ -193,8 +193,8 @@ public class ModBlocks
         hotBlockFillerModel = hotBlockFillerModel.clone();
         hotBlockFillerModel.setTexture(PaintLayer.MIDDLE, texHot);
         hotBlockFillerModel.setTexture(PaintLayer.OUTER, texHot);
-        Block dynamicHotBasaltHeight = new CoolingBasaltBlock("basalt_dynamic_hot_height", ModSubstances.BASALT, hotBlockHeightModel, hotBlockHeightModelEnhanced, false).setAllowSilkHarvest(false).setCreativeTab(Pyroclasm.tabMod);
-        Block dynamicHotBasaltFiller = new CoolingBasaltBlock("basalt_dynamic_hot_filler", ModSubstances.BASALT, hotBlockFillerModel, hotBlockFillerModelEnhanced, true).setAllowSilkHarvest(false).setCreativeTab(Pyroclasm.tabMod);
+        Block dynamicHotBasaltHeight = new CoolingBasaltBlock(prefix("basalt_dynamic_hot_height"), ModSubstances.BASALT, hotBlockHeightModel, hotBlockHeightModelEnhanced, false).setAllowSilkHarvest(false).setCreativeTab(Pyroclasm.tabMod);
+        Block dynamicHotBasaltFiller = new CoolingBasaltBlock(prefix("basalt_dynamic_hot_filler"), ModSubstances.BASALT, hotBlockFillerModel, hotBlockFillerModelEnhanced, true).setAllowSilkHarvest(false).setCreativeTab(Pyroclasm.tabMod);
         event.getRegistry().register(dynamicHotBasaltHeight);
         event.getRegistry().register(dynamicHotBasaltFiller);
         TerrainBlockRegistry.TERRAIN_STATE_REGISTRY.registerFiller(dynamicHotBasaltHeight, dynamicHotBasaltFiller);
@@ -206,8 +206,8 @@ public class ModBlocks
         hotBlockFillerModel = hotBlockFillerModel.clone();
         hotBlockFillerModel.setTexture(PaintLayer.MIDDLE, texVeryHot);
         hotBlockFillerModel.setTexture(PaintLayer.OUTER, texVeryHot);
-        Block dynamicVeryHotBasaltHeight = new CoolingBasaltBlock("basalt_dynamic_very_hot_height", ModSubstances.BASALT, hotBlockHeightModel, hotBlockHeightModelEnhanced, false).setAllowSilkHarvest(false).setCreativeTab(Pyroclasm.tabMod);
-        Block dynamicVeryHotBasaltFiller = new CoolingBasaltBlock("basalt_dynamic_very_hot_filler", ModSubstances.BASALT, hotBlockFillerModel, hotBlockFillerModelEnhanced, true).setAllowSilkHarvest(false).setCreativeTab(Pyroclasm.tabMod);
+        Block dynamicVeryHotBasaltHeight = new CoolingBasaltBlock(prefix("basalt_dynamic_very_hot_height"), ModSubstances.BASALT, hotBlockHeightModel, hotBlockHeightModelEnhanced, false).setAllowSilkHarvest(false).setCreativeTab(Pyroclasm.tabMod);
+        Block dynamicVeryHotBasaltFiller = new CoolingBasaltBlock(prefix("basalt_dynamic_very_hot_filler"), ModSubstances.BASALT, hotBlockFillerModel, hotBlockFillerModelEnhanced, true).setAllowSilkHarvest(false).setCreativeTab(Pyroclasm.tabMod);
         event.getRegistry().register(dynamicVeryHotBasaltHeight);
         event.getRegistry().register(dynamicVeryHotBasaltFiller);
         TerrainBlockRegistry.TERRAIN_STATE_REGISTRY.registerFiller(dynamicVeryHotBasaltHeight, dynamicVeryHotBasaltFiller);

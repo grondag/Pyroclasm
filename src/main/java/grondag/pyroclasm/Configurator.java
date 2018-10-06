@@ -259,6 +259,10 @@ public class Configurator
             "Only works if running Java with assertions enabled using -ea JVM parameter.",
             "Will cause significant log spam so should only be enabled for debug and testing."})
         public boolean traceVolcaneStateMachine = false;
+
+        @LangKey("pyroclasm.config.enable_probe_output")
+        @Comment({"If true and The One Probe is installed, will display lava cell debug info in probe display."})
+        public boolean enableLavaBlockProbeOutput = false;
     }
     
     ////////////////////////////////////////////////////        

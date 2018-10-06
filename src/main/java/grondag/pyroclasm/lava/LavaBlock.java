@@ -138,23 +138,26 @@ public class LavaBlock extends TerrainDynamicBlock
         if(data == null || probeInfo == null)
             return;
         
-        LavaSimulator sim = Simulator.instance().getNode(LavaSimulator.class);
-        if(sim != null) 
+        if(Configurator.DEBUG.enableLavaBlockProbeOutput)
         {
-            BlockPos pos = data.getPos();  
-            LavaCell cell = sim.cells.getCellIfExists(pos.getX(), pos.getY(), pos.getZ());
-            if(cell == null)
+            LavaSimulator sim = Simulator.instance().getNode(LavaSimulator.class);
+            if(sim != null) 
             {
-                probeInfo.text("Cell not checked.");
-            }
-            else
-            {
-                probeInfo.text("Cell ID = " + cell.hashCode())
-                    .text("FluidUnits=" + cell.fluidUnits() + "  FluidSurfaceLevel=" + cell.worldSurfaceLevel() + "  Fluid Levels=" + (cell.fluidLevels()))
-                    .text("RetainedUnits=" + cell.getRetainedUnits() + "  Retained Depth=" + (cell.getRetainedUnits() / LavaSimulator.FLUID_UNITS_PER_LEVEL))
-                    .text("floor=" + cell.floorLevel() + "  ceiling=" + cell.ceilingLevel() + " isFlowFloor=" + cell.isBottomFlow() + " floorFlowHeight=" + cell.floorFlowHeight())
-                    .text("Visible Level = " + cell.worldSurfaceLevel() + "  Last Visible Level = " + cell.getLastVisibleLevel())
-                    .text("Connection Count = " + cell.connections.size() + "   Last flow tick = " + cell.lastFlowTick);
+                BlockPos pos = data.getPos();  
+                LavaCell cell = sim.cells.getCellIfExists(pos.getX(), pos.getY(), pos.getZ());
+                if(cell == null)
+                {
+                    probeInfo.text("Cell not checked.");
+                }
+                else
+                {
+                    probeInfo.text("Cell ID = " + cell.hashCode())
+                        .text("FluidUnits=" + cell.fluidUnits() + "  FluidSurfaceLevel=" + cell.worldSurfaceLevel() + "  Fluid Levels=" + (cell.fluidLevels()))
+                        .text("RetainedUnits=" + cell.getRetainedUnits() + "  Retained Depth=" + (cell.getRetainedUnits() / LavaSimulator.FLUID_UNITS_PER_LEVEL))
+                        .text("floor=" + cell.floorLevel() + "  ceiling=" + cell.ceilingLevel() + " isFlowFloor=" + cell.isBottomFlow() + " floorFlowHeight=" + cell.floorFlowHeight())
+                        .text("Visible Level = " + cell.worldSurfaceLevel() + "  Last Visible Level = " + cell.getLastVisibleLevel())
+                        .text("Connection Count = " + cell.connections.size() + "   Last flow tick = " + cell.lastFlowTick);
+                }
             }
         }
     }
