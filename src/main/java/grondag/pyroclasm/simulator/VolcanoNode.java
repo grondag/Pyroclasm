@@ -42,6 +42,7 @@ public class VolcanoNode implements IReadWriteNBT, IDirtListener, ISimulationTic
          * will only be updated by server tick thread.
          */
         private int weight = 0;
+        
         private VolcanoStage stage = VolcanoStage.DORMANT;
         
         private int height = 0;
