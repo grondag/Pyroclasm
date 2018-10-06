@@ -2,8 +2,8 @@ package grondag.pyroclasm.commands;
 
 import grondag.exotic_matter.simulator.Simulator;
 import grondag.pyroclasm.Pyroclasm;
+import grondag.pyroclasm.simulator.VolcanoCommandException;
 import grondag.pyroclasm.simulator.VolcanoManager;
-import grondag.pyroclasm.simulator.VolcanoManager.VolcanoCommandException;
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.CommandException;
 import net.minecraft.command.ICommandSender;

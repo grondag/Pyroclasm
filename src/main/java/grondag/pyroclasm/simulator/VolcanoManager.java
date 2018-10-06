@@ -34,15 +34,6 @@ public class VolcanoManager implements ISimulationTickable, ISimulationTopNode
     private static final String NBT_VOLCANO_NODES = NBTDictionary.claim("volcNodes");
     private static final String NBT_VOLCANO_MANAGER_IS_CREATED = NBTDictionary.claim("volcExists");
     
-    @SuppressWarnings("serial")
-    public static class VolcanoCommandException extends Exception
-    {
-        public VolcanoCommandException(String message)
-        {
-            super(message);
-        }
-    }
-    
     /**
      * Will be reliable initialized via {@link VolcanoManager#afterCreated(Simulator)}
      */

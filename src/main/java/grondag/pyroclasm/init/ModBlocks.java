@@ -60,6 +60,8 @@ public class ModBlocks
     @SubscribeEvent
     public static void registerBlocks(RegistryEvent.Register<Block> event) 
     {
+        // RENDER: need purpose-specific textures for sides of hot blocks
+        // not super urgent because 
         ISuperModelState workingModel = new ModelState();
         final ITexturePalette texCool = Configurator.RENDER.largeTextureScale ? ModTextures.BIGTEX_BASALT_COOL_ZOOM_X2 : ModTextures.BIGTEX_BASALT_COOL_ZOOM;
         final ITexturePalette texCut = Configurator.RENDER.largeTextureScale ? ModTextures.BIGTEX_BASALT_CUT_ZOOM_X2 : ModTextures.BIGTEX_BASALT_CUT_ZOOM;
