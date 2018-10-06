@@ -65,7 +65,7 @@ void main()
     float kelvin = 600 + v_color_0.a * i * i * mapColor.r * (200.0 + mapColor.r * ( 800.0 + mapColor.r * 4000.0));
 
     // subtle, small-scale animation of temperature
-	kelvin *= (0.9 + tnoise(uvRel * 512.0, u_time * 2.0) * 0.2);
+	kelvin *= (0.9 + tnoise(uvRel * 512.0, u_time * 8.0) * 0.2);
 
     // shifting the blue curve out a tad - looks better
     vec4 hotColor = vec4(1.0, green(kelvin), blue(kelvin - 1500.0), 1.0);
