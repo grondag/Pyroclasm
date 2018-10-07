@@ -263,6 +263,11 @@ public class Configurator
         @LangKey("pyroclasm.config.enable_probe_output")
         @Comment({"If true and The One Probe is installed, will display lava cell debug info in probe display."})
         public boolean enableLavaBlockProbeOutput = false;
+
+        @LangKey("pyroclasm.config.enable_test_items")
+        @RequiresMcRestart
+        @Comment({"If true, item(s) used for testing in the dev environment will be registered. These items have no recipes."})
+        public boolean enableTestItems = false;
     }
     
     ////////////////////////////////////////////////////        
