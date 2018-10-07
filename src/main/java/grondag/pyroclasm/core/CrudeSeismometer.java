@@ -5,7 +5,6 @@ import javax.annotation.Nonnull;
 import grondag.exotic_matter.init.RegistratingItem;
 import grondag.exotic_matter.simulator.Simulator;
 import grondag.pyroclasm.simulator.VolcanoManager;
-import net.minecraft.client.resources.I18n;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ActionResult;
@@ -13,7 +12,7 @@ import net.minecraft.util.EnumActionResult;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.EnumHand;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.text.TextComponentString;
+import net.minecraft.util.text.TextComponentTranslation;
 import net.minecraft.world.World;
 
 
@@ -42,11 +41,10 @@ public class CrudeSeismometer extends RegistratingItem
             }
         }
             
-        String message = dist == -1 
-            ? I18n.format("misc.seismometer_not_found")
-            : I18n.format("misc.seismometer_message", dist);
-            
-        playerIn.sendMessage(new TextComponentString(message));
+        if(dist == -1)
+            playerIn.sendMessage(new TextComponentTranslation("misc.seismometer_not_found"));
+        else
+            playerIn.sendMessage(new TextComponentTranslation("misc.seismometer_message", dist));
     }
     
     @Override
