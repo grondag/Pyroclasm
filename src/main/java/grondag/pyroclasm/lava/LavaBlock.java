@@ -1,5 +1,7 @@
 package grondag.pyroclasm.lava;
 
+import java.util.Random;
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -9,6 +11,7 @@ import grondag.exotic_matter.model.state.ISuperModelState;
 import grondag.exotic_matter.simulator.Simulator;
 import grondag.exotic_matter.terrain.TerrainDynamicBlock;
 import grondag.pyroclasm.Configurator;
+import grondag.pyroclasm.init.ModSounds;
 import grondag.pyroclasm.simulator.LavaCell;
 import grondag.pyroclasm.simulator.LavaSimulator;
 import mcjty.theoneprobe.api.IProbeHitData;
@@ -16,14 +19,20 @@ import mcjty.theoneprobe.api.IProbeInfo;
 import mcjty.theoneprobe.api.ProbeMode;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockFalling;
+import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.init.SoundEvents;
+import net.minecraft.util.EnumParticleTypes;
+import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.Explosion;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.common.Optional;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class LavaBlock extends TerrainDynamicBlock
 {
@@ -33,6 +42,7 @@ public class LavaBlock extends TerrainDynamicBlock
     {
         super(blockName, substance, defaultModelState, isFiller);
         this.enhancedModelState = enhancedModelState;
+        this.setTickRandomly(true);
     }
     
     @Override
@@ -174,5 +184,51 @@ public class LavaBlock extends TerrainDynamicBlock
     public ISuperModelState getDefaultModelState()
     {
         return ExoticMatter.proxy.isAcuityEnabled() ? this.enhancedModelState.clone() : super.getDefaultModelState();
+    }
+    
+    @Override
+    @SideOnly(Side.CLIENT)
+    public void randomDisplayTick(IBlockState stateIn, World worldIn, BlockPos pos, Random rand)
+    {
+        double d0 = (double)pos.getX();
+        double d1 = (double)pos.getY();
+        double d2 = (double)pos.getZ();
+
+        if (worldIn.getBlockState(pos.up()).getMaterial() == Material.AIR)
+        {
+            if (rand.nextInt(100) == 0)
+            {
+                double d8 = d0 + (double)rand.nextFloat();
+                double d4 = d1 + stateIn.getBoundingBox(worldIn, pos).maxY;
+                double d6 = d2 + (double)rand.nextFloat();
+                worldIn.spawnParticle(EnumParticleTypes.LAVA, d8, d4, d6, 0.0D, 0.0D, 0.0D);
+                worldIn.playSound(d8, d4, d6, SoundEvents.BLOCK_LAVA_POP, SoundCategory.BLOCKS, 0.2F + rand.nextFloat() * 0.2F, 0.9F + rand.nextFloat() * 0.15F, false);
+            }
+
+            if (rand.nextInt(200) == 0)
+            {
+                worldIn.playSound(d0, d1, d2, ModSounds.lava_bubble, SoundCategory.BLOCKS, 0.2F + rand.nextFloat() * 0.2F, 0.9F + rand.nextFloat() * 0.15F, false);
+            }
+        }
+
+        if (rand.nextInt(10) == 0 && worldIn.getBlockState(pos.down()).isTopSolid())
+        {
+            Material material = worldIn.getBlockState(pos.down(2)).getMaterial();
+
+            if (!material.blocksMovement() && !material.isLiquid())
+            {
+                double d3 = d0 + (double)rand.nextFloat();
+                double d5 = d1 - 1.05D;
+                double d7 = d2 + (double)rand.nextFloat();
+
+                worldIn.spawnParticle(EnumParticleTypes.DRIP_LAVA, d3, d5, d7, 0.0D, 0.0D, 0.0D);
+            }
+        }
+    }
+    
+    @Override
+    public int tickRate(World worldIn)
+    {
+        return 30;
     }
 }

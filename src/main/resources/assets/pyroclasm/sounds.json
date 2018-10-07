@@ -1,0 +1,7 @@
+{
+  "lava_bubble": {
+    "category": "block",
+    "subtitle": "pyroclasm.subtitle.lava_lava_bubble",
+    "sounds": [ "pyroclasm:lava0", "pyroclasm:lava1" ]
+  }
+}
