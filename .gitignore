@@ -5,6 +5,9 @@ Thumbs.db
 *_anim.png
 *_anim_low.png
 
+## sounds - licensing may not be appropriate for GitHub
+*.ogg
+
 # eclipse
 bin
 *.launch
