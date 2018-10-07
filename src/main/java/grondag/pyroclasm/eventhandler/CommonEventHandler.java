@@ -2,8 +2,10 @@ package grondag.pyroclasm.eventhandler;
 
 import javax.annotation.Nullable;
 
+import grondag.exotic_matter.simulator.Simulator;
 import grondag.exotic_matter.world.WorldInfo;
 import grondag.pyroclasm.Pyroclasm;
+import grondag.pyroclasm.simulator.VolcanoManager;
 import grondag.pyroclasm.Configurator;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Items;
@@ -14,6 +16,7 @@ import net.minecraftforge.common.config.Config.Type;
 import net.minecraftforge.common.config.ConfigManager;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.event.ServerChatEvent;
+import net.minecraftforge.event.world.ChunkEvent;
 import net.minecraftforge.fml.client.event.ConfigChangedEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
@@ -32,7 +35,28 @@ public class CommonEventHandler
         }
     }
     
-
+    @SubscribeEvent
+    public static void onChunkLoad(ChunkEvent.Load event) 
+    {
+        if (event.getWorld().isRemote)
+            return;
+        
+        VolcanoManager vm = Simulator.instance().getNode(VolcanoManager.class);
+        if(vm != null)
+            vm.handleChunkLoad(event.getWorld(), event.getChunk());
+    }
+    
+    @SubscribeEvent
+    public static void onChunkUnload(ChunkEvent.Unload event) 
+    {
+        if (event.getWorld().isRemote)
+            return;
+        
+        VolcanoManager vm = Simulator.instance().getNode(VolcanoManager.class);
+        if(vm != null)
+            vm.handleChunkUnload(event.getWorld(), event.getChunk());
+    }
+    
     //TODO: make these player caps, vs static global
     private static @Nullable String lastTroubleMaker = null;
     private static @Nullable BlockPos lastAttemptLocation = null;

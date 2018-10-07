@@ -339,7 +339,7 @@ public class Configurator
         public int lavaBlocksPerSecond = 16;
         
         @LangKey("pyroclasm.config.max_y_level")
-        @Comment("Y-orthogonalAxis build limit at which Volcano becomes permanently dormant.")
+        @Comment("Y-axis build limit at which Volcano becomes permanently dormant.")
         @RangeInt(min = 128, max = 255)
         @RequiresMcRestart
         public int maxYLevel = 147; 
@@ -350,21 +350,38 @@ public class Configurator
         public int moundBlocksPerTick = 1;
 
         @LangKey("pyroclasm.config.mound_radius")
-        @Comment("Radius of one standard deviation, in blocks, for underground volcano mounding.")
+        @Comment("Radius of one standard deviation, in blocks, for volcano mound building.")
         @RangeInt(min = 14, max = 28)
         public int moundRadius = 20;
 
+        @LangKey("pyroclasm.config.grace_ticks")
+        @Comment({"Number of ticks before volcano activation clock starts in a new world.",
+            "There are 24000 ticks in one minecraft day."})
+        @RangeInt(min = 0, max = 480000000)
+        public int graceTicks = 24000;
+        
         @LangKey("pyroclasm.config.min_dormant_ticks")
-        @Comment("Minimum number of ticks between the time a volcano becomes dormant and the same or another erupts.")
-        @RangeInt(min = 20, max = 24000000)
-        public int minDormantTicks = 20;
+        @Comment("Minimum number of ticks volcanos remain dormant between activations.")
+        @RangeInt(min = 20, max = 240000000)
+        public int minDormantTicks = 24000;
 
         @LangKey("pyroclasm.config.max_dormant_ticks")
-        @Comment({"Maximum number of ticks between the time a volcano becomes dormant and the same or another erupts.",
-            "Should be larger than minDormantTicks"})
-        @RangeInt(min = 20, max = 24000000)
-        public int maxDormantTicks = 200;
+        @Comment({"Maximum number of ticks a volcanos remain dormant between activations.",
+            "Should be larger than minDormantTicks."})
+        @RangeInt(min = 40, max = 480000000)
+        public int maxDormantTicks = 60000;
 
+        @LangKey("pyroclasm.config.min_active_ticks")
+        @Comment("Minimum number of ticks a volcano remains active.")
+        @RangeInt(min = 20, max = 240000000)
+        public int minActiveTicks = 60000;
+
+        @LangKey("pyroclasm.config.max_active_ticks")
+        @Comment({"Maximum number of ticks a volcano remain active.",
+            "Should be larger than minActiveTicks."})
+        @RangeInt(min = 40, max = 480000000)
+        public int maxActiveTicks = 120000;
+        
         @LangKey("pyroclasm.config.max_lava_projectiles")
         @Comment({"Maximum number of flying/falling volcanic lava entities that may be in the world simultaneously.",
             "Higher numbers may provide more responsive flowing and better realism but can create lag."})

@@ -6,8 +6,8 @@ import grondag.exotic_matter.network.PacketHandler;
 import grondag.exotic_matter.simulator.Simulator;
 import grondag.exotic_matter.world.PackedBlockPos;
 import grondag.pyroclasm.Pyroclasm;
-import grondag.pyroclasm.core.VolcanoStage;
 import grondag.pyroclasm.simulator.VolcanoManager;
+import grondag.pyroclasm.simulator.VolcanoNode;
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.CommandException;
 import net.minecraft.command.ICommandSender;
@@ -44,10 +44,10 @@ public class CommandMark extends CommandBase
         {
             EntityPlayerMP player = (EntityPlayerMP) sender.getCommandSenderEntity();
             VolcanoManager vm = Simulator.instance().getNode(VolcanoManager.class);
-            Map<BlockPos, VolcanoStage> near = vm.nearbyVolcanos(sender.getPosition());
+            Map<BlockPos, VolcanoNode> near = vm.nearbyVolcanos(sender.getPosition());
             long[] data = new long[near.size()];
             int i = 0;
-            for(Map.Entry<BlockPos, VolcanoStage> entry : near.entrySet())
+            for(Map.Entry<BlockPos, VolcanoNode> entry : near.entrySet())
             {
                 data[i++] = PackedBlockPos.pack(entry.getKey());
             }

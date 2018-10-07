@@ -6,6 +6,7 @@ import grondag.exotic_matter.simulator.Simulator;
 import grondag.pyroclasm.Pyroclasm;
 import grondag.pyroclasm.core.VolcanoStage;
 import grondag.pyroclasm.simulator.VolcanoManager;
+import grondag.pyroclasm.simulator.VolcanoNode;
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.CommandException;
 import net.minecraft.command.ICommandSender;
@@ -50,7 +51,7 @@ public class CommandStatus extends CommandBase
                 final int myZ = sender.getPosition().getZ();
                 sender.sendMessage(TextComponentHelper.createComponentTranslation(sender, "commands.volcano.status_header"));
                 sender.sendMessage(new TextComponentString("========================================"));
-                for(Map.Entry<BlockPos, VolcanoStage> entry : vm.nearbyVolcanos(sender.getPosition()).entrySet())
+                for(Map.Entry<BlockPos, VolcanoNode> entry : vm.nearbyVolcanos(sender.getPosition()).entrySet())
                 {
                     BlockPos pos =  entry.getKey();
                     final int vX = pos.getX();
@@ -58,7 +59,10 @@ public class CommandStatus extends CommandBase
                     final int dX = vX - myX;
                     final int dZ = vZ - myZ;
                     final int dist = (int) Math.sqrt(dX * dX + dZ * dZ);
-                    sender.sendMessage(TextComponentHelper.createComponentTranslation(sender, "commands.volcano.status", dist, vX, vZ, entry.getValue().toString()));
+                    VolcanoNode node = entry.getValue();
+                    final String stage = node == null ? VolcanoStage.DORMANT.toString() : node.getStage().toString();
+                    final long weight = node == null ? 0 : node.getWeight();
+                    sender.sendMessage(TextComponentHelper.createComponentTranslation(sender, "commands.volcano.status", dist, vX, vZ, stage, weight));
                 }
             }
             else

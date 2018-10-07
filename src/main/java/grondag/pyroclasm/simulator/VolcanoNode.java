@@ -1,7 +1,5 @@
 package grondag.pyroclasm.simulator;
 
-import java.util.concurrent.ThreadLocalRandom;
-
 import javax.annotation.Nullable;
 
 import grondag.exotic_matter.serialization.IReadWriteNBT;
@@ -18,6 +16,7 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.Vec3i;
+import net.minecraft.world.chunk.Chunk;
 
 public class VolcanoNode implements IReadWriteNBT, IDirtListener, ISimulationTickable
     {
@@ -36,18 +35,26 @@ public class VolcanoNode implements IReadWriteNBT, IDirtListener, ISimulationTic
         private final LavaSimulator lavaSim;
         
         /** 
-         * Occasionally updated by TE based on how
-         * long the containing chunk has been inhabited.
-         * Does not need to be thread-safe because it
-         * will only be updated by server tick thread.
+         * Caches inhabited time from chunk where this node lives.<br>
+         * Used as a weight for activation priority<p>
+         * 
+         * Not using chunk value directly because chunks may not be loaded.
+         * Updated when chunk first loads, when chunk unloads
+         * and periodically while the chunk is loaded.
          */
-        private int weight = 0;
+        private long inhabitedTicks = 0;
         
         private VolcanoStage stage = VolcanoStage.DORMANT;
         
         private int height = 0;
         
         private ChunkPos position;
+        
+        /**
+         * Will be set to my chunk while my chunk is loaded.
+         * Purpose is access to inhabited time for activation weight.
+         */
+        private @Nullable Chunk chunk;
         
         private @Nullable VolcanoStateMachine stateMachine = null;
         
@@ -103,7 +110,7 @@ public class VolcanoNode implements IReadWriteNBT, IDirtListener, ISimulationTic
         @Override
         public void deserializeNBT(@SuppressWarnings("null") NBTTagCompound nbt)
         {
-            this.weight = nbt.getInteger(NBT_VOLCANO_NODE_TAG_WEIGHT);                  
+            this.inhabitedTicks = nbt.getLong(NBT_VOLCANO_NODE_TAG_WEIGHT);                  
             this.height = nbt.getInteger(NBT_VOLCANO_NODE_TAG_HEIGHT);
             this.stage = VolcanoStage.values()[nbt.getInteger(NBT_VOLCANO_NODE_TAG_STAGE)];
             this.position = PackedChunkPos.unpackChunkPos(nbt.getLong(NBT_VOLCANO_NODE_TAG_POSITION));
@@ -117,28 +124,13 @@ public class VolcanoNode implements IReadWriteNBT, IDirtListener, ISimulationTic
         {
             synchronized(this)
             {
-                nbt.setInteger(NBT_VOLCANO_NODE_TAG_WEIGHT, this.weight);
+                nbt.setLong(NBT_VOLCANO_NODE_TAG_WEIGHT, this.inhabitedTicks);
                 nbt.setInteger(NBT_VOLCANO_NODE_TAG_HEIGHT, this.height);
                 nbt.setInteger(NBT_VOLCANO_NODE_TAG_STAGE, this.stage.ordinal());
                 nbt.setLong(NBT_VOLCANO_NODE_TAG_POSITION, PackedChunkPos.getPackedChunkPos(this.position));
                 nbt.setInteger(NBT_VOLCANO_NODE_TAG_LAST_ACTIVATION_TICK, this.lastActivationTick);
                 nbt.setInteger(NBT_VOLCANO_NODE_TAG_COOLDOWN_TICKS, this.lavaCooldownTicks);
             }
-        }
-        
-        public boolean wantsToActivate()
-        {
-            if(this.isActive() || this.height >= Configurator.VOLCANO.maxYLevel) return false;
-            
-            int dormantTime = Simulator.currentTick() - this.lastActivationTick;
-            
-            if(dormantTime < Configurator.VOLCANO.minDormantTicks) return false;
-            
-            float chance = (float)dormantTime / Configurator.VOLCANO.maxDormantTicks;
-            chance = chance * chance * chance;
-            
-            return ThreadLocalRandom.current().nextFloat() <= chance;
-
         }
         
         public boolean isActive()
@@ -177,14 +169,19 @@ public class VolcanoNode implements IReadWriteNBT, IDirtListener, ISimulationTic
             }
         }
 
-        public void sleep()
+        /**
+         * @param doRemoval if true will remove from active collection. 
+         * Then false, caller should handle removal; prevents errors when iterating collection.
+         */
+        public void sleep(boolean doRemoval)
         {
             synchronized(this)
             {
                 if(this.stage != VolcanoStage.DORMANT)
                 {
                     this.stage = VolcanoStage.DORMANT;
-                    this.volcanoManager.activeNodes.remove(this.packedChunkPos());
+                    if(doRemoval)
+                        this.volcanoManager.activeNodes.remove(this.packedChunkPos());
                     this.loadChunks(false);
                     this.setDirty();
                 }
@@ -205,8 +202,15 @@ public class VolcanoNode implements IReadWriteNBT, IDirtListener, ISimulationTic
             }
         }
         
-        public int getWeight() { return this.weight; }
-        public int getLastActivationTick() { return this.lastActivationTick; }
+        public long getWeight()
+        { 
+            if(!this.isActive() || this.stage == VolcanoStage.DEAD || this.height >= Configurator.VOLCANO.maxYLevel)
+                return 0;
+
+            return this.inhabitedTicks;
+        }
+        
+        public int lastActivationTick() { return this.lastActivationTick; }
         public VolcanoStage getStage() { return this.stage; }
         /** Y coordinate will always be 0 */
         public BlockPos blockPos() { return VolcanoManager.blockPosFromChunkPos(this.position); }
@@ -286,4 +290,38 @@ public class VolcanoNode implements IReadWriteNBT, IDirtListener, ISimulationTic
             }
         }
 
+        public void onChunkLoad(Chunk chunk)
+        {
+            this.chunk = chunk;
+            refreshWeightFromChunk();
+        }
+
+        public void onChunkUnload(Chunk chunk)
+        {
+            assert this.chunk == chunk;
+            refreshWeightFromChunk();
+            this.chunk = null;
+        }
+        
+        /**
+         * Refreshes weight from chunk. (Currently based on chunk inhabited time.)
+         * Must be thread-safe because periodically called off-tick by volcano manager.
+         */
+        public void refreshWeightFromChunk()
+        {
+            final Chunk chunk = this.chunk;
+            
+            if(chunk != null)
+            {
+                assert chunk.isLoaded();
+                final long t = chunk.getInhabitedTime();
+                if(t != this.inhabitedTicks)
+                {
+                    this.inhabitedTicks = t;
+                    this.setDirty();
+                }
+            }
+            else 
+                assert !this.stage.isActive;
+        }
     }

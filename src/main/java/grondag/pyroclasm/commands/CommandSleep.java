@@ -51,7 +51,7 @@ public class CommandSleep extends CommandBase
                 }
                 else
                 {
-                    node.sleep();
+                    node.sleep(true);
                     if(node.isActive())
                     {
                         sender.sendMessage(TextComponentHelper.createComponentTranslation(sender, "commands.volcano.sleep.fail"));

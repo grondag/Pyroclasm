@@ -1,6 +1,6 @@
 package grondag.pyroclasm.simulator;
 
-import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
@@ -16,11 +16,13 @@ import grondag.exotic_matter.simulator.persistence.ISimulationTopNode;
 import grondag.exotic_matter.varia.BlueNoise;
 import grondag.exotic_matter.varia.Useful;
 import grondag.exotic_matter.world.PackedChunkPos;
+import grondag.pyroclasm.Configurator;
 import grondag.pyroclasm.commands.VolcanoCommandException;
-import grondag.pyroclasm.core.VolcanoStage;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMaps;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2LongMap;
+import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.util.math.BlockPos;
@@ -34,6 +36,7 @@ public class VolcanoManager implements ISimulationTickable, ISimulationTopNode
     private static final String NBT_VOLCANO_MANAGER = NBTDictionary.claim("volcMgr");
     private static final String NBT_VOLCANO_NODES = NBTDictionary.claim("volcNodes");
     private static final String NBT_VOLCANO_MANAGER_IS_CREATED = NBTDictionary.claim("volcExists");
+    private static final String NBT_VOLCANO_MANAGER_LAST_CYCLE_TICK = NBTDictionary.claim("vmLastCycleTick");
     
     /**
      * Will be reliable initialized via {@link VolcanoManager#afterCreated(Simulator)}
@@ -45,6 +48,8 @@ public class VolcanoManager implements ISimulationTickable, ISimulationTopNode
     final Long2ObjectMap<VolcanoNode> activeNodes =  Long2ObjectMaps.synchronize(new Long2ObjectOpenHashMap<VolcanoNode>());
     
     private boolean isDirty = true;
+    
+    private long lastCycleTick = 0;
     
     /**
      * Will be reliable initialized via {@link VolcanoManager#afterCreated(Simulator)}
@@ -93,16 +98,20 @@ public class VolcanoManager implements ISimulationTickable, ISimulationTopNode
     
     private VolcanoNode getOrCreateNode(ChunkPos chunkPos)
     {
-        long key = PackedChunkPos.getPackedChunkPos(chunkPos);
+        return getOrCreateNode(PackedChunkPos.getPackedChunkPos(chunkPos));
+    }
+    
+    private VolcanoNode getOrCreateNode(long packedChunkPos)
+    {
         VolcanoNode node;
         
-        node = this.nodes.computeIfAbsent(key, new Function<Long, VolcanoNode>()
+        node = this.nodes.computeIfAbsent(packedChunkPos, new Function<Long, VolcanoNode>()
         {
             @Override
             public VolcanoNode apply(@Nullable Long k)
             {
                 VolcanoManager.this.setDirty();
-                return new VolcanoNode(VolcanoManager.this, chunkPos);
+                return new VolcanoNode(VolcanoManager.this, PackedChunkPos.unpackChunkPos(packedChunkPos));
             }
         });
         
@@ -166,12 +175,12 @@ public class VolcanoManager implements ISimulationTickable, ISimulationTopNode
         return result;
     }
     
-    public Map<BlockPos, VolcanoStage> nearbyVolcanos(BlockPos pos)
+    public Map<BlockPos, VolcanoNode> nearbyVolcanos(BlockPos pos)
     {
         final int originX = pos.getX() >> 4;
         final int originZ = pos.getZ() >> 4;
         
-        ImmutableMap.Builder<BlockPos, VolcanoStage> builder = ImmutableMap.builder();
+        ImmutableMap.Builder<BlockPos, VolcanoNode> builder = ImmutableMap.builder();
         
         for(Vec3i vec : Useful.DISTANCE_SORTED_CIRCULAR_OFFSETS)
         {
@@ -179,11 +188,8 @@ public class VolcanoManager implements ISimulationTickable, ISimulationTopNode
             int chunkZ = originZ + vec.getZ();
             if(isVolcanoChunk(chunkX, chunkZ))
             {
-                VolcanoStage stage = VolcanoStage.DORMANT;
-                
-                VolcanoNode node = this.nodes.get(PackedChunkPos.getPackedChunkPosFromChunkXZ(chunkX, chunkZ));
-                if(node != null) stage = node.getStage();
-                builder.put(blockPosFromChunkPos(chunkX, chunkZ), stage);
+                VolcanoNode node = getOrCreateNode(PackedChunkPos.getPackedChunkPosFromChunkXZ(chunkX, chunkZ));
+                builder.put(blockPosFromChunkPos(chunkX, chunkZ), node);
             }
         }
         return builder.build();
@@ -216,7 +222,7 @@ public class VolcanoManager implements ISimulationTickable, ISimulationTopNode
     
     /**
      * Checks for activation if no volcanos are active,
-     * or updates the active volcano is there is one.
+     * or updates the active volcano if there is one.
      */
     @Override
     public void doOffTick()
@@ -224,50 +230,108 @@ public class VolcanoManager implements ISimulationTickable, ISimulationTopNode
         if(LavaSimulator.isSuspended)
             return;
         
-        if(this.activeNodes.isEmpty())
+        final long tick = Simulator.currentTick();
+        
+        // Ipdate weights (inhabited time) for loaded chunks
+        // can happen off tick because doesn't mutate chunk in any way
+        // Interval is about 4x more often than the chunks are updated by world
+        // because we aren't synchronized with that timer
+        if((tick & 0x7FF) == 0x7FF)
+            nodes.values().forEach(n -> n.refreshWeightFromChunk());
+            
+        // check activation every ~ten seconds
+        if((tick & 0xFF) == 0xFF)
         {
-            long totalWeight = 0;
-            
-            ArrayList<VolcanoNode> candidates = new ArrayList<VolcanoNode>(this.nodes.size());
-            
-            for ( VolcanoNode node : this.nodes.values()) 
-            {
-                if(node != null 
-                        && node.getWeight() > 0
-                        && node.wantsToActivate())
-                {
-                    candidates.add(node);
-                    totalWeight += node.getWeight();
-                }
-            }
-            
-            if(!candidates.isEmpty())
-            {
-                long targetWeight = (long) (ThreadLocalRandom.current().nextFloat() * totalWeight);
-                
-                for(VolcanoNode candidate : candidates)
-                {
-                    targetWeight -= candidate.getWeight();
-                    if(targetWeight < 0)
-                    {
-                        //TODO: how does it get added to active list?
-                        candidate.activate();
-                        
-                        return;
-                    }
-                }
-            }
-            
+            if(activeNodes.isEmpty())
+                tryActivate();
+            else
+                tryDeactivate();
         }
-        else
-        {
+        
+        if(!activeNodes.isEmpty())
             for(VolcanoNode active : activeNodes.values())
-            {
                 active.doOffTick();
+    }
+
+    private void tryActivate()
+    {
+        final long t = Simulator.currentTick() - Configurator.VOLCANO.minDormantTicks 
+                - (lastCycleTick == 0 ? Configurator.VOLCANO.graceTicks : lastCycleTick);
+        
+        if(t <= 0)
+            return;
+        
+        // Lightweight deterministic randomization that honors in-flight changes to thresholds.
+        // Uses top half of mixed long as a second sample to make results somewhat normalized.
+        int span = Configurator.VOLCANO.maxDormantTicks - Configurator.VOLCANO.minDormantTicks;
+        final long r = Useful.longHash(world.getSeed() ^ lastCycleTick);
+        final long x = (r % span) + ((r >>> 32) % span);
+        if(t < x / 2)
+            return;
+        
+        long totalWeight = 0;
+        
+        final Object2LongOpenHashMap<VolcanoNode> candidates = new Object2LongOpenHashMap<VolcanoNode>();
+        
+        for ( VolcanoNode node : this.nodes.values()) 
+        {
+            if(node == null)
+                continue;
+            
+            long w = node.getWeight();
+            if(w == 0) 
+                continue;
+        
+            candidates.put(node, w);
+            totalWeight += w;
+        }
+        
+        if(!candidates.isEmpty())
+        {
+            long targetWeight = (long) (ThreadLocalRandom.current().nextFloat() * totalWeight);
+            
+            for(Object2LongMap.Entry<VolcanoNode> candidate : candidates.object2LongEntrySet())
+            {
+                targetWeight -= candidate.getLongValue();
+                if(targetWeight < 0)
+                {
+                    candidate.getKey().activate();
+                    lastCycleTick = Simulator.currentTick();
+                    setDirty();
+                    return;
+                }
             }
         }
     }
 
+    private void tryDeactivate()
+    {
+        Iterator<VolcanoNode> it = this.activeNodes.values().iterator();
+        
+        while(it.hasNext())
+        {
+            VolcanoNode node = it.next();
+            
+            final long t = Simulator.currentTick() - node.lastActivationTick() - Configurator.VOLCANO.minActiveTicks;
+            
+            if(t <= 0)
+                continue;
+            
+            // Lightweight deterministic randomization that honors in-flight changes to thresholds.
+            // Uses top half of mixed long as a second sample to make results somewhat normalized.
+            int span = Configurator.VOLCANO.maxActiveTicks - Configurator.VOLCANO.minActiveTicks;
+            final long r = Useful.longHash(world.getSeed() ^ node.lastActivationTick());
+            final long x = (r % span) + ((r >>> 32) % span);
+            if(t < x / 2)
+                continue;
+            
+            node.sleep(false);
+            it.remove();
+            lastCycleTick = Simulator.currentTick();
+            setDirty();
+        }
+    }
+    
     /**
      * Not thread-safe.  
      * Should only ever be called from server thread during server start up.
@@ -280,6 +344,7 @@ public class VolcanoManager implements ISimulationTickable, ISimulationTopNode
         
         if(nbt != null)
         {
+            this.lastCycleTick = nbt.getLong(NBT_VOLCANO_MANAGER_LAST_CYCLE_TICK);
             NBTTagList nbtSubNodes = nbt.getTagList(NBT_VOLCANO_NODES, 10);
             if( !nbtSubNodes.hasNoTags())
             {
@@ -298,6 +363,7 @@ public class VolcanoManager implements ISimulationTickable, ISimulationTopNode
     {
         // always save *something* to prevent warning when there are no volcanos
         nbt.setBoolean(NBT_VOLCANO_MANAGER_IS_CREATED, true);
+        nbt.setLong(NBT_VOLCANO_MANAGER_LAST_CYCLE_TICK, lastCycleTick);
         
         // Do start because any changes made after this point aren't guaranteed to be saved
         this.setSaveDirty(false);
@@ -333,5 +399,31 @@ public class VolcanoManager implements ISimulationTickable, ISimulationTopNode
     public String tagName()
     {
         return NBT_VOLCANO_MANAGER;
+    }
+
+    public void handleChunkLoad(World world, Chunk chunk)
+    {
+        if(world == this.world)
+        {
+            ChunkPos cp = chunk.getPos();
+            if(isVolcanoChunk(cp))
+            {
+                VolcanoNode node = this.getOrCreateNode(cp);
+                node.onChunkLoad(chunk);
+            }
+        }
+    }
+    
+    public void handleChunkUnload(World world, Chunk chunk)
+    {
+        if(world == this.world)
+        {
+            ChunkPos cp = chunk.getPos();
+            if(isVolcanoChunk(cp))
+            {
+                VolcanoNode node = this.getOrCreateNode(cp);
+                node.onChunkUnload(chunk);
+            }
+        }
     }
 }
