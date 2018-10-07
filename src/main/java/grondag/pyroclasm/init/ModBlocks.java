@@ -136,7 +136,6 @@ public class ModBlocks
         hotBlockHeightModel.setEmissive(PaintLayer.CUT, true);
         hotBlockHeightModel.setVertexProcessor(PaintLayer.CUT, VertexProcessorLava.INSTANCE);
         
-        // TODO: need an overlay texture for sides
         hotBlockHeightModel.setTexture(PaintLayer.OUTER, texVeryHot);
         hotBlockHeightModel.setColorRGB(PaintLayer.OUTER, BlockColorMapProvider.COLOR_BASALT);
         hotBlockHeightModel.setVertexProcessor(PaintLayer.OUTER, VertexProcessorLavaCrust.INSTANCE);

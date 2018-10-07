@@ -29,19 +29,18 @@ public class CellStackBuilder
     // need to recover from loss of cell state
     private void completeCell(LavaCells cells, int x, int z, int ceiling)
     {
-        
-        if(this.entryCell == null)
+        LavaCell entryCell = this.entryCell;
+        if(entryCell == null)
         {
-            this.entryCell = new LavaCell(cells, x, z, this.floor, ceiling, this.isFlowFloor);
+            entryCell = new LavaCell(cells, x, z, this.floor, ceiling, this.isFlowFloor);
+            this.entryCell = entryCell;
         }
         else
         {
-            this.entryCell.linkAbove(new LavaCell(this.entryCell, this.floor, ceiling, this.isFlowFloor));
-            this.entryCell = this.entryCell.aboveCell();
+            entryCell.linkAbove(new LavaCell(entryCell, this.floor, ceiling, this.isFlowFloor));
+            this.entryCell = entryCell.aboveCell();
         }
-        
         this.isCellStarted = false;
-        
     }
     
     /** 
@@ -89,8 +88,11 @@ public class CellStackBuilder
         
     }
     
-    private boolean assertNoOverlap(LavaCell simEntryCell)
+    private boolean assertNoOverlap(@Nullable LavaCell simEntryCell)
     {
+        if(simEntryCell == null)
+            return true;
+        
         // validate no cell overlap
         LavaCell testCell1 = simEntryCell.firstCell();
         while(testCell1 != null)

@@ -29,7 +29,6 @@ public class CommandUnmark extends CommandBase
         return "commands.volcano.unmark.usage";
     }
 
-    @SuppressWarnings("null")
     @Override
     public void execute(MinecraftServer server, ICommandSender sender, String[] args) throws CommandException
     {

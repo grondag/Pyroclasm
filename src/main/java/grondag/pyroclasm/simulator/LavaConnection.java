@@ -62,31 +62,31 @@ public class LavaConnection
     /**
      * Determine if connection can flow, and if so, in which direction.
      * If flowed last tick, then direction cannot reverse - must start go to none and then to opposite direction.
-     * returns true if can flow from the calling cell.
+     * returns Flowable if can flow from the calling cell.
      */
-    public final boolean setupTick(LavaCell sourceCell)
+    public final @Nullable Flowable setupTick(LavaCell sourceCell)
     {
         int surface1 = this.firstCell.pressureSurfaceUnits();
         int surface2 = this.secondCell.pressureSurfaceUnits();
         
         if(surface1 == surface2)
         {
-            return false;
+            return null;
         }
         
         if(surface1 > surface2)
         {
             // Will be set up from other cell
-            if(this.secondCell == sourceCell) return false; 
+            if(this.secondCell == sourceCell) return null; 
             
             if(this.direction == FlowDirection.TWO_TO_ONE) 
             {
                 // don't allow switch of direction unless something substantial to flow
-                if(surface1 - surface2 < LavaSimulator.FLUID_UNITS_PER_LEVEL / 4) return false;
+                if(surface1 - surface2 < LavaSimulator.FLUID_UNITS_PER_LEVEL / 4) return null;
                 
                 // don't allow switch of direction in same tick
                 this.direction = FlowDirection.NONE;
-                return false;
+                return null;
             }
             
             Flowable f = this.flowable;
@@ -99,27 +99,27 @@ public class LavaConnection
             if(f.setFlowLimitsThisTick(surface1, surface2))
             {
                 this.direction = FlowDirection.ONE_TO_TWO;
-                return true;
+                return f;
             }
             else
             {
-                return false;
+                return null;
             }
         }
         else // surface1 < surface2
         {
             
             // Will be set up from other cell
-            if(this.firstCell == sourceCell) return false; 
+            if(this.firstCell == sourceCell) return null; 
             
             if(this.direction == FlowDirection.ONE_TO_TWO) 
             {
                 // don't allow switch of direction unless something substantial to flow
-                if(surface2 - surface1 < Configurator.LAVA.lavaFlowReversalThreshold) return false;
+                if(surface2 - surface1 < Configurator.LAVA.lavaFlowReversalThreshold) return null;
                 
                 // don't allow switch of direction in same tick
                 this.direction = FlowDirection.NONE;
-                return false;
+                return null;
             }
 
             Flowable f = this.flowable;
@@ -132,11 +132,11 @@ public class LavaConnection
             if(f.setFlowLimitsThisTick(surface2, surface1))
             {
                 this.direction = FlowDirection.TWO_TO_ONE;
-                return true;
+                return f;
             }
             else
             {
-                return false;
+                return null;
             }
         }
     }

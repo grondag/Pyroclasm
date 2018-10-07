@@ -412,17 +412,7 @@ public class CellChunk
                     continue;
                 }
                 
-                LavaCell firstCell = entryCell.firstCell();
-                if(firstCell == null)
-                {
-                    assert false: "First cell in entry cell is null in chunk being unloaded.";
-                    
-                    // strange case - do our best
-                    entryCell.setDeleted();
-                    this.setEntryCell(x, z, null);
-                    continue;
-                }
-                entryCell = firstCell;
+                entryCell = entryCell.firstCell();
                 
                 assert entryCell.belowCell() == null : "First cell is not actually the start cell.";
                     

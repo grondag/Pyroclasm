@@ -3,6 +3,7 @@ package grondag.pyroclasm.simulator;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import grondag.exotic_matter.block.SuperBlockWorldAccess;
@@ -277,13 +278,14 @@ public class LavaCell extends AbstractLavaCell
         }
         
         this.emptyCell();
-        if(this.below == null)
+        LavaCell below = this.below;
+        if(below == null)
         {
             if(this.above != null) this.above.below = null;
         }
         else
         {
-            this.below.linkAbove(this.above);
+            below.linkAbove(this.above);
         }
 
         this.above = null;
@@ -539,10 +541,12 @@ public class LavaCell extends AbstractLavaCell
         
         else
         {
+            LavaCell above = candidate.above;
             // candidate is below the level, is another cell closer?
-            while(candidate.above != null && candidate.above.ceilingLevel() <= level)
+            while(above != null && above.ceilingLevel() <= level)
             {
-                candidate = candidate.above;
+                candidate = above;
+                above = candidate.above;
             }
             return candidate;
         }
@@ -553,8 +557,6 @@ public class LavaCell extends AbstractLavaCell
     public final LavaCell selectStartingCell()
     {
         LavaCell candidate = this.firstCell();
-        
-        if(candidate == null) candidate = this;
         
         while(candidate.isEmpty() && candidate.above != null)
         {
@@ -677,9 +679,10 @@ public class LavaCell extends AbstractLavaCell
     }
     
     /** cells should not meet - use this to assert */
-    public final boolean isVerticallyAdjacentTo(LavaCell other)
+    public final boolean isVerticallyAdjacentTo(@Nullable LavaCell other)
     {
-        return  this.locator.x == other.locator.x 
+        return  other != null
+                && this.locator.x == other.locator.x 
                 && this.locator.z == other.locator.z
                 && this.isAdjacentOnYAxis(other.floorLevel(), other.ceilingLevel());
     }
@@ -712,9 +715,10 @@ public class LavaCell extends AbstractLavaCell
      * True if cells are in the same space and have vertical overlap. 
      * Cells should not overlap - use this to assert.
      */
-    public final boolean intersectsWith(LavaCell other)
+    public final boolean intersectsWith(@Nullable LavaCell other)
     {
-        return this.locator.x == other.locator.x 
+        return other != null
+                && this.locator.x == other.locator.x 
                 && this.locator.z == other.locator.z
                 && this.intersectsOnYAxis(other.floorLevel(), other.ceilingLevel());
     }
@@ -908,9 +912,12 @@ public class LavaCell extends AbstractLavaCell
      * Lava in cell above transfers to this cell.
      * Otherwise returns this cell.
      */
+    @SuppressWarnings("null")
     private LavaCell checkForMergeUp()
     {
-        return canMergeCells(this, this.above) ? mergeCells(this, this.above) : this;
+        LavaCell above = this.above;
+        // null check handled in canMergeCells
+        return canMergeCells(this, above) ? mergeCells(this, above) : this;
     }
     
     /** 
@@ -918,9 +925,12 @@ public class LavaCell extends AbstractLavaCell
      * Lava in this cell transfers to cell below.
      * Otherwise returns this cell.
      */
+    @SuppressWarnings("null")
     private LavaCell checkForMergeDown()
     {
-        return canMergeCells(this.below, this) ? mergeCells(this.below, this) : this;
+        LavaCell below = this.below;
+        // null check handled in canMergeCells
+        return canMergeCells(below, this) ? mergeCells(below, this) : this;
     }
     
     /**
@@ -1133,16 +1143,18 @@ public class LavaCell extends AbstractLavaCell
             }
         }
         
-        if(this.aboveCell() != null)
+        final LavaCell above = this.above;
+        if(above != null)
         {
-            int aboveDist = this.aboveCell().distanceToY(y);
-            if(aboveDist < myDist) return this.aboveCell().addOrConfirmBarrier(y, isFlowBlock);
+            int aboveDist = above.distanceToY(y);
+            if(aboveDist < myDist) return above.addOrConfirmBarrier(y, isFlowBlock);
         }
         
-        if(this.belowCell() != null)
+        final LavaCell below = this.below;
+        if(below != null)
         {
-            int belowDist = this.belowCell().distanceToY(y);
-            if(belowDist < myDist) return this.belowCell().addOrConfirmBarrier(y, isFlowBlock);
+            int belowDist = below.distanceToY(y);
+            if(belowDist < myDist) return below.addOrConfirmBarrier(y, isFlowBlock);
         }
         
         // no adjacent cell is closer than this one - barrier must already be between cells
@@ -1235,9 +1247,10 @@ public class LavaCell extends AbstractLavaCell
                 && otherCell.floorLevel() < this.worldSurfaceLevel();
     }
     
+    @SuppressWarnings("null")
     public final boolean isConnectedTo(LavaCell otherCell)
     {
-        for(int i = this.connections.size() -1; i >= 0; i--)
+        for(int i = this.connections.size() - 1; i >= 0; i--)
         {
             if(this.connections.get(i).getOther(this) == otherCell) return true;
         }
@@ -1465,6 +1478,7 @@ public class LavaCell extends AbstractLavaCell
         // delay cooling in neighbors - see delayCooling for explanation
         for(int i = this.connections.size() - 1; i >= 0; i--)
         {
+            @SuppressWarnings("null")
             final LavaCell other = this.connections.get(i).getOther(this);
             if(other.fluidUnits() > 0 && this.canFluidConnect(other))
             {
@@ -1720,14 +1734,13 @@ public class LavaCell extends AbstractLavaCell
             result = this;
         }
         
-        if(result.below != null)
+        LavaCell below = result.below;
+        while(below != null)
         {
-            do 
-            {
-                result = result.below;
-            } while(result.below != null);
-            this.locator.firstCell = result;
+            result = below;
+            below = result.below;
         }
+        this.locator.firstCell = result;
 
         return result;
     }
@@ -1947,7 +1960,6 @@ public class LavaCell extends AbstractLavaCell
         // needed by LavaConnection.setupTick
         this.maxOutputPerStep = Math.max(LavaSimulator.MIN_FLOW_UNITS, available / LavaConnections.STEP_COUNT);
         
-        
         Flowable keeper = null;
         
         final int conSize = this.connections.size();
@@ -1955,22 +1967,21 @@ public class LavaCell extends AbstractLavaCell
         
         for(int i = 0; i < conSize; i++)
         {
-            LavaConnection connection = connections.get(i);
+            @SuppressWarnings("null")
+            @Nonnull LavaConnection connection = connections.get(i);
             
-            if(connection.setupTick(this))
+            Flowable f = connection.setupTick(this);
+            if(f != null)
             {
                 if(keeper == null)
                 {
-                    keeper = connection.flowable();
+                    keeper = f;
                     keeper.nextToFlow = null;
-                    
                     // only necessary if we're going to flow
                     this.outputThisTick = 0;
                 }
                 else
-                {
-                    keeper = addToFlowChain(keeper, connection.flowable());
-                }
+                    keeper = addToFlowChain(keeper, f);
             }
         }
         
@@ -1982,19 +1993,19 @@ public class LavaCell extends AbstractLavaCell
      * @param toBeAdded
      * @return
      */
+    @SuppressWarnings("null")
     private Flowable addToFlowChain(Flowable start, Flowable toBeAdded)
     {
         // if new node has the highest drop or the same drop, can 
         // simply make it the new head
         
-        //FIXME: NPEs here
         if(toBeAdded.drop >= start.drop)
         {
             toBeAdded.nextToFlow = start;
             return toBeAdded;
         }
         
-        Flowable current = start;
+        @Nonnull Flowable current = start;
         
         while(true)
         {

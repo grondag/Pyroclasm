@@ -18,6 +18,7 @@ import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.init.Blocks;
 import net.minecraft.util.EnumFacing;
+import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.BlockPos.MutableBlockPos;
 import net.minecraft.world.World;
@@ -80,6 +81,7 @@ public class LavaTerrainHelper
 
         result.sort(new Comparator<VisibilityNode>() 
         {
+            @SuppressWarnings("null")
             @Override
             public int compare(@Nullable VisibilityNode o1, @Nullable VisibilityNode o2)
             {
@@ -270,9 +272,10 @@ public class LavaTerrainHelper
         {
             Block b = blocks.next();
             Material m = b.getMaterial(b.getDefaultState());
-            if(m.isLiquid() || m.isReplaceable())
+            ResourceLocation r = b.getRegistryName();
+            if(r != null && (m.isLiquid() || m.isReplaceable()))
             {
-                results.add(b.getRegistryName().toString());
+                results.add(r.toString());
             }
         }
 
