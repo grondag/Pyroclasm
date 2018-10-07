@@ -87,6 +87,10 @@ item.volcano_wand.name=Volcano Wand
 item.basalt_rubble.name=Basalt Rubble
 item.lava_blob.name=Lava Ball
 item.terrain_wand.name=Terrain Wand
+item.crude_seismometer=Crude Seismometer
+misc.seismometer_message=The nearest volcano is about %d blocks away.
+misc.seismometer_not_found=No volcanos detected nearby.
+
 
 #TEXTURES
 texture.basalt_cut=Cut Stone

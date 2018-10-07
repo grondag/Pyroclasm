@@ -313,7 +313,6 @@ public class VolcanoNode implements IReadWriteNBT, IDirtListener, ISimulationTic
             
             if(chunk != null)
             {
-                assert chunk.isLoaded();
                 final long t = chunk.getInhabitedTime();
                 if(t != this.inhabitedTicks)
                 {
