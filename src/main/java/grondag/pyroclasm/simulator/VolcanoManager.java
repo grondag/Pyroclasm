@@ -17,6 +17,7 @@ import grondag.exotic_matter.varia.BlueNoise;
 import grondag.exotic_matter.varia.Useful;
 import grondag.exotic_matter.world.PackedChunkPos;
 import grondag.pyroclasm.Configurator;
+import grondag.pyroclasm.Pyroclasm;
 import grondag.pyroclasm.commands.VolcanoCommandException;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMaps;
@@ -52,7 +53,7 @@ public class VolcanoManager implements ISimulationTickable, ISimulationTopNode
     private long lastCycleTick = 0;
     
     /**
-     * Will be reliable initialized via {@link VolcanoManager#afterCreated(Simulator)}
+     * Will be reliably initialized via {@link VolcanoManager#afterCreated(Simulator)}
      */
     @SuppressWarnings("null")
     private BlueNoise noise;
@@ -62,7 +63,9 @@ public class VolcanoManager implements ISimulationTickable, ISimulationTopNode
     public void afterCreated(Simulator sim)
     {
         this.world = sim.getWorld();
-        this.noise = BlueNoise.create(256, 24, this.world.getSeed());
+//        long start = System.nanoTime();
+        this.noise = BlueNoise.create(512, 40, this.world.getSeed());
+//        Pyroclasm.INSTANCE.info("Blue noise generation completed in %d nanoseconds", System.nanoTime() - start);
     }
     
     public int dimension()
