@@ -1,0 +1,38 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "BDA",
+    "GCA",
+    "HFE"
+  ],
+  "key": {
+    "A": {
+      "item": "minecraft:iron_ingot"
+    },
+    "B": {
+      "item": "minecraft:iron_nugget"
+    },
+    "C": {
+      "item": "minecraft:compass"
+    },
+    "D": {
+      "item": "minecraft:stick"
+    },
+    "E": {
+      "item": "minecraft:writable_book"
+    },
+    "F": {
+      "item": "minecraft:chest"
+    },
+    "G": {
+      "item": "minecraft:glass_pane"
+    },
+    "H": {
+      "item": "minecraft:torch"
+    }
+  },
+  "result": {
+    "item": "pyroclasm:crude_seismometer",
+    "data": 0
+  }
+}

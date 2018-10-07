@@ -23,7 +23,8 @@ public class ModItems
     // item blocks
     public static final Item basalt_cobble = null;
     public static final Item basalt_cut = null;
-      
+    public static final Item crude_seismometer = null;
+    
     @SubscribeEvent
     public static void registerItems(RegistryEvent.Register<Item> event) 
     {
