@@ -19,18 +19,35 @@ buildscript {
     }
 }
 
+// see https://github.com/passsy/gradle-GitVersioner
+ext.gitVersioner = [
+        defaultBranch           : "master",  // default "master"
+        stableBranches          : ["master"], // default [], the feature branch postfix (-dm4(6)) will not be appended on stable branches, all commits are included into the version number calculation
+        yearFactor              : 1200, 	  // default "1000", increasing every 8.57h
+        snapshotEnabled         : true,      // default false, the "-SNAPSHOT" postfix
+        localChangesCountEnabled: false,       // default false, the (<commitCount>) before -SNAPSHOT
+        shortName: { gitVersion ->            // optional closure to build a short name
+          // allows you to add your own short name logic
+          // All properties from gitVersion are available
+          // can be used for CI `System.getenv("BUILD_NUMBER")`
+
+          // i.e. use short sha1
+          return gitVersion.commit.subSequence(0, 7)
+        }
+]
+
+// import the script which runs the version generation
+apply from: 'https://raw.githubusercontent.com/passsy/gradle-GitVersioner/master/git-versioner.gradle'
+
+// variable `gitVersionName` can be used everywhere to get the revision name
+println("versionName: $gitVersionName") // output: "versionName: 1083-dm4(6)-SNAPSHOT"
+
 apply plugin: 'net.minecraftforge.gradle.forge'
 apply plugin: 'maven-publish'
+apply plugin: 'java'
+apply plugin: 'maven'
 
-import org.ajoberstar.grgit.Grgit
-
-def repo = Grgit.open(project.file('.'))
-project.ext.gitHash = repo.log().find().abbreviatedId
-
-ext.buildnumber = 0
-project.buildnumber = System.getenv('BUILD_NUMBER') != null ? System.getenv('BUILD_NUMBER') : project.ext.gitHash
-
-version = "MC${minecraft_version}-${mod_version}.${buildnumber}"
+version = "mc${minecraft_version}-${mod_version}.${gitVersionName}-${release_type}"
 group= "grondag" // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = "pyroclasm"
 
@@ -89,6 +106,10 @@ repositories {
      maven {
     	name = "grondag"
     	url = "https://grondag-repo.appspot.com"
+    	credentials {
+            username "guest"
+            password ""
+		}
     }
 }
 
@@ -127,6 +148,19 @@ processResources
     // copy everything else, thats not the mcmod.info
     from(sourceSets.main.resources.srcDirs) {
         exclude 'mcmod.info'
+    }
+}
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            repository(url: "https://grondag-repo.appspot.com") {
+                authentication(userName: "admin", password: "${maven_password}")
+            }
+            pom.version = project.version
+            pom.artifactId = project.archivesBaseName
+            pom.groupId = project.group
+        }
     }
 }
 
