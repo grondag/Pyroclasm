@@ -15,13 +15,10 @@ import mcjty.theoneprobe.api.IProbeHitData;
 import mcjty.theoneprobe.api.IProbeInfo;
 import mcjty.theoneprobe.api.ProbeMode;
 import net.minecraft.block.Block;
-import net.minecraft.block.BlockDynamicLiquid;
 import net.minecraft.block.BlockFalling;
-import net.minecraft.block.BlockLiquid;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.init.Blocks;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.Explosion;
 import net.minecraft.world.IBlockAccess;
@@ -84,16 +81,20 @@ public class LavaBlock extends TerrainDynamicBlock
     public void neighborChanged(@Nonnull IBlockState state, @Nonnull World worldIn, @Nonnull BlockPos pos, @Nonnull Block blockIn, @Nonnull BlockPos fromPos)
     {
         super.neighborChanged(state, worldIn, pos, blockIn, fromPos);
-        handleFallingBlocks(worldIn, pos, state);
+        if(!worldIn.isRemote && fromPos.getY() == pos.getY() + 1)
+            handleFallingBlocks(worldIn, pos, state);
     }
 
     @Override
     public void onBlockAdded(@Nonnull World worldIn, @Nonnull BlockPos pos, @Nonnull IBlockState state)
     {
         super.onBlockAdded(worldIn, pos, state);
-        handleFallingBlocks(worldIn, pos, state);
-        LavaSimulator sim = Simulator.instance().getNode(LavaSimulator.class);
-        if(sim != null) sim.registerPlacedLava(worldIn, pos, state);
+        if(!worldIn.isRemote)
+        {
+            handleFallingBlocks(worldIn, pos, state);
+            LavaSimulator sim = Simulator.instance().getNode(LavaSimulator.class);
+            if(sim != null) sim.registerPlacedLava(worldIn, pos, state);
+        }
     }
     
     @Override
@@ -116,17 +117,18 @@ public class LavaBlock extends TerrainDynamicBlock
         {
             worldIn.setBlockToAir(upPos);
         }
-        else if(upBlock == Blocks.FLOWING_WATER || upBlock == Blocks.FLOWING_LAVA)
-        {
-            if(upBlock instanceof BlockDynamicLiquid)
-            {
-                int level = upState.getValue(BlockLiquid.LEVEL);
-                if( level < 8)
-                {
-                    worldIn.setBlockToAir(upPos);
-                }
-            }
-        }
+        // Disabled this for now - seems laggy underwater...
+//        else if(upBlock == Blocks.FLOWING_WATER || upBlock == Blocks.FLOWING_LAVA)
+//        {
+//            if(upBlock instanceof BlockDynamicLiquid)
+//            {
+//                int level = upState.getValue(BlockLiquid.LEVEL);
+//                if( level < 8)
+//                {
+//                    worldIn.setBlockToAir(upPos);
+//                }
+//            }
+//        }
     }
     
 
