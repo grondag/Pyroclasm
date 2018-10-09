@@ -1,8 +1,0 @@
-@ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
-@FieldsAreNonnullByDefault
-package grondag.pyroclasm.simulator;
-
-import javax.annotation.ParametersAreNonnullByDefault;
-import mcp.MethodsReturnNonnullByDefault;
-import grondag.exotic_matter.varia.FieldsAreNonnullByDefault;

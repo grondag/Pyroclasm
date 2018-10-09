@@ -8,7 +8,7 @@ import grondag.acuity.api.TextureFormat;
 import grondag.acuity.api.UniformUpdateFrequency;
 import grondag.exotic_matter.ExoticMatter;
 import grondag.pyroclasm.init.ModTextures;
-import grondag.pyroclasm.lava.FXLavaBlob;
+import grondag.pyroclasm.projectile.FXLavaBlob;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.world.World;

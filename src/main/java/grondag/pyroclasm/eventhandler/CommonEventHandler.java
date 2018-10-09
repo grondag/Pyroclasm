@@ -5,7 +5,7 @@ import javax.annotation.Nullable;
 import grondag.exotic_matter.simulator.Simulator;
 import grondag.exotic_matter.world.WorldInfo;
 import grondag.pyroclasm.Pyroclasm;
-import grondag.pyroclasm.simulator.VolcanoManager;
+import grondag.pyroclasm.volcano.VolcanoManager;
 import grondag.pyroclasm.Configurator;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Items;

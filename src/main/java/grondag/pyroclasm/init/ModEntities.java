@@ -1,8 +1,8 @@
 package grondag.pyroclasm.init;
 
 import grondag.pyroclasm.Pyroclasm;
-import grondag.pyroclasm.lava.EntityLavaBlob;
-import grondag.pyroclasm.lava.RenderLavaBlob;
+import grondag.pyroclasm.projectile.EntityLavaBlob;
+import grondag.pyroclasm.projectile.RenderLavaBlob;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.client.registry.RenderingRegistry;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;

@@ -7,7 +7,7 @@ import javax.annotation.Nullable;
 import com.google.gson.Gson;
 
 import grondag.pyroclasm.Pyroclasm;
-import grondag.pyroclasm.lava.LavaBlock;
+import grondag.pyroclasm.block.LavaBlock;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.text.TextComponentString;

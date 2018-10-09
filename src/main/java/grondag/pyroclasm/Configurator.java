@@ -5,7 +5,7 @@ import java.util.IdentityHashMap;
 import grondag.exotic_matter.block.BlockHarvestTool;
 import grondag.exotic_matter.init.ConfigPathNodeType;
 import grondag.exotic_matter.init.SubstanceConfig;
-import grondag.pyroclasm.simulator.LavaCell;
+import grondag.pyroclasm.fluidsim.LavaCell;
 import net.minecraft.block.Block;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.config.Config;
