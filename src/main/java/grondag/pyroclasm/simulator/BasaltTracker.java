@@ -11,8 +11,8 @@ import grondag.exotic_matter.simulator.Simulator;
 import grondag.exotic_matter.varia.Useful;
 import grondag.exotic_matter.world.PackedBlockPos;
 import grondag.exotic_matter.world.PackedChunkPos;
-import grondag.pyroclasm.Pyroclasm;
 import grondag.pyroclasm.Configurator;
+import grondag.pyroclasm.Pyroclasm;
 import grondag.pyroclasm.lava.CoolingBasaltBlock;
 import it.unimi.dsi.fastutil.longs.Long2IntMap.Entry;
 import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
@@ -91,6 +91,8 @@ public class BasaltTracker
     
     protected void doBasaltCooling(long packedChunkPos)
     {
+//        assert FMLCommonHandler.instance().getMinecraftServerInstance().isCallingFromMinecraftThread();
+        
         this.perfCounter.startRun();
         if(!this.basaltBlocks.isEmpty())
         {
@@ -123,6 +125,8 @@ public class BasaltTracker
      */
     public void trackCoolingBlock(long packedBlockPos, int tick)
     {
+//        assert FMLCommonHandler.instance().getMinecraftServerInstance().isCallingFromMinecraftThread();
+        
         long chunkPos = PackedChunkPos.getPackedChunkPos(packedBlockPos);
         Long2IntOpenHashMap blocks = this.basaltBlocks.get(chunkPos);
         
@@ -180,7 +184,8 @@ public class BasaltTracker
             {
                 this.trackCoolingBlock(Useful.longFromInts(saveData[i++], saveData[i++]), saveData[i++]);
             }
-            Pyroclasm.INSTANCE.info("Loaded " + this.size + " cooling basalt blocks.");
+            if(Configurator.DEBUG.enablePerformanceLogging)
+                Pyroclasm.INSTANCE.info("Loaded " + this.size + " cooling basalt blocks.");
         }
     }
 }
