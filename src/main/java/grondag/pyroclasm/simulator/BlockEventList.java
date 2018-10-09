@@ -82,8 +82,6 @@ public class BlockEventList
             }
         }
         
-        Pyroclasm.INSTANCE.info("Saving " + i / BlockEvent.NBT_WIDTH + " Block Events with tag " + this.nbtTagName);
-        
         nbt.setIntArray(this.nbtTagName, Arrays.copyOfRange(saveData, 0, i));
     }
     
@@ -108,8 +106,6 @@ public class BlockEventList
                 this.eventList.add(new BlockEvent(saveData, i));
                 i += BlockEvent.NBT_WIDTH;
             }
-          
-            Pyroclasm.INSTANCE.info("Loaded " + this.eventList.size() + " block events with NBT Tag " + nbtTagName);
         }
     }
     
