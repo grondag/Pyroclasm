@@ -17,8 +17,6 @@ import grondag.pyroclasm.Pyroclasm;
 import grondag.pyroclasm.world.ChunkTracker;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import net.minecraft.nbt.NBTTagCompound;
-//import it.unimi.dsi.fastutil.longs.Long2ObjectMap.Entry;
-//import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import net.minecraft.util.math.BlockPos;
 
 
@@ -203,20 +201,16 @@ public class LavaCells
      */
     public void unloadInactiveCellChunks()
     {
-        synchronized(this)
+        Iterator<CellChunk> it = this.cellChunks.values().iterator();
+        
+        while(it.hasNext())
         {
-//            HardScience.log.info("CHUNK UNLOAD REPORT");
-            Iterator<CellChunk> it = this.cellChunks.values().iterator();
-            
-            while(it.hasNext())
+            CellChunk chunk = it.next();
+            if(chunk.canUnload())
             {
-                CellChunk chunk = it.next();
-                if(chunk.canUnload())
-                {
-                    it.remove();
-                    chunk.unload();
-                    this.chunkTracker.untrackChunk(this.sim.world, chunk.packedChunkPos);
-                }
+                it.remove();
+                chunk.unload();
+                this.chunkTracker.untrackChunk(this.sim.world, chunk.packedChunkPos);
             }
         }
     }
