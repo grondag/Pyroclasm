@@ -2,6 +2,7 @@ package grondag.pyroclasm.fluidsim;
 
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 import javax.annotation.Nullable;
@@ -15,9 +16,9 @@ import grondag.pyroclasm.Configurator;
 import grondag.pyroclasm.Pyroclasm;
 import grondag.pyroclasm.world.ChunkTracker;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
-import it.unimi.dsi.fastutil.longs.Long2ObjectMap.Entry;
-import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import net.minecraft.nbt.NBTTagCompound;
+//import it.unimi.dsi.fastutil.longs.Long2ObjectMap.Entry;
+//import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import net.minecraft.util.math.BlockPos;
 
 
@@ -26,20 +27,20 @@ public class LavaCells
     private final static String NBT_LAVA_CELLS = NBTDictionary.claim("lavaCells");
     private final static int CAPACITY_INCREMENT = 0x10000;
     
-    @SuppressWarnings("serial")
-    private static class ChunkMap extends Long2ObjectOpenHashMap<CellChunk>
-    {
-        private static final CellChunk[] EMPTY = new CellChunk[0];
-        /**
-         * See {@link LavaCells#rawChunks()}
-         */
-        public final CellChunk[] rawValues()
-        {
-            return this.value == null  ?  EMPTY : this.value;
-        }
-    };
+//    @SuppressWarnings("serial")
+//    private static class ChunkMap extends Long2ObjectOpenHashMap<CellChunk>
+//    {
+//        private static final CellChunk[] EMPTY = new CellChunk[0];
+//        /**
+//         * See {@link LavaCells#rawChunks()}
+//         */
+//        public final Object[] rawValues()
+//        {
+//            return this.value == null  ?  EMPTY : this.value;
+//        }
+//    };
     
-    private final ChunkMap cellChunks = new ChunkMap();
+    private final ConcurrentHashMap<Long, CellChunk> cellChunks = new ConcurrentHashMap<>();
     
     
     private final ChunkTracker chunkTracker;
@@ -146,9 +147,6 @@ public class LavaCells
      */
     public @Nullable LavaCell getEntryCell(int x, int z)
     {
-        // FIXME: array out of bounds in Long2ObjectOpenHashMap.get()
-        // probably because map has been resized in a different thread and is applying wrong mask.
-        // Need to handle or use a concurrent collection
         CellChunk chunk = cellChunks.get(PackedChunkPos.getPackedChunkPosFromBlockXZ(x, z));
         return chunk == null ? null : chunk.getEntryCell(x, z);
     }
@@ -170,32 +168,24 @@ public class LavaCells
     public CellChunk getOrCreateCellChunk(int xBlock, int zBlock)
     {
         final  long key = PackedChunkPos.getPackedChunkPosFromBlockXZ(xBlock, zBlock);
-        CellChunk chunk = cellChunks.get(key);
-        if(chunk == null)
+        return cellChunks.computeIfAbsent(key, k -> 
         {
-            synchronized(this)
-            {
-                //confirm not added by another thread
-                chunk = cellChunks.get(key);
-                if(chunk == null)
-                {
-                    chunk = new CellChunk(key, this);
-                    this.cellChunks.put(key, chunk);
-                    
-                    this.chunkTracker.trackChunk(this.sim.world, key);
-                }
-            }
-        }
-        return chunk;
+            CellChunk result = new CellChunk(key, this);
+            this.chunkTracker.trackChunk(this.sim.world, key);
+            return result;
+        });
     }
     
     /**
-     * Provides direct access to underlying value array for brute force scan.  
-     * Must check for null / invalid objects.  
+     * Snapshot of chunks in an array.  
      */
     public CellChunk[] rawChunks()
     {
-        return this.cellChunks.rawValues();
+        final Object[] val = cellChunks.values().toArray();
+        final int len = val.length;
+        final CellChunk[] result = new CellChunk[len];
+        System.arraycopy(val, 0, result, 0, len);
+        return result;
     }
     
     public @Nullable CellChunk getCellChunk(int xBlock, int zBlock)
@@ -216,16 +206,16 @@ public class LavaCells
         synchronized(this)
         {
 //            HardScience.log.info("CHUNK UNLOAD REPORT");
-            Iterator<Entry<CellChunk>> chunks = this.cellChunks.long2ObjectEntrySet().fastIterator();
+            Iterator<CellChunk> it = this.cellChunks.values().iterator();
             
-            while(chunks.hasNext())
+            while(it.hasNext())
             {
-                Entry<CellChunk> entry = chunks.next();
-                if(entry.getValue().canUnload())
+                CellChunk chunk = it.next();
+                if(chunk.canUnload())
                 {
-                    entry.getValue().unload();
-                    this.chunkTracker.untrackChunk(this.sim.world, entry.getLongKey());
-                    chunks.remove();
+                    it.remove();
+                    chunk.unload();
+                    this.chunkTracker.untrackChunk(this.sim.world, chunk.packedChunkPos);
                 }
             }
         }
@@ -329,10 +319,17 @@ public class LavaCells
      */
     public void forEach(Consumer<LavaCell> consumer)
     {
-        for(CellChunk c : this.cellChunks.rawValues())
+        for(CellChunk c : this.cellChunks.values())
         {
-            if(c == null || c.isNew() || c.isDeleted() || c.isUnloaded()) continue;
+            if(c.isNew() || c.isDeleted() || c.isUnloaded()) 
+                continue;
+            
             c.forEach(consumer);
         }
+    }
+    
+    public void forEachChunk(Consumer<CellChunk> consumer)
+    {
+        this.cellChunks.values().forEach(consumer);
     }
 }

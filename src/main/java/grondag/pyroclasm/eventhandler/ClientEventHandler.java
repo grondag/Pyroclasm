@@ -77,7 +77,6 @@ public class ClientEventHandler
                 
                 if(Configurator.DEBUG.enableLavaCellDebugRender)
                 {
-                    //FIXME: avoid NPE in concurrency
                     try
                     {
                         lavaSim.cells.forEach(c -> renderCell(camera, tessellator, bufferBuilder, c));
@@ -92,7 +91,7 @@ public class ClientEventHandler
                 
                 if(Configurator.DEBUG.enableLavaChunkDebugRender)
                 {
-                    for(CellChunk c : lavaSim.cells.rawChunks()) { renderCellChunk(tessellator, bufferBuilder, c); }
+                    lavaSim.cells.forEachChunk(c -> renderCellChunk(tessellator, bufferBuilder, c));
                 }
             
             }

@@ -21,14 +21,14 @@ public class LavaConnections extends AbstractLavaConnections
     
     /**
      * Per-step max is always the available units / step count.
-     * Connections in the same round can cumulatively user more than the per-step max.
+     * Connections in the same round can cumulatively use more than the per-step max.
      * Connections in subsequent rounds don't get to go if previous rounds have
      * used or exceeded the cumulative per-step max for the given step.
      */
     private final ArrayMappingConsumer<CellChunk, Flowable> chunkConsumer =  new ArrayMappingConsumer<CellChunk, Flowable>(
             (CellChunk c, Consumer<Flowable> r) ->
             {
-                if(c == null || c.isDeleted() || c.isNew()) return;
+                if(c.isDeleted() || c.isNew()) return;
                 
                 assert !c.isUnloaded();
                 
@@ -115,6 +115,7 @@ public class LavaConnections extends AbstractLavaConnections
         {
             Flowable current = connections[i];
             
+            // FIX: getting NPE here during startup
             final LavaCell source = current.fromCell;
             
             if(source.getAvailableFluidUnits() <= 0) continue;
