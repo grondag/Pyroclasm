@@ -1,6 +1,5 @@
 package grondag.pyroclasm.fluidsim;
 
-import java.util.Collection;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.function.Consumer;
@@ -12,9 +11,9 @@ import com.google.common.collect.ComparisonChain;
 import grondag.exotic_matter.concurrency.PerformanceCounter;
 import grondag.exotic_matter.serialization.NBTDictionary;
 import grondag.exotic_matter.world.PackedChunkPos;
+import grondag.pyroclasm.Configurator;
 import grondag.pyroclasm.Pyroclasm;
 import grondag.pyroclasm.world.ChunkTracker;
-import grondag.pyroclasm.Configurator;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap.Entry;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
@@ -30,11 +29,11 @@ public class LavaCells
     @SuppressWarnings("serial")
     private static class ChunkMap extends Long2ObjectOpenHashMap<CellChunk>
     {
-        private static final Object[] EMPTY = new Object[0];
+        private static final CellChunk[] EMPTY = new CellChunk[0];
         /**
          * See {@link LavaCells#rawChunks()}
          */
-        public final Object[] rawValues()
+        public final CellChunk[] rawValues()
         {
             return this.value == null  ?  EMPTY : this.value;
         }
@@ -190,16 +189,11 @@ public class LavaCells
         return chunk;
     }
     
-    public Collection<CellChunk> allChunks()
-    {
-        return this.cellChunks.values();
-    }
-    
     /**
-     * Provides direct access to the map's underlying value array.  Allows brute-force parallel scan
-     * with caveat that must check for nulls.
+     * Provides direct access to underlying value array for brute force scan.  
+     * Must check for null / invalid objects.  
      */
-    public Object[] rawChunks()
+    public CellChunk[] rawChunks()
     {
         return this.cellChunks.rawValues();
     }
@@ -329,15 +323,15 @@ public class LavaCells
     }
     
     /**
-     * Applies the given operation to all cells.<p>
+     * Applies the given operation to all active cells.<p>
      * 
      * Do not use for operations that may add or remove cells.
      */
     public void forEach(Consumer<LavaCell> consumer)
     {
-        for(CellChunk c : this.cellChunks.values())
+        for(CellChunk c : this.cellChunks.rawValues())
         {
-            if(c.isNew() || c.isDeleted() || c.isUnloaded()) continue;
+            if(c == null || c.isNew() || c.isDeleted() || c.isUnloaded()) continue;
             c.forEach(consumer);
         }
     }

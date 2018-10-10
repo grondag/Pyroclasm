@@ -100,7 +100,8 @@ public class BasaltTracker
             
             if(targets != null)
             {
-                if(!targets.isEmpty()) this.coolBlocks(targets);
+                if(!targets.isEmpty())
+                    this.coolBlocks(targets);
                 
                 if(targets.isEmpty())
                 {

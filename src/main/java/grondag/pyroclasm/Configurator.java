@@ -268,6 +268,11 @@ public class Configurator
         @RequiresMcRestart
         @Comment({"If true, item(s) used for testing in the dev environment will be registered. These items have no recipes."})
         public boolean enableTestItems = false;
+
+        @LangKey("pyroclasm.config.enable_bomb_trace")
+        @Comment({"If true, will output debug information for lava bombs.",
+            "Will cause significant log spam so should only be enabled for debug and testing."})
+        public boolean enableLavaBombTrace = false;
     }
     
     ////////////////////////////////////////////////////        

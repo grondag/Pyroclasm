@@ -28,7 +28,10 @@ public class LavaConnections extends AbstractLavaConnections
     private final ArrayMappingConsumer<CellChunk, Flowable> chunkConsumer =  new ArrayMappingConsumer<CellChunk, Flowable>(
             (CellChunk c, Consumer<Flowable> r) ->
             {
-                if(c.isDeleted() || c.isNew()) return;
+                if(c == null || c.isDeleted() || c.isNew()) return;
+                
+                assert !c.isUnloaded();
+                
                 c.forEach(cell ->
                 {
                     cell.updateStuff(sim);
@@ -50,7 +53,7 @@ public class LavaConnections extends AbstractLavaConnections
         if(chunkCount == 0) return;
         
         this.setupCounter.startRun();
-        Simulator.SCATTER_GATHER_POOL.completeTask(this.sim.cells.allChunks().toArray(new CellChunk[chunkCount]), ScatterGatherThreadPool.POOL_SIZE, this.chunkConsumer);
+        Simulator.SCATTER_GATHER_POOL.completeTask(this.sim.cells.rawChunks(), ScatterGatherThreadPool.POOL_SIZE, this.chunkConsumer);
         this.setupCounter.endRun();
         this.setupCounter.addCount(chunkCount);
     }

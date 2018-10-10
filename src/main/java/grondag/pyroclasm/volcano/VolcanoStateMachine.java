@@ -76,11 +76,11 @@ import net.minecraft.world.World;
  */
 public class VolcanoStateMachine implements ISimulationTickable
 {
-    private static final int BORE_RADIUS = 5;
+    private static final int BORE_RADIUS = 7;
     
     private static final int MAX_BORE_OFFSET = Useful.getLastDistanceSortedOffsetIndex(BORE_RADIUS);
     
-    private static final int MAX_CONVERSION_OFFSET = Useful.getLastDistanceSortedOffsetIndex(BORE_RADIUS + 6);
+    private static final int MAX_CONVERSION_OFFSET = Useful.getLastDistanceSortedOffsetIndex(BORE_RADIUS + 3);
     
     private static final int MAX_CONVERSION_Y = 70;
     
@@ -470,8 +470,15 @@ public class VolcanoStateMachine implements ISimulationTickable
             
             for(int i = 0; i < blobCount; i++)
             {
-                final double dx = (r.nextDouble() - 0.5) * 2;
-                final double dz = (r.nextDouble() - 0.5) * 2;
+                double dx = (r.nextDouble() - 0.5) * 2;
+                double dz = (r.nextDouble() - 0.5) * 2;
+                double dy = 1.0;
+                // normalize
+                double scale = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                
+                // add velocity
+                scale *= (0.75 + Math.abs(r.nextGaussian()) * 0.5);
+                
                 final int units = Math.max(LavaSimulator.FLUID_UNITS_PER_HALF_BLOCK, 
                         r.nextInt(LavaSimulator.FLUID_UNITS_PER_BLOCK) 
                         + r.nextInt(LavaSimulator.FLUID_UNITS_PER_BLOCK) 
@@ -482,9 +489,9 @@ public class VolcanoStateMachine implements ISimulationTickable
                         center.x(), 
                         center.worldSurfaceY() + 1,
                         center.z(), 
-                        dx,
-                        Math.max(.75, r.nextGaussian() * 0.1 + 1),
-                        dz);
+                        dx * scale,
+                        dy * scale,
+                        dz * scale);
                 this.world.spawnEntity(blob);
                 this.lavaRemainingThisPass -= units;
             }
@@ -636,6 +643,12 @@ public class VolcanoStateMachine implements ISimulationTickable
         if(toState != null)
         {
             BlockPos pushPos = findOpenSpot(fromPos.getY());
+            if(pushPos == null)
+                pushPos = findMoundSpot();
+            this.lavaSim.world.setBlockState(pushPos, toState);
+            
+            // because no ash yet, duplicate each pushed block to get a higher mound
+            pushPos = findOpenSpot(fromPos.getY());
             if(pushPos == null)
                 pushPos = findMoundSpot();
             this.lavaSim.world.setBlockState(pushPos, toState);

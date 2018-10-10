@@ -46,9 +46,10 @@ public class ClientEventHandler
         FXLavaBlob.doDeferredRenders(tessellator);
         
         long marks[] = VolcanoMarks.getMarks();
-        if(marks.length == 0)
-            return;
         
+        if(marks.length == 0 && !(Configurator.DEBUG.enableLavaCellDebugRender || Configurator.DEBUG.enableLavaChunkDebugRender))
+            return;
+            
         final ICamera camera = ClientProxy.camera();
         if(camera == null) return;
         
@@ -63,8 +64,8 @@ public class ClientEventHandler
         GlStateManager.enablePolygonOffset();
         GlStateManager.doPolygonOffset(-1, -1);
         
-        renderMarks(camera, tessellator, bufferBuilder, marks);
-        
+        if(marks.length != 0)
+            renderMarks(camera, tessellator, bufferBuilder, marks);
 
         if((Configurator.DEBUG.enableLavaCellDebugRender || Configurator.DEBUG.enableLavaChunkDebugRender))
         {
@@ -91,7 +92,7 @@ public class ClientEventHandler
                 
                 if(Configurator.DEBUG.enableLavaChunkDebugRender)
                 {
-                    for(Object c : lavaSim.cells.allChunks().toArray()) { renderCellChunk(tessellator, bufferBuilder, (CellChunk)c); }
+                    for(CellChunk c : lavaSim.cells.rawChunks()) { renderCellChunk(tessellator, bufferBuilder, c); }
                 }
             
             }

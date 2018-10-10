@@ -409,6 +409,8 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
         {
             for(int i = 0; i < updateCount; i++)
             {
+                // FIX: should check if any update actually happens
+                // and try again if not
                 doChunkUpdateInner(tracker.nextPackedChunkPosForUpdate());
             }
         }

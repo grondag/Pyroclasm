@@ -37,6 +37,7 @@ pyroclasm.config.enable_cell_stats=Enable Cell Statistics
 pyroclasm.config.enable_chunk_trace=Enable Lava Chunk Tracing
 pyroclasm.config.enable_volcano_trace=Enable Volcano State Machine Tracing
 pyroclasm.config.enable_test_items=Enable Test Items
+pyroclasm.config.enable_bomb_trace=Enable Lava Bomb Tracing
 
 pyroclasm.config.lava=Lava and Basalt Settings
 pyroclasm.config.lava_cooling_ticks=Lava Cooling Ticks
