@@ -270,7 +270,9 @@ public class LavaCells
                     startingCell.addCellToColumn(newCell);
                 }
 
-                newCell.clearBlockUpdate();
+                // can't see why this was here - world doesn't get updated during save or load
+                // so pending updates should still be valid
+                //newCell.clearBlockUpdate();
                 
                 // Java parameters are always pass by value, so have to advance index here
                 // subtract two because we incremented for x and z values already
@@ -315,8 +317,10 @@ public class LavaCells
     {
         for(CellChunk c : this.cellChunks.values())
         {
-            if(c.isNew() || c.isDeleted() || c.isUnloaded()) 
+            if(c.isNew()) 
                 continue;
+            
+            assert !c.isUnloaded();
             
             c.forEach(consumer);
         }

@@ -89,6 +89,7 @@ public class CellChunk
     //    /** Set to true after start loaded. Also set true by NBTLoad.  */
 //    private boolean isLoaded = false;
 
+    //TODO: remove - only used for assertion and never triggered 
     /** Set to true when chunk is unloaded and should no longer be processed */
     private boolean isUnloaded = false;
 
@@ -126,7 +127,8 @@ public class CellChunk
      */
     public void requestFullValidation()
     {
-        if(!this.isUnloaded) this.needsFullValidation = true;
+        assert !this.isUnloaded;
+        this.needsFullValidation = true;
     }
     
     /**
@@ -135,12 +137,13 @@ public class CellChunk
      */
     public boolean needsFullLoadOrValidation()
     {
-        return (this.needsFullValidation || this.validationCount.get() > 64) && !this.isUnloaded;
+        assert !this.isUnloaded;
+        return (this.needsFullValidation || this.validationCount.get() > 64);
     }
     
     public int validationPriority()
     {
-        if(this.isUnloaded) return -1;
+        assert !this.isUnloaded;
         
         if(this.isNew()) return Integer.MAX_VALUE;
         
@@ -172,9 +175,11 @@ public class CellChunk
      */
     public boolean validateMarkedCells()
     {
+        assert !this.isUnloaded;
+        
         this.lastValidationTick = Simulator.currentTick();
         
-        if(this.isUnloaded || this.needsFullLoadOrValidation() || this.validationCount.get() == 0) return false;
+        if(this.needsFullLoadOrValidation() || this.validationCount.get() == 0) return false;
 
         if(Configurator.DEBUG.enableLavaCellChunkTrace)
             Pyroclasm.INSTANCE.info("Validating marked cells in chunk with corner x=%d, z=%d", this.xStart, this.zStart);
@@ -218,7 +223,7 @@ public class CellChunk
     {
         synchronized(this)
         {
-            if(this.isUnloaded) return;
+            assert !this.isUnloaded;
 
             if(Configurator.DEBUG.enableLavaCellChunkTrace)
                 Pyroclasm.INSTANCE.info("Loading (or reloading) chunk buffer with corner x=%d, z=%d", this.xStart, this.zStart);
@@ -259,7 +264,7 @@ public class CellChunk
      */
     public void incrementValidationCount()
     {
-        if(this.isUnloaded) return;
+        assert !this.isUnloaded;
 
         this.validationCount.incrementAndGet();
     }
@@ -276,7 +281,7 @@ public class CellChunk
      */
     public void incrementActiveCount(int blockX, int blockZ)
     {
-        if(this.isUnloaded) return;
+        assert !this.isUnloaded;
 
         this.activeCount.incrementAndGet();
         
@@ -310,7 +315,7 @@ public class CellChunk
      */
     public void decrementActiveCount(int blockX, int blockZ)
     {
-        if(this.isUnloaded) return;
+        assert !this.isUnloaded;
         
         // release neighbors if no longer have lava at the edge of this chunk
         if(blockX == this.xStart)
@@ -358,7 +363,8 @@ public class CellChunk
      */
     public void retain()
     {
-        if(!this.isUnloaded) this.retainCount.incrementAndGet();
+        assert !this.isUnloaded;
+        this.retainCount.incrementAndGet();
     }
 
     /**
@@ -367,7 +373,9 @@ public class CellChunk
      */
     public void release()
     {
-        if(!this.isUnloaded) this.retainCount.decrementAndGet();
+        assert !this.isUnloaded;
+        final int c = this.retainCount.decrementAndGet();
+        assert c >= 0;
     }
 
     /**
@@ -377,8 +385,9 @@ public class CellChunk
     {
 //        HardScience.log.info("chunk " + this.xStart + ", " + this.zStart + " activeCount=" + this.activeCount.get() 
 //        + "  retainCount=" + this.retainCount.get() + " unloadTickCount=" + this.unloadTickCount);
+        assert !this.isUnloaded;
         
-        if(this.isUnloaded || this.isNew()) return false;
+        if(this.isNew()) return false;
         
         //  complete validation before unloading because may be new info that could cause chunk to remain loaded
         if(this.activeCount.get() == 0 && this.retainCount.get() == 0 && this.validationCount.get() == 0)
@@ -394,7 +403,7 @@ public class CellChunk
 
     public void unload()
     {
-        if(this.isUnloaded) return;
+        assert !this.isUnloaded;
         
         if(Configurator.DEBUG.enableLavaCellChunkTrace)
             Pyroclasm.INSTANCE.info("Unloading chunk buffer with corner x=%d, z=%d", this.xStart, this.zStart);
@@ -453,7 +462,7 @@ public class CellChunk
      */
     void setEntryCell(int x, int z, @Nullable LavaCell entryCell)
     {
-        if(this.isUnloaded) return;
+        assert !this.isUnloaded;
 
         int i = getIndex(x, z);
         boolean wasNull = this.entryCells[i] == null;
@@ -479,11 +488,6 @@ public class CellChunk
     private static int getIndex(int x, int z)
     {
         return ((x & 15) << 4) | (z & 15);
-    }
-
-    public boolean isDeleted()
-    {
-        return this.isUnloaded;
     }
 
     public void provideBlockUpdatesAndDoCooling()

@@ -160,7 +160,9 @@ public class ClientEventHandler
     
     private static void renderCellChunk(Tessellator tessellator, BufferBuilder bufferBuilder, @Nullable CellChunk chunk)
     {
-        if(chunk == null || chunk.isUnloaded()) return;
+        if(chunk == null) return;
+        
+        assert !chunk.isUnloaded();
         
         AxisAlignedBB box = new AxisAlignedBB(chunk.xStart, 0, chunk.zStart, chunk.xStart + 16, 255, chunk.zStart + 16);
         

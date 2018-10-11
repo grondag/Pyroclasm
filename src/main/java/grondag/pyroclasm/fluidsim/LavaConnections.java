@@ -28,7 +28,8 @@ public class LavaConnections extends AbstractLavaConnections
     private final ArrayMappingConsumer<CellChunk, Flowable> chunkConsumer =  new ArrayMappingConsumer<CellChunk, Flowable>(
             (CellChunk c, Consumer<Flowable> r) ->
             {
-                if(c.isDeleted() || c.isNew()) return;
+                if(c.isNew())
+                    return;
                 
                 assert !c.isUnloaded();
                 
