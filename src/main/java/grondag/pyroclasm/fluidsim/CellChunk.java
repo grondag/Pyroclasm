@@ -151,7 +151,10 @@ public class CellChunk
     
     public boolean isNew()
     {
-        return this.lastValidationTick == 0;
+        // Entry count test means chunks loaded via NBT deserialization don't count as new.
+        // Not having this was preventing chunks with active cell from retaining neighbor chunks 
+        // after NBT load because activation counts weren't being updated because chunk was "new"
+        return this.lastValidationTick == 0 && this.entryCount.get() == 0;
     }
     
     /**
@@ -293,7 +296,8 @@ public class CellChunk
             if(this.activeCountHighX.incrementAndGet() == 1) 
                 this.cells.getOrCreateCellChunk(this.xStart + 16, this.zStart).retain();
         }
-        else if(blockZ == this.zStart)
+        
+        if(blockZ == this.zStart)
         {
             if(this.activeCountLowZ.incrementAndGet() == 1) 
                 this.cells.getOrCreateCellChunk(this.xStart, this.zStart - 16).retain();
@@ -325,7 +329,8 @@ public class CellChunk
             if(this.activeCountHighX.decrementAndGet() == 0) 
                 this.releaseChunkIfExists(this.xStart + 16, this.zStart);
         }
-        else if(blockZ == this.zStart)
+        
+        if(blockZ == this.zStart)
         {
             if(this.activeCountLowZ.decrementAndGet() == 0) 
                 this.releaseChunkIfExists(this.xStart, this.zStart - 16);
@@ -335,9 +340,8 @@ public class CellChunk
             if(this.activeCountHighZ.decrementAndGet() == 0) 
                 this.releaseChunkIfExists(this.xStart, this.zStart + 16);
         }
-        if(this.activeCount.decrementAndGet() == 0)
-        {
-        }
+        
+        this.activeCount.decrementAndGet();
     }
 
     private void releaseChunkIfExists(int blockX, int blockZ)
