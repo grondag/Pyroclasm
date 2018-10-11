@@ -86,14 +86,11 @@ public class CellChunk
     /** count of cells that have requested validation since last validation occurred */
     private final AtomicInteger validationCount = new AtomicInteger(0);
 
-    //    /** Set to true after start loaded. Also set true by NBTLoad.  */
-//    private boolean isLoaded = false;
-
     //TODO: remove - only used for assertion and never triggered 
     /** Set to true when chunk is unloaded and should no longer be processed */
     private boolean isUnloaded = false;
 
-    /** If true, chunk needs full validation. Should always be true if isLoaded = False. */
+    /** If true, chunk needs full validation.*/
     private boolean needsFullValidation = true;
 
     CellChunk(long packedChunkPos, LavaCells cells)

@@ -309,7 +309,7 @@ public class LavaCells
     }
     
     /**
-     * Applies the given operation to all active cells.<p>
+     * Applies the given operation to all cells.<p>
      * 
      * Do not use for operations that may add or remove cells.
      */
