@@ -629,7 +629,7 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
         
         Block newBlock = newState.getBlock();
         
-        //FIXME: these have their own handling - does that still make sense?
+        //  these have their own handling - see the block class
         if(newBlock == ModBlocks.lava_dynamic_height) return;
             
             
@@ -647,7 +647,7 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
         LavaCell entry = this.cells.getEntryCell(pos.getX(), pos.getZ());
         if(entry == null) 
         {
-            // TODO: see if chunk needs validation?
+            // FIXME: handle rare case of full block columns
             // for example, if a block is broken in a chunk that has lava cells
             // but the block is in a column that doesn't have any air space?
             // could handle by creating "void" cells as entry cells in columns with no space

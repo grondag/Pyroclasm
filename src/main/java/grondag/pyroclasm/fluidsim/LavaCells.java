@@ -320,8 +320,6 @@ public class LavaCells
             if(c.isNew()) 
                 continue;
             
-            assert !c.isUnloaded();
-            
             c.forEach(consumer);
         }
     }

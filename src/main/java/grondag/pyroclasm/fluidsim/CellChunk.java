@@ -86,10 +86,6 @@ public class CellChunk
     /** count of cells that have requested validation since last validation occurred */
     private final AtomicInteger validationCount = new AtomicInteger(0);
 
-    //TODO: remove - only used for assertion and never triggered 
-    /** Set to true when chunk is unloaded and should no longer be processed */
-    private boolean isUnloaded = false;
-
     /** If true, chunk needs full validation.*/
     private boolean needsFullValidation = true;
 
@@ -107,24 +103,12 @@ public class CellChunk
             Pyroclasm.INSTANCE.info("Created chunk buffer with corner x=%d, z=%d", this.xStart, this.zStart);
     }
 
-//    /** for use when reading from NBT */
-//    public void setLoaded()
-//    {
-//        this.isLoaded = true;
-//    }
-    
-    public boolean isUnloaded()
-    {
-        return this.isUnloaded;
-    }
-    
     /** 
      * Marks this chunk for full validation.  
      * Has no effect if it already so or if chunk is unloaded.
      */
     public void requestFullValidation()
     {
-        assert !this.isUnloaded;
         this.needsFullValidation = true;
     }
     
@@ -134,14 +118,11 @@ public class CellChunk
      */
     public boolean needsFullLoadOrValidation()
     {
-        assert !this.isUnloaded;
         return (this.needsFullValidation || this.validationCount.get() > 64);
     }
     
     public int validationPriority()
     {
-        assert !this.isUnloaded;
-        
         if(this.isNew()) return Integer.MAX_VALUE;
         
         if(this.needsFullValidation) return 256;
@@ -175,8 +156,6 @@ public class CellChunk
      */
     public boolean validateMarkedCells()
     {
-        assert !this.isUnloaded;
-        
         this.lastValidationTick = Simulator.currentTick();
         
         if(this.needsFullLoadOrValidation() || this.validationCount.get() == 0) return false;
@@ -223,8 +202,6 @@ public class CellChunk
     {
         synchronized(this)
         {
-            assert !this.isUnloaded;
-
             if(Configurator.DEBUG.enableLavaCellChunkTrace)
                 Pyroclasm.INSTANCE.info("Loading (or reloading) chunk buffer with corner x=%d, z=%d", this.xStart, this.zStart);
             
@@ -264,8 +241,6 @@ public class CellChunk
      */
     public void incrementValidationCount()
     {
-        assert !this.isUnloaded;
-
         this.validationCount.incrementAndGet();
     }
     
@@ -281,8 +256,6 @@ public class CellChunk
      */
     public void incrementActiveCount(int blockX, int blockZ)
     {
-        assert !this.isUnloaded;
-
         this.activeCount.incrementAndGet();
         
        // create (if needed) and retain neighbors if newly have lava at the edge of this chunk
@@ -316,8 +289,6 @@ public class CellChunk
      */
     public void decrementActiveCount(int blockX, int blockZ)
     {
-        assert !this.isUnloaded;
-        
         // release neighbors if no longer have lava at the edge of this chunk
         if(blockX == this.xStart)
         {
@@ -364,7 +335,6 @@ public class CellChunk
      */
     public void retain()
     {
-        assert !this.isUnloaded;
         this.retainCount.incrementAndGet();
     }
 
@@ -374,7 +344,6 @@ public class CellChunk
      */
     public void release()
     {
-        assert !this.isUnloaded;
         final int c = this.retainCount.decrementAndGet();
         assert c >= 0;
     }
@@ -384,10 +353,6 @@ public class CellChunk
      */
     public boolean canUnload()
     {
-//        HardScience.log.info("chunk " + this.xStart + ", " + this.zStart + " activeCount=" + this.activeCount.get() 
-//        + "  retainCount=" + this.retainCount.get() + " unloadTickCount=" + this.unloadTickCount);
-        assert !this.isUnloaded;
-        
         if(this.isNew()) return false;
         
         //  complete validation before unloading because may be new info that could cause chunk to remain loaded
@@ -404,8 +369,6 @@ public class CellChunk
 
     public void unload()
     {
-        assert !this.isUnloaded;
-        
         if(Configurator.DEBUG.enableLavaCellChunkTrace)
             Pyroclasm.INSTANCE.info("Unloading chunk buffer with corner x=%d, z=%d", this.xStart, this.zStart);
 
@@ -418,7 +381,6 @@ public class CellChunk
                 if(entryCell == null)
                 {
                     Pyroclasm.INSTANCE.warn("Null entry cell in chunk being unloaded"); 
-                    //assert false : "Null entry cell in chunk being unloaded.";
                     continue;
                 }
                 
@@ -437,10 +399,6 @@ public class CellChunk
                 this.setEntryCell(x, z, null);
             }
         }
-        
-        this.isUnloaded = true;
-        
-        
     }
 
     /** 
@@ -450,8 +408,6 @@ public class CellChunk
      */
     @Nullable LavaCell getEntryCell(int x, int z)
     {
-        assert !this.isUnloaded : "derp in CellChunk unloading - returning cell from unloaded chunk in getEntryCell";
-        
         LavaCell result = this.entryCells[getIndex(x, z)];
         assert result == null || !result.isDeleted() : "derp in CellChunk unloading - returning deleted cell from getEntryCell";
         return result;
@@ -463,8 +419,6 @@ public class CellChunk
      */
     void setEntryCell(int x, int z, @Nullable LavaCell entryCell)
     {
-        assert !this.isUnloaded;
-
         int i = getIndex(x, z);
         boolean wasNull = this.entryCells[i] == null;
 

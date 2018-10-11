@@ -316,7 +316,6 @@ public class AdjustmentTracker extends TerrainWorldAdapter
         
         for(long l : pendingUpdates)
         {
-            //TODO: check if worth comparing to old world state before applying - do we have any reversions internal to our process?
             IBlockState newState = this.blockStates.get(l);
             if(newState != null)
             {

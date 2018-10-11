@@ -162,8 +162,6 @@ public class ClientEventHandler
     {
         if(chunk == null) return;
         
-        assert !chunk.isUnloaded();
-        
         AxisAlignedBB box = new AxisAlignedBB(chunk.xStart, 0, chunk.zStart, chunk.xStart + 16, 255, chunk.zStart + 16);
         
         final ICamera camera = ClientProxy.camera();

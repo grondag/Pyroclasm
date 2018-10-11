@@ -31,8 +31,6 @@ public class LavaConnections extends AbstractLavaConnections
                 if(c.isNew())
                     return;
                 
-                assert !c.isUnloaded();
-                
                 c.forEach(cell ->
                 {
                     cell.updateStuff(sim);
