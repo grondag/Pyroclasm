@@ -1864,18 +1864,12 @@ public class LavaCell extends AbstractLavaCell
             {
                 pos.setPos(x, y, z);
                 
-                IBlockState priorState = tracker.getBlockState(pos);
-                
                 if(hasLava && y == currentSurfaceY)
                 {
                     // partial or full lava block
                     tracker.setBlockState(pos, 
                             TerrainBlockHelper.stateWithDiscreteFlowHeight(ModBlocks.lava_dynamic_height.getDefaultState(), currentVisible - currentSurfaceY * TerrainState.BLOCK_LEVELS_INT));
-                    
-                    if(priorState.getBlock().isWood(tracker, pos))
-                    {
-                        sim.lavaTreeCutter.queueTreeCheck(PackedBlockPos.pack(x, y + 1, z));
-                    }
+                   
                 }
                 else if(hasLava && y < currentSurfaceY)
                 {
@@ -1886,7 +1880,7 @@ public class LavaCell extends AbstractLavaCell
                 else
                 {
                     // don't want to clear non-air blocks if they did not contain lava - let falling particles do that
-                    if(priorState.getBlock() == ModBlocks.lava_dynamic_height)
+                    if(tracker.getBlockState(pos).getBlock() == ModBlocks.lava_dynamic_height)
                     {
                         tracker.setBlockState(pos, Blocks.AIR.getDefaultState());
                     }

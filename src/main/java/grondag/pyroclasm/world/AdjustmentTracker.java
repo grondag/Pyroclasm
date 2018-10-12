@@ -62,6 +62,7 @@ public class AdjustmentTracker extends TerrainWorldAdapter
         surfaceBlocks.clear();
     }
     
+    final MutableBlockPos changePos = new MutableBlockPos();
     @Override
     protected final void onBlockStateChange(long packedBlockPos, IBlockState oldBlockState, IBlockState newBlockState)
     {
@@ -69,6 +70,10 @@ public class AdjustmentTracker extends TerrainWorldAdapter
         oldBlockState = oldWorld.getBlockState(packedBlockPos);
         final boolean isNewHeight = TerrainBlockHelper.isFlowHeight(newBlockState.getBlock());
         final boolean isOldHeight = TerrainBlockHelper.isFlowHeight(oldBlockState.getBlock());
+        final MutableBlockPos changePos = this.changePos;
+        
+        if(oldBlockState.getBlock().isWood(oldWorld, PackedBlockPos.unpackTo(packedBlockPos, changePos)))
+            sim.lavaTreeCutter.queueTreeCheck(PackedBlockPos.up(packedBlockPos));
         
         if(isOldHeight)
         {
