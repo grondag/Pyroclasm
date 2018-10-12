@@ -24,9 +24,6 @@ public class CellStackBuilder
         this.isFlowFloor = isFlowFloor;
     }
     
-    
-    // TODO:  consider having newly built cells retain lava found in world - just in case
-    // need to recover from loss of cell state
     private void completeCell(LavaCells cells, int x, int z, int ceiling)
     {
         LavaCell entryCell = this.entryCell;

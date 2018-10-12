@@ -15,6 +15,7 @@ import grondag.pyroclasm.fluidsim.CellChunk;
 import grondag.pyroclasm.fluidsim.LavaCell;
 import grondag.pyroclasm.fluidsim.LavaSimulator;
 import grondag.pyroclasm.projectile.FXLavaBlob;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.RenderGlobal;
@@ -69,9 +70,8 @@ public class ClientEventHandler
 
         if((Configurator.DEBUG.enableLavaCellDebugRender || Configurator.DEBUG.enableLavaChunkDebugRender))
         {
-            
             LavaSimulator lavaSim = Simulator.instance().getNode(LavaSimulator.class);
-            if(lavaSim != null)
+            if(lavaSim != null && lavaSim.world.provider.getDimension() == Minecraft.getMinecraft().world.provider.getDimension())
             {
                 GlStateManager.disableDepth();
                 

@@ -16,6 +16,7 @@ import grondag.pyroclasm.Configurator;
 import grondag.pyroclasm.fluidsim.LavaConnection.Flowable;
 import grondag.pyroclasm.init.ModBlocks;
 import grondag.pyroclasm.world.AdjustmentTracker;
+import grondag.pyroclasm.world.LavaTerrainHelper;
 import io.netty.util.internal.ThreadLocalRandom;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import net.minecraft.block.state.IBlockState;
@@ -1587,8 +1588,7 @@ public class LavaCell extends AbstractLavaCell
         
         int depth = this.isBottomFlow() 
                 ? this.getFlowFloorRetentionDepth()
-                : (int)(locator.cellChunk.cells.sim.terrainHelper()
-                        .computeIdealBaseFlowHeight(PackedBlockPos.pack(this.x(), this.floorY(), this.z()))
+                : (int)(LavaTerrainHelper.computeIdealBaseFlowHeight(locator.cellChunk.cells.sim.world, PackedBlockPos.pack(this.x(), this.floorY(), this.z()))
                         * LavaSimulator.FLUID_UNITS_PER_BLOCK);
                 
         // never retain more than volume, otherwise cell can never depressurize fully

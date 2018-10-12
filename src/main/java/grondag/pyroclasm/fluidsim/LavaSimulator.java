@@ -26,7 +26,6 @@ import grondag.pyroclasm.world.AdjustmentTracker;
 import grondag.pyroclasm.world.BasaltTracker;
 import grondag.pyroclasm.world.BlockEventList;
 import grondag.pyroclasm.world.ChunkTracker;
-import grondag.pyroclasm.world.LavaTerrainHelper;
 import grondag.pyroclasm.world.LavaTreeCutter;
 import grondag.pyroclasm.world.BlockEventList.BlockEvent;
 import grondag.pyroclasm.world.BlockEventList.BlockEventHandler;
@@ -79,10 +78,8 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
     private PerformanceCounter perfParticles = PerformanceCounter.create(Configurator.DEBUG.enablePerformanceLogging, "Particle Spawning", perfCollectorOnTick);
     private PerformanceCounter perfBlockUpdate = PerformanceCounter.create(Configurator.DEBUG.enablePerformanceLogging, "Block update", perfCollectorOnTick);
 
-    @Deprecated
-    private final LavaTerrainHelper terrainHelper;
     public final LavaBlobManager particleManager;
-    private final BasaltTracker basaltTracker;
+    public final BasaltTracker basaltTracker;
     final AdjustmentTracker adjustmentTracker;
     
     public final ChunkTracker chunkTracker = new ChunkTracker();
@@ -191,7 +188,6 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
         this.world = FMLCommonHandler.instance().getMinecraftServerInstance().worlds[0];
         this.world.addEventListener(this);
         this.lavaTreeCutter = new LavaTreeCutter(this.world);
-        this.terrainHelper = new LavaTerrainHelper(this.world);        
         this.particleManager = new LavaBlobManager();
         this.basaltTracker = new BasaltTracker(perfCollectorOnTick, this.world, this.chunkTracker);
         this.adjustmentTracker = new AdjustmentTracker(this);
@@ -615,11 +611,6 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
     public void afterDeserialization()
     {
         
-    }
-
-    public LavaTerrainHelper terrainHelper()
-    {
-        return terrainHelper;
     }
 
     @Override

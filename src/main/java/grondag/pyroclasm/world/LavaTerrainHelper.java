@@ -27,8 +27,6 @@ import net.minecraft.world.World;
 public class LavaTerrainHelper
 {
 
-    private final World world;
-
     private static final int RADIUS = 5;
     private static final int MASK_WIDTH = RADIUS * 2 + 1;
     private static final int MASK_SIZE = MASK_WIDTH * MASK_WIDTH;
@@ -104,16 +102,11 @@ public class LavaTerrainHelper
         return (x + RADIUS) * MASK_WIDTH + z + RADIUS;
     }
 
-    public LavaTerrainHelper(World world)
-    {
-        this.world = world;
-    }
-
     /**
      * Returns true if space already contains lava or could contain lava.
      * IOW, like canLavaDisplace except returns true if contains lava height block.
      */
-    public boolean isLavaSpace(IBlockState state)
+    public static boolean isLavaSpace(IBlockState state)
     {
         return state.getBlock() == ModBlocks.lava_dynamic_height || LavaTerrainHelper.canLavaDisplace(state);
 
@@ -124,7 +117,7 @@ public class LavaTerrainHelper
      * Used to compute the native (non-flow) smoothed terrain surface irrespective of any solidified lava.
      * IOW, like canLavaDisplace except returns true if contains lava height block.
      */
-    public boolean isOpenTerrainSpace(IBlockState state)
+    public static boolean isOpenTerrainSpace(IBlockState state)
     {
 
         Block block = state.getBlock();
@@ -139,7 +132,7 @@ public class LavaTerrainHelper
     /**
      * Want to avoid the synchronization penalty of pooled block pos.
      */
-    private ThreadLocal<BlockPos.MutableBlockPos> baseFlowPos = new ThreadLocal<BlockPos.MutableBlockPos>()
+    private static ThreadLocal<BlockPos.MutableBlockPos> baseFlowPos = new ThreadLocal<BlockPos.MutableBlockPos>()
     {
 
         @Override
@@ -153,7 +146,7 @@ public class LavaTerrainHelper
      * Ideal height of flowing lava retained on base (non-flow) terrain at the given location.  
      * Returned as fraction of 1 block.
      */
-    public float computeIdealBaseFlowHeight(long originPackedPos)
+    public static float computeIdealBaseFlowHeight(World world, long originPackedPos)
     {               
         final float NOT_FOUND = -1;
         float nearestRiseDistance = NOT_FOUND;

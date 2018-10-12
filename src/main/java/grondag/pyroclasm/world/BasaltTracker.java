@@ -113,6 +113,16 @@ public class BasaltTracker
         this.perfCounter.endRun();
     }
     
+    public boolean isTracked(long packedBlockPos)
+    {
+        long chunkPos = PackedChunkPos.getPackedChunkPos(packedBlockPos);
+        Long2IntOpenHashMap blocks = this.basaltBlocks.get(chunkPos);
+        if(blocks == null)
+            return false;
+        
+        return blocks.containsKey(packedBlockPos);
+    }
+    
     /**
      * Call from world thread only - not thread-safe
      */

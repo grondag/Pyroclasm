@@ -104,7 +104,7 @@ texture.basalt_very_hot=Very Hot Basalt
 texture.basalt_hint=Basalt Hint
 
 #COMMANDS
-commands.volcano.usage=Use /volcano <status | mark | wake | sleep | suspend | resume> 
+commands.volcano.usage=Use /volcano <status | mark | wake | sleep | suspend | resume | cleanup> 
 commands.volcano.mark.usage=Marks all nearby volcanos by placing a pillar of blocks
 commands.volcano.dimension_disabled=Volcanos not enabled in this dimension
 commands.volcano.status.usage=Reports information on nearby volcanos
@@ -124,6 +124,8 @@ commands.volcano.suspend.usage=Pauses all lava and volcano processing until game
 commands.volcano.suspend.success=All lava and volcano processing is suspended until game restart. Use /volcano resume to undo.
 commands.volcano.resume.usage=Continue lava and volcano processing paused by /volcano suspend
 commands.volcano.resume.success=Lava and volcano processing is resuming.
+commands.volcano.cleanup.usage=Solidifies nearby orphaned lava or hot basalt that aren't flowing or cooling
+commands.volcano.cleanup.success=Solidified %d orphaned lava and hot basalt blacks.
 
 
 
