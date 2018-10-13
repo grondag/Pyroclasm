@@ -90,7 +90,29 @@ public class AdjustmentTracker extends TerrainWorldAdapter
         }
         
         if(isNewHeight)
+        {
             this.newHeightBlocks.add(packedBlockPos);
+            
+            // make cooled/cooling basalt under lava hot again - renders better that way
+            if(newBlockState.getBlock() == ModBlocks.lava_dynamic_height && PackedBlockPos.getY(packedBlockPos) > 0)
+            {
+                IBlockState downState = oldWorld.getBlockState(PackedBlockPos.down(packedBlockPos));
+                Block downBlock = downState.getBlock();
+                if(TerrainBlockHelper.getFlowHeightFromState(downState) == TerrainState.BLOCK_LEVELS_INT
+                        && downBlock != ModBlocks.lava_dynamic_height && downBlock != ModBlocks.basalt_dynamic_very_hot_height)
+                {
+                    if(downBlock  == ModBlocks.basalt_cut 
+                            || downBlock == ModBlocks.basalt_cool_dynamic_height 
+                            || downBlock == ModBlocks.basalt_cool_static_height
+                            || downBlock == ModBlocks.basalt_dynamic_cooling_height
+                            || downBlock == ModBlocks.basalt_dynamic_hot_height
+                            || downBlock == ModBlocks.basalt_dynamic_warm_height)
+                    {
+                        this.setBlockState(PackedBlockPos.down(packedBlockPos), ModBlocks.basalt_dynamic_very_hot_height.getDefaultState().withProperty(ISuperBlock.META, 0), false);
+                    }
+                }
+            }
+        }
     }
     
     private void trackOldHeightChange(long packedBlockPos)
