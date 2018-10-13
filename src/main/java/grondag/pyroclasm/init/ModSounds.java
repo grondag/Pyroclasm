@@ -15,6 +15,7 @@ import net.minecraftforge.registries.IForgeRegistry;
 public class ModSounds
 {
     public static final SoundEvent lava_bubble = null;
+    public static final SoundEvent volcano_rumble = null;
     
     @SubscribeEvent
     public static void registerSounds(RegistryEvent.Register<SoundEvent> event) 
@@ -22,6 +23,7 @@ public class ModSounds
         IForgeRegistry<SoundEvent> soundReg = event.getRegistry();
         
         registerSound("lava_bubble", soundReg);
+        registerSound("volcano_rumble", soundReg);
     }
     
     private static void registerSound(String soundName, IForgeRegistry<SoundEvent> soundReg)

@@ -12,7 +12,10 @@ import grondag.exotic_matter.varia.Useful;
 import grondag.exotic_matter.world.PackedChunkPos;
 import grondag.pyroclasm.Configurator;
 import grondag.pyroclasm.fluidsim.LavaSimulator;
+import grondag.pyroclasm.init.ModSounds;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.Vec3i;
@@ -233,7 +236,11 @@ public class VolcanoNode implements IReadWriteNBT, IDirtListener, ISimulationTic
                      }
                      else
                      {
-                         if(this.lavaCooldownTicks++ > Configurator.PERFORMANCE.cooldownWaitTicks) this.stage = VolcanoStage.FLOWING;
+                         if(this.lavaCooldownTicks++ > Configurator.PERFORMANCE.cooldownWaitTicks)
+                         {
+                             startRumble();
+                             this.stage = VolcanoStage.FLOWING;
+                         }
                      }
                      break;
                  }
@@ -255,6 +262,7 @@ public class VolcanoNode implements IReadWriteNBT, IDirtListener, ISimulationTic
                              this.stateMachine = m;
                          }
                          m.doOnTick();
+                         sustainRumble();
                      }
                      break;
                  }
@@ -266,6 +274,17 @@ public class VolcanoNode implements IReadWriteNBT, IDirtListener, ISimulationTic
                      break;
                 
             }
+        }
+        
+        private void startRumble()
+        {
+            lavaSim.world.playSound((EntityPlayer)null, position.getXStart() + 8, 48, position.getZStart() + 8, ModSounds.volcano_rumble, SoundCategory.AMBIENT, 16.0F, 1.0F);
+        }
+        
+        private void sustainRumble()
+        {
+            if((Simulator.currentTick() & 31) == 31)
+                startRumble();
         }
         
         @Override
