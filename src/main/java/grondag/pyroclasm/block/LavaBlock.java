@@ -23,7 +23,6 @@ import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.init.SoundEvents;
 import net.minecraft.util.EnumParticleTypes;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.BlockPos;
@@ -202,13 +201,14 @@ public class LavaBlock extends TerrainDynamicBlock
                 double d4 = d1 + stateIn.getBoundingBox(worldIn, pos).maxY;
                 double d6 = d2 + (double)rand.nextFloat();
                 worldIn.spawnParticle(EnumParticleTypes.LAVA, d8, d4, d6, 0.0D, 0.0D, 0.0D);
-                worldIn.playSound(d8, d4, d6, SoundEvents.BLOCK_LAVA_POP, SoundCategory.BLOCKS, 0.2F + rand.nextFloat() * 0.2F, 0.9F + rand.nextFloat() * 0.15F, false);
+//                worldIn.playSound(d8, d4, d6, SoundEvents.BLOCK_LAVA_POP, SoundCategory.BLOCKS, 0.2F + rand.nextFloat() * 0.2F, 0.9F + rand.nextFloat() * 0.15F, false);
             }
+            else if (rand.nextInt(200) == 0)
+                worldIn.playSound(d0, d1, d2, ModSounds.lava_bubble, SoundCategory.BLOCKS, 0.4F + rand.nextFloat() * 0.4F, 0.9F + rand.nextFloat() * 0.15F, false);
+            
+            else if (rand.nextInt(1000) == 0)
+                worldIn.playSound(d0, d1, d2, ModSounds.lava_hiss, SoundCategory.BLOCKS, 0.4F + rand.nextFloat() * 0.4F, 0.9F + rand.nextFloat() * 0.30F, false);
 
-            if (rand.nextInt(200) == 0)
-            {
-                worldIn.playSound(d0, d1, d2, ModSounds.lava_bubble, SoundCategory.BLOCKS, 0.2F + rand.nextFloat() * 0.2F, 0.9F + rand.nextFloat() * 0.15F, false);
-            }
         }
 
         if (rand.nextInt(10) == 0 && worldIn.getBlockState(pos.down()).isTopSolid())

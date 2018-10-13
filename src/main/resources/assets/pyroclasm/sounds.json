@@ -2,7 +2,12 @@
   "lava_bubble": {
     "category": "block",
     "subtitle": "pyroclasm.subtitle.lava_bubble",
-    "sounds": [ "pyroclasm:lava0", "pyroclasm:lava1" ]
+    "sounds": [ "pyroclasm:lava0", "pyroclasm:lava1", "pyroclasm:lava2", "pyroclasm:lava3", "pyroclasm:lava4", "pyroclasm:lava5" ]
+  },
+  "lava_hiss": {
+    "category": "block",
+    "subtitle": "pyroclasm.subtitle.lava_hiss",
+    "sounds": [ "pyroclasm:hiss0", "pyroclasm:hiss1", "pyroclasm:hiss2" ]
   },
   "volcano_rumble": {
     "category": "ambient",
