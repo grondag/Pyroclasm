@@ -31,18 +31,6 @@ public class CoolingBasaltBlock extends TerrainDynamicBlock
         this.enhancedModelState = enhancedModelState;
     }
 
-    public static enum CoolingResult
-    {
-        /** means no more cooling can take place */
-        COMPLETE,
-        /** means one stage completed - more remain */
-        PARTIAL,
-        /** means block wan't ready to cool */
-        UNREADY,
-        /** means this isn't a cooling block*/
-        INVALID
-    }
-    
     /**
      * Cools this block if ready and returns true if successful.
      */

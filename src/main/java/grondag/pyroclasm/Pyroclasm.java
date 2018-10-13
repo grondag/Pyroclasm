@@ -54,7 +54,7 @@ public class Pyroclasm  implements IGrondagMod
 	public static Pyroclasm INSTANCE = new Pyroclasm();
 
 
-    @SidedProxy(clientSide = "grondag.pyroclasm.ClientProxy", serverSide = "grondag.pyroclasm.ServerProxy")
+    @SidedProxy(clientSide = "grondag.pyroclasm.ClientProxy", serverSide = "grondag.pyroclasm.CommonProxy")
 	public static CommonProxy proxy;
 
     static
