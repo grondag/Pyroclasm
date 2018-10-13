@@ -1,5 +1,6 @@
 package grondag.pyroclasm.block;
 
+import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
 import javax.annotation.Nullable;
@@ -11,13 +12,17 @@ import grondag.exotic_matter.block.ISuperBlockAccess;
 import grondag.exotic_matter.model.state.ISuperModelState;
 import grondag.exotic_matter.terrain.TerrainDynamicBlock;
 import grondag.pyroclasm.init.ModBlocks;
+import grondag.pyroclasm.init.ModSounds;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.util.EnumFacing;
+import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.BlockPos.MutableBlockPos;
 import net.minecraft.util.math.Vec3i;
 import net.minecraft.world.World;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class CoolingBasaltBlock extends TerrainDynamicBlock
 {
@@ -128,6 +133,7 @@ public class CoolingBasaltBlock extends TerrainDynamicBlock
     {
         this.nextCoolingBlock = nextCoolingBlock;
         this.heatLevel = heatLevel;
+        this.setTickRandomly(true);
         return this;
     }
 
@@ -141,5 +147,27 @@ public class CoolingBasaltBlock extends TerrainDynamicBlock
     public ISuperModelState getDefaultModelState()
     {
         return ExoticMatter.proxy.isAcuityEnabled() ? this.enhancedModelState.clone() : super.getDefaultModelState();
+    }
+    
+    @Override
+    @SideOnly(Side.CLIENT)
+    public void randomDisplayTick(IBlockState stateIn, World worldIn, BlockPos pos, Random rand)
+    {
+        double d0 = (double)pos.getX();
+        double d1 = (double)pos.getY();
+        double d2 = (double)pos.getZ();
+
+        if (rand.nextInt(1000) == 0)
+            worldIn.playSound(d0, d1, d2, ModSounds.basalt_cooling, SoundCategory.BLOCKS, 0.4F + rand.nextFloat() * 0.4F, 1.0F + rand.nextFloat() * 1.0F, false);
+        
+        else if (rand.nextInt(4000) == 0)
+            worldIn.playSound(d0, d1, d2, ModSounds.lava_hiss, SoundCategory.BLOCKS, 0.4F + rand.nextFloat() * 0.4F, 0.9F + rand.nextFloat() * 0.30F, false);
+
+    }
+    
+    @Override
+    public int tickRate(World worldIn)
+    {
+        return 60;
     }
 }

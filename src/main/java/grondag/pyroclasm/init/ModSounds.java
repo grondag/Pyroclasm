@@ -17,6 +17,7 @@ public class ModSounds
     public static final SoundEvent lava_bubble = null;
     public static final SoundEvent lava_hiss = null;
     public static final SoundEvent volcano_rumble = null;
+    public static final SoundEvent basalt_cooling = null;
     
     @SubscribeEvent
     public static void registerSounds(RegistryEvent.Register<SoundEvent> event) 
@@ -26,6 +27,7 @@ public class ModSounds
         registerSound("lava_bubble", soundReg);
         registerSound("lava_hiss", soundReg);
         registerSound("volcano_rumble", soundReg);
+        registerSound("basalt_cooling", soundReg);
     }
     
     private static void registerSound(String soundName, IForgeRegistry<SoundEvent> soundReg)

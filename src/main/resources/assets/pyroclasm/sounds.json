@@ -9,6 +9,11 @@
     "subtitle": "pyroclasm.subtitle.lava_hiss",
     "sounds": [ "pyroclasm:hiss0", "pyroclasm:hiss1", "pyroclasm:hiss2" ]
   },
+    "basalt_cooling": {
+    "category": "block",
+    "subtitle": "pyroclasm.subtitle.basalt_cooling",
+    "sounds": [ "pyroclasm:cooling0", "pyroclasm:cooling1", "pyroclasm:cooling2" ]
+  },
   "volcano_rumble": {
     "category": "ambient",
     "subtitle": "pyroclasm.subtitle.volcano_rumble",
