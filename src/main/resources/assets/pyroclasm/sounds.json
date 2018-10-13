@@ -18,5 +18,20 @@
     "category": "ambient",
     "subtitle": "pyroclasm.subtitle.volcano_rumble",
     "sounds": [ "pyroclasm:rumble0", "pyroclasm:rumble1", "pyroclasm:rumble2", "pyroclasm:rumble3" ]
+  },
+  "bomb_whoosh": {
+    "category": "ambient",
+    "subtitle": "pyroclasm.subtitle.bomb_whoosh",
+    "sounds": [ "pyroclasm:whoosh0" ]
+  },
+  "bomb_launch": {
+    "category": "ambient",
+    "subtitle": "pyroclasm.subtitle.bomb_launch",
+    "sounds": [ "pyroclasm:launch0", "pyroclasm:launch1" ]
+  },
+  "bomb_impact": {
+    "category": "ambient",
+    "subtitle": "pyroclasm.subtitle.bomb_impact",
+    "sounds": [ "pyroclasm:impact0", "pyroclasm:impact1", "pyroclasm:impact2" ]
   }
 }

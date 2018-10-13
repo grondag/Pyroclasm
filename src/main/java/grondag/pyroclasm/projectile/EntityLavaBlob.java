@@ -14,6 +14,7 @@ import grondag.pyroclasm.Configurator;
 import grondag.pyroclasm.Pyroclasm;
 import grondag.pyroclasm.fluidsim.LavaSimulator;
 import grondag.pyroclasm.init.ModBlocks;
+import grondag.pyroclasm.init.ModSounds;
 import grondag.pyroclasm.world.LavaTerrainHelper;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockFence;
@@ -21,6 +22,7 @@ import net.minecraft.block.BlockFenceGate;
 import net.minecraft.block.BlockWall;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
+import net.minecraft.client.Minecraft;
 import net.minecraft.crash.CrashReport;
 import net.minecraft.crash.CrashReportCategory;
 import net.minecraft.entity.Entity;
@@ -31,6 +33,7 @@ import net.minecraft.network.datasync.DataSerializers;
 import net.minecraft.network.datasync.EntityDataManager;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.ReportedException;
+import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
@@ -57,7 +60,7 @@ public class EntityLavaBlob extends Entity
     private static int liveParticleCount = 0;
 
     private static final DataParameter<Integer> FLUID_AMOUNT = EntityDataManager.<Integer>createKey(EntityLavaBlob.class, DataSerializers.VARINT);
-
+    
     @Override
     public int hashCode()
     {
@@ -100,12 +103,11 @@ public class EntityLavaBlob extends Entity
     public EntityLavaBlob(World world, int amount)
     {
         super(world);
-        if(!world.isRemote) 
-            liveParticleCount++;
-        
         this.id = nextParticleID++;
+
         if(!world.isRemote)
         {
+            liveParticleCount++;
             this.cachedAmount = amount;
             this.dataManager.set(FLUID_AMOUNT, Integer.valueOf(amount)); 
         }
@@ -232,46 +234,56 @@ public class EntityLavaBlob extends Entity
     @Override
     public void onUpdate()
     {
-            if(this.ticksExisted > 600)
+        if(this.firstUpdate)
+        {
+            this.firstUpdate = false;
+            if(this.world.isRemote)
             {
-                Pyroclasm.INSTANCE.info("Ancient lava particle died of old age.");
-                this.setDead();
-                return;
+                world.playSound(this.posX, this.posY, this.posZ, ModSounds.bomb_launch, SoundCategory.AMBIENT, 2.0F + rand.nextFloat() * 2.0F, 0.8F + rand.nextFloat() * 0.2F, false);
+                Minecraft.getMinecraft().getSoundHandler().playSound(new LavaBombSound(this));
             }
-            
-            // If inside lava, release to lava simulator.
-            // This can happen somewhat frequently because another particle landed or lava flowed around us.
-            Block block = this.world.getBlockState(this.getPosition()).getBlock();
-            
-            if(block == ModBlocks.lava_dynamic_height || block == ModBlocks.lava_dynamic_filler )
-            {
-                this.land();
-                return;
-            }
-            
-            super.onUpdate();
-            
-            this.impactNearbyEntities();
-            
-            this.prevPosX = this.posX;
-            this.prevPosY = this.posY;
-            this.prevPosZ = this.posZ;
-    
-            this.motionY -= 0.03999999910593033D;
-    
-            this.move(MoverType.SELF, this.motionX, this.motionY, this.motionZ);
-    
-            if(Configurator.DEBUG.enableLavaBombTrace && !this.world.isRemote && !((net.minecraft.world.gen.ChunkProviderServer)this.world.getChunkProvider()).chunkExists(((int)this.posX) >> 4, ((int)this.posZ) >> 4))
-                Pyroclasm.INSTANCE.info("Lava bomb went out of loaded chunk @ x, z = %f, %f", this.posX, this.posZ);
-            
-            this.motionX *= 0.9800000190734863D;
-            this.motionY *= 0.9800000190734863D;
-            this.motionZ *= 0.9800000190734863D;
-    
-            this.emitParticles();
-            
-            if (this.onGround) 
-                this.land();
+        }
+        
+        if(this.ticksExisted > 600)
+        {
+            Pyroclasm.INSTANCE.info("Ancient lava particle died of old age.");
+            this.setDead();
+            return;
+        }
+        
+        // If inside lava, release to lava simulator.
+        // This can happen somewhat frequently because another particle landed or lava flowed around us.
+        Block block = this.world.getBlockState(this.getPosition()).getBlock();
+        
+        if(block == ModBlocks.lava_dynamic_height || block == ModBlocks.lava_dynamic_filler )
+        {
+            this.land();
+            return;
+        }
+        
+        super.onUpdate();
+        
+        this.impactNearbyEntities();
+        
+        this.prevPosX = this.posX;
+        this.prevPosY = this.posY;
+        this.prevPosZ = this.posZ;
+
+        this.motionY -= 0.03999999910593033D;
+
+        this.move(MoverType.SELF, this.motionX, this.motionY, this.motionZ);
+
+        if(Configurator.DEBUG.enableLavaBombTrace && !this.world.isRemote && !((net.minecraft.world.gen.ChunkProviderServer)this.world.getChunkProvider()).chunkExists(((int)this.posX) >> 4, ((int)this.posZ) >> 4))
+            Pyroclasm.INSTANCE.info("Lava bomb went out of loaded chunk @ x, z = %f, %f", this.posX, this.posZ);
+        
+        this.motionX *= 0.9800000190734863D;
+        this.motionY *= 0.9800000190734863D;
+        this.motionZ *= 0.9800000190734863D;
+
+        this.emitParticles();
+        
+        if (this.onGround) 
+            this.land();
     }
     
     private double pX = Double.MAX_VALUE;
@@ -338,7 +350,12 @@ public class EntityLavaBlob extends Entity
 
     private void land()
     {
-        if(!this.world.isRemote )
+        if(this.world.isRemote)
+        {
+            world.playSound(this.posX, this.posY, this.posZ, ModSounds.bomb_impact, SoundCategory.AMBIENT, 2.0F + rand.nextFloat() * 2.0F, 0.8F + rand.nextFloat() * 0.2F, false);
+
+        }
+        else
         {
             LavaSimulator sim = Simulator.instance().getNode(LavaSimulator.class);
             if(sim == null) return;
