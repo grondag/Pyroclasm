@@ -98,7 +98,9 @@ public class VolcanoStateMachine implements ISimulationTickable
     
     private VolcanoOperation operation = VolcanoOperation.SETUP_CONVERT_LAVA_AND_SCAN;
     
-    private double blobChance = 0;
+    private float blobChance = 0;
+    // set to true starts of each tick
+    private boolean tryBlobs = false;
     
     private final Random myRandom = new Random();
     
@@ -167,6 +169,7 @@ public class VolcanoStateMachine implements ISimulationTickable
         final int opsPerTick = Configurator.VOLCANO.operationsPerTick;
         final int maxPush = Configurator.VOLCANO.moundBlocksPerTick;
         pushCount = 0;
+        tryBlobs = true;
         
         lastOp = this.operation;
         
@@ -355,7 +358,7 @@ public class VolcanoStateMachine implements ISimulationTickable
         if(this.offsetIndex == 0)
         {
             // things we do on first pass
-            this.blobChance = cell.isOpenToSky() ? 1.0 : 0.0;
+            this.blobChance = cell.isOpenToSky() ? 1.0f : 0.0f;
             maxCeilingLevel = 0;
         }
         
@@ -388,8 +391,11 @@ public class VolcanoStateMachine implements ISimulationTickable
             this.lavaPerCellThisPass = lavaRemainingThisPass / MAX_BORE_OFFSET + 1;
         }
         
-        if(lavaRemainingThisPass > 0)
+        if(tryBlobs && lavaRemainingThisPass > 0)
+        {
             doBlobs();
+            tryBlobs = false;
+        }
         
         LavaCell cell = this.getBoreCell(offsetIndex++);
         
@@ -464,41 +470,36 @@ public class VolcanoStateMachine implements ISimulationTickable
         
         final Random r = myRandom;
         
-        if(Math.abs(r.nextDouble()) < blobChance)
+        if(Math.abs(r.nextFloat()) < blobChance)
         {
-            final int blobCount = Math.min(maxBlobs - currentBlobs, r.nextInt(4) + r.nextInt(4) + r.nextInt(4));
+            double dx = (r.nextDouble() - 0.5) * 2;
+            double dz = (r.nextDouble() - 0.5) * 2;
+            double dy = 1.0;
+            // normalize
+            double scale = Math.sqrt(dx * dx + dy * dy + dz * dz);
             
-            for(int i = 0; i < blobCount; i++)
-            {
-                double dx = (r.nextDouble() - 0.5) * 2;
-                double dz = (r.nextDouble() - 0.5) * 2;
-                double dy = 1.0;
-                // normalize
-                double scale = Math.sqrt(dx * dx + dy * dy + dz * dz);
-                
-                // add velocity
-                scale *= (0.75 + Math.abs(r.nextGaussian()) * 0.5);
-                
-                final int units = Math.max(LavaSimulator.FLUID_UNITS_PER_HALF_BLOCK, 
-                        r.nextInt(LavaSimulator.FLUID_UNITS_PER_BLOCK) 
-                        + r.nextInt(LavaSimulator.FLUID_UNITS_PER_BLOCK) 
-                        + r.nextInt(LavaSimulator.FLUID_UNITS_PER_BLOCK));
-                EntityLavaBlob blob = new EntityLavaBlob(
-                        this.world, 
-                        units, 
-                        center.x(), 
-                        center.worldSurfaceY() + 1,
-                        center.z(), 
-                        dx * scale,
-                        dy * scale,
-                        dz * scale);
-                this.world.spawnEntity(blob);
-                this.lavaRemainingThisPass -= units;
-            }
+            // add velocity
+            scale *= (0.75 + Math.abs(r.nextGaussian()) * 0.5);
+            
+            final int units = Math.max(LavaSimulator.FLUID_UNITS_PER_HALF_BLOCK, 
+                    r.nextInt(LavaSimulator.FLUID_UNITS_PER_BLOCK) 
+                    + r.nextInt(LavaSimulator.FLUID_UNITS_PER_BLOCK) 
+                    + r.nextInt(LavaSimulator.FLUID_UNITS_PER_BLOCK));
+            EntityLavaBlob blob = new EntityLavaBlob(
+                    this.world, 
+                    units, 
+                    center.x(), 
+                    center.worldSurfaceY() + 1,
+                    center.z(), 
+                    dx * scale,
+                    dy * scale,
+                    dz * scale);
+            this.world.spawnEntity(blob);
+            this.lavaRemainingThisPass -= units;
             blobChance = 0;
         }
         else
-            blobChance  += 0.01;
+            blobChance  += 0.003f;
     }
   
     private VolcanoOperation meltCheck()

@@ -239,7 +239,7 @@ public class EntityLavaBlob extends Entity
             this.firstUpdate = false;
             if(this.world.isRemote)
             {
-                world.playSound(this.posX, this.posY, this.posZ, ModSounds.bomb_launch, SoundCategory.AMBIENT, 2.0F + rand.nextFloat() * 2.0F, 0.8F + rand.nextFloat() * 0.2F, false);
+                world.playSound(this.posX, this.posY, this.posZ, ModSounds.bomb_launch, SoundCategory.AMBIENT, 8.0F + rand.nextFloat() * 2.0F, 0.8F + rand.nextFloat() * 0.2F, false);
                 Minecraft.getMinecraft().getSoundHandler().playSound(new LavaBombSound(this));
             }
         }
@@ -352,7 +352,7 @@ public class EntityLavaBlob extends Entity
     {
         if(this.world.isRemote)
         {
-            world.playSound(this.posX, this.posY, this.posZ, ModSounds.bomb_impact, SoundCategory.AMBIENT, 2.0F + rand.nextFloat() * 2.0F, 0.8F + rand.nextFloat() * 0.2F, false);
+            world.playSound(this.posX, this.posY, this.posZ, ModSounds.bomb_impact, SoundCategory.AMBIENT, 8.0F + rand.nextFloat() * 2.0F, 0.8F + rand.nextFloat() * 0.2F, false);
 
         }
         else
