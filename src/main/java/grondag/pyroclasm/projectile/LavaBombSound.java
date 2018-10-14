@@ -14,6 +14,7 @@ public class LavaBombSound extends MovingSound
         this.bomb = bomb;
         this.repeat = true;
         this.repeatDelay = 0;
+        this.volume = 6.0f;
     }
 
     @Override

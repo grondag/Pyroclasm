@@ -32,6 +32,7 @@ import net.minecraft.network.datasync.DataParameter;
 import net.minecraft.network.datasync.DataSerializers;
 import net.minecraft.network.datasync.EntityDataManager;
 import net.minecraft.util.DamageSource;
+import net.minecraft.util.EnumParticleTypes;
 import net.minecraft.util.ReportedException;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.AxisAlignedBB;
@@ -239,8 +240,12 @@ public class EntityLavaBlob extends Entity
             this.firstUpdate = false;
             if(this.world.isRemote)
             {
-                world.playSound(this.posX, this.posY, this.posZ, ModSounds.bomb_launch, SoundCategory.AMBIENT, 8.0F + rand.nextFloat() * 2.0F, 0.8F + rand.nextFloat() * 0.2F, false);
+                world.playSound(this.posX, this.posY, this.posZ, ModSounds.bomb_launch, SoundCategory.AMBIENT, 8.0F + rand.nextFloat() * 2.0F, 0.1F + rand.nextFloat() * 0.1F, false);
                 Minecraft.getMinecraft().getSoundHandler().playSound(new LavaBombSound(this));
+                
+                for(int i = 0; i < 20; i++)
+                    world.spawnParticle(EnumParticleTypes.LAVA, this.posX - 1 + rand.nextFloat() * 2, this.posY + 1.0, this.posZ - 1 + rand.nextFloat() * 2, 0.0D, 0.0D, 0.0D);
+
             }
         }
         
@@ -353,7 +358,8 @@ public class EntityLavaBlob extends Entity
         if(this.world.isRemote)
         {
             world.playSound(this.posX, this.posY, this.posZ, ModSounds.bomb_impact, SoundCategory.AMBIENT, 8.0F + rand.nextFloat() * 2.0F, 0.8F + rand.nextFloat() * 0.2F, false);
-
+            for(int i = 0; i < 20; i++)
+                world.spawnParticle(EnumParticleTypes.LAVA, this.posX - 1 + rand.nextFloat() * 2, this.posY + 1.0, this.posZ - 1 + rand.nextFloat() * 2, 0.0D, 0.0D, 0.0D);
         }
         else
         {
