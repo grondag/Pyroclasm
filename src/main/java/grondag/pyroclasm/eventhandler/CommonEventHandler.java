@@ -24,6 +24,7 @@ public class CommonEventHandler
         {
             ConfigManager.sync(Pyroclasm.MODID, Type.INSTANCE);
             Configurator.recalcDerived();
+            Configurator.recalcBlocks();
         }
     }
     

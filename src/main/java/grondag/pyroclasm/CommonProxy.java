@@ -28,7 +28,8 @@ public class CommonProxy
 
     public void postInit(FMLPostInitializationEvent event)
     {
-        
+        // block lists won't be proper until registry is loaded
+        Configurator.recalcBlocks();
     }
     
     public void spawnLavaBlobParticle(World worldIn, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed, float radius)

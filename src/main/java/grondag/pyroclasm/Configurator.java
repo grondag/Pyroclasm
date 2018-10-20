@@ -26,6 +26,11 @@ public class Configurator
     {
         Volcano.recalcDerived();
     }
+    
+    public static void recalcBlocks()
+    {
+        Volcano.recalcBlocks();
+    }
 
     ////////////////////////////////////////////////////
     // RENDER
@@ -2401,6 +2406,12 @@ public class Configurator
         @Comment({"If true, will output debug information for lava bombs.",
             "Will cause significant log spam so should only be enabled for debug and testing."})
         public boolean enableLavaBombTrace = false;
+        
+        @LangKey("pyroclasm.config.enable_blocklist_trace")
+        @Comment({"If true, will output debug information for lava safe/destroyed block lists.",
+            "Will cause significant log spam so should only be enabled for debug and testing."})
+        public boolean enable_blocklist_trace = false;
+        
     }
     
     ////////////////////////////////////////////////////        
@@ -2575,7 +2586,10 @@ public class Configurator
             {
                 VOLCANO.maxDormantTicks = VOLCANO.minDormantTicks + 20;
             }
-
+        }
+        
+        private static void recalcBlocks()
+        {
             IForgeRegistry<Block> reg = GameRegistry.findRegistry(Block.class);
 
             blocksDestroyedByLava.clear();
@@ -2586,13 +2600,16 @@ public class Configurator
                 {
                     Block b = reg.getValue(rl);
                     blocksDestroyedByLava.put(b, b);
+                    if(DEBUG.enable_blocklist_trace)
+                        Pyroclasm.INSTANCE.info("Configured " + s + " to be DESTROYED by volcanic lava." );
+    
                 }
-                else
+                else if(DEBUG.enable_blocklist_trace)
                 {
-                    Pyroclasm.INSTANCE.warn("Did not find block " + s + " configured to be destroyed by volcanic lava. Confirm block name is correct." );
+                    Pyroclasm.INSTANCE.info("Did not find block " + s + " configured to be destroyed by volcanic lava. Confirm block name is correct." );
                 }
             }
-
+    
             blocksSafeFromLava.clear();
             for(String s : SUBSTANCES.blocksSafeFromVolcanicLava)
             {
@@ -2601,10 +2618,13 @@ public class Configurator
                 {
                     Block b = reg.getValue(rl);
                     blocksSafeFromLava.put(b, b);
+                    
+                    if(DEBUG.enable_blocklist_trace)
+                        Pyroclasm.INSTANCE.info("Configured " + s + " to be SAFE from volcanic lava." );
                 }
-                else
+                else if(DEBUG.enable_blocklist_trace)
                 {
-                    Pyroclasm.INSTANCE.warn("Did not find block " + s + " configured to be safe from volcanic lava. Confirm block name is correct." );
+                    Pyroclasm.INSTANCE.info("Did not find block " + s + " configured to be safe from volcanic lava. Confirm block name is correct." );
                 }
             }
         }
