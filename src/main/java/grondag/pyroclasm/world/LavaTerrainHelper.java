@@ -278,7 +278,7 @@ public class LavaTerrainHelper
         final Block block = state.getBlock();
         
         if (TerrainBlockHelper.isFlowBlock(block))
-           return TerrainBlockHelper.isFlowHeight(block);
+           return !TerrainBlockHelper.isFlowHeight(block);
         
         boolean isSafe = true;
         final Material material = state.getMaterial();
