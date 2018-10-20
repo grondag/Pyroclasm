@@ -3,7 +3,6 @@ package grondag.pyroclasm.world;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Comparator;
-import java.util.Iterator;
 
 import javax.annotation.Nullable;
 
@@ -14,12 +13,11 @@ import grondag.exotic_matter.world.PackedBlockPos;
 import grondag.pyroclasm.Configurator;
 import grondag.pyroclasm.block.CoolingBasaltBlock;
 import grondag.pyroclasm.init.ModBlocks;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
-import net.minecraft.init.Blocks;
 import net.minecraft.util.EnumFacing;
-import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.BlockPos.MutableBlockPos;
 import net.minecraft.world.World;
@@ -231,49 +229,89 @@ public class LavaTerrainHelper
         //        up and down in range = 1.5 - (up dist / (combined dist - 1))
     }
 
+    private static final Object2IntOpenHashMap<Material> MATERIAL_MAP = new Object2IntOpenHashMap<Material>();
+    private static final int TOAST = -1;
+    private static final int SAFE = 1;
+    private static final int UNKNOWN = 0;
+    
+    static
+    {
+        MATERIAL_MAP.put(Material.AIR, TOAST);
+        MATERIAL_MAP.put(Material.GRASS, SAFE);
+        MATERIAL_MAP.put(Material.GROUND, SAFE);
+        MATERIAL_MAP.put(Material.WOOD, TOAST);
+        MATERIAL_MAP.put(Material.ROCK, SAFE);
+        MATERIAL_MAP.put(Material.IRON, SAFE);
+        MATERIAL_MAP.put(Material.ANVIL, SAFE);
+        MATERIAL_MAP.put(Material.WATER, TOAST);
+        MATERIAL_MAP.put(Material.LAVA, SAFE);
+        MATERIAL_MAP.put(Material.LEAVES, TOAST);
+        MATERIAL_MAP.put(Material.PLANTS, TOAST);
+        MATERIAL_MAP.put(Material.VINE, TOAST);
+        MATERIAL_MAP.put(Material.SPONGE, TOAST);
+        MATERIAL_MAP.put(Material.CLOTH, TOAST);
+        MATERIAL_MAP.put(Material.FIRE, TOAST);
+        MATERIAL_MAP.put(Material.SAND, SAFE);
+        MATERIAL_MAP.put(Material.CIRCUITS, TOAST);
+        MATERIAL_MAP.put(Material.CARPET, TOAST);
+        MATERIAL_MAP.put(Material.GLASS, TOAST);
+        MATERIAL_MAP.put(Material.REDSTONE_LIGHT, TOAST);
+        MATERIAL_MAP.put(Material.TNT, TOAST);
+        MATERIAL_MAP.put(Material.CORAL, TOAST);
+        MATERIAL_MAP.put(Material.PACKED_ICE, TOAST);
+        MATERIAL_MAP.put(Material.SNOW, TOAST);
+        MATERIAL_MAP.put(Material.CRAFTED_SNOW, TOAST);
+        MATERIAL_MAP.put(Material.CACTUS, TOAST);
+        MATERIAL_MAP.put(Material.CLAY, SAFE);
+        MATERIAL_MAP.put(Material.GOURD, TOAST);
+        MATERIAL_MAP.put(Material.DRAGON_EGG, SAFE);
+        MATERIAL_MAP.put(Material.PORTAL, SAFE);
+        MATERIAL_MAP.put(Material.CAKE, TOAST);
+        MATERIAL_MAP.put(Material.WEB, TOAST);
+        MATERIAL_MAP.put(Material.PISTON, TOAST);
+        MATERIAL_MAP.put(Material.BARRIER, SAFE);
+        MATERIAL_MAP.put(Material.STRUCTURE_VOID, TOAST);
+    }
+    
     public static boolean canLavaDisplace(IBlockState state)
     {
-        Block block = state.getBlock();
-
-        if (TerrainBlockHelper.isFlowFiller(block)) return true;
-
-        if (TerrainBlockHelper.isFlowHeight(block)) return false;
+        final Block block = state.getBlock();
         
-        if(block == Blocks.AIR) return true;
+        if (TerrainBlockHelper.isFlowBlock(block))
+           return TerrainBlockHelper.isFlowHeight(block);
         
-        if(block == Blocks.LAVA) return false;
-
-        Material material = state.getMaterial();
+        boolean isSafe = true;
+        final Material material = state.getMaterial();
+        final int materialOutcome = MATERIAL_MAP.getInt(material);
+        if(materialOutcome == TOAST 
+                // check atrributes of unknown materials not found in material map
+                || (materialOutcome == UNKNOWN 
+                    && (material.isReplaceable() || !material.blocksMovement() || !material.isSolid() || material.isLiquid() || material.getCanBurn())))
+            isSafe = false;
         
-        if(material.isReplaceable() || !material.blocksMovement() || !material.isSolid() || material.isLiquid() || material.getCanBurn())
-        {
-            // confirm can be destroyed
-            return !Configurator.Volcano.blocksSafeFromLava.containsKey(block);
-        }
-        else
-        {
-            // safe unless specifically identified in config
-            return Configurator.Volcano.blocksDestroyedByLava.containsKey(block);
-        }
+        return isSafe
+                // safe unless specifically identified in config
+                ? Configurator.Volcano.blocksDestroyedByLava.containsKey(block)
+                : !Configurator.Volcano.blocksSafeFromLava.containsKey(block);
     }
 
-    public static String[] generateDefaultDisplaceableList()
-    {
-        ArrayList<String> results = new ArrayList<String>();
-
-        Iterator<Block> blocks = Block.REGISTRY.iterator();
-        while(blocks.hasNext())
-        {
-            Block b = blocks.next();
-            Material m = b.getMaterial(b.getDefaultState());
-            ResourceLocation r = b.getRegistryName();
-            if(r != null && (m.isLiquid() || m.isReplaceable()))
-            {
-                results.add(r.toString());
-            }
-        }
-
-        return results.toArray(new String[results.size()]);
-
-    }
+//    public static String[] generateDefaultDisplaceableList()
+//    {
+//        ArrayList<String> results = new ArrayList<String>();
+//
+//        Iterator<Block> blocks = Block.REGISTRY.iterator();
+//        while(blocks.hasNext())
+//        {
+//            Block b = blocks.next();
+//            Material m = b.getMaterial(b.getDefaultState());
+//            ResourceLocation r = b.getRegistryName();
+//            if(r != null && (m.isLiquid() || m.isReplaceable()))
+//            {
+//                results.add(r.toString());
+//            }
+//        }
+//
+//        return results.toArray(new String[results.size()]);
+//
+//    }
 }
