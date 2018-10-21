@@ -24,7 +24,6 @@ import net.minecraft.block.BlockFenceGate;
 import net.minecraft.block.BlockWall;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
-import net.minecraft.client.Minecraft;
 import net.minecraft.crash.CrashReport;
 import net.minecraft.crash.CrashReportCategory;
 import net.minecraft.entity.Entity;
@@ -254,8 +253,7 @@ public class EntityLavaBlob extends Entity
             this.firstUpdate = false;
             if(this.world.isRemote)
             {
-                world.playSound(this.posX, this.posY, this.posZ, ModSounds.bomb_launch, SoundCategory.AMBIENT, 8.0F + rand.nextFloat() * 2.0F, 0.1F + rand.nextFloat() * 0.1F, false);
-                Minecraft.getMinecraft().getSoundHandler().playSound(new LavaBombSound(this));
+                world.playSound(this.posX, this.posY, this.posZ, ModSounds.bomb_launch, SoundCategory.HOSTILE, (float) (Configurator.SOUND.launchVolume + rand.nextDouble() * 0.25 * Configurator.SOUND.launchVolume), 0.2F + rand.nextFloat() * 0.6F, false);
                 
                 for(int i = 0; i < 20; i++)
                     world.spawnParticle(EnumParticleTypes.LAVA, this.posX - 1 + rand.nextFloat() * 2, this.posY + 1.0, this.posZ - 1 + rand.nextFloat() * 2, 0.0D, 0.0D, 0.0D);

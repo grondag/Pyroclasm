@@ -2493,11 +2493,34 @@ public class Configurator
         public int lavaBombFireChance = 20;
     }
     
+    ////////////////////////////////////////////////////
+    // VOLCANO
+    ////////////////////////////////////////////////////
+    @LangKey("pyroclasm.config.sound")
+    @Comment("Settings for Volcano & Lava Sounds")
+    public static Sound SOUND = new Sound();
+    
+    public static class Sound
+    {
+        @LangKey("pyroclasm.config.launch_volume")
+        @Comment({"Loudness (range) of lava bombs when they launch. Zero disables.",
+            "This is a client-side setting."})
+        @RangeDouble(min = 0.0, max = 64.0)
+        public double launchVolume = 8.0;
+        
+        @LangKey("pyroclasm.config.rumble_volume")
+        @Comment({"Loudness (range) of volcano rumble. Zero disables.",
+            "Currently this is a SERVER-side setting. That's stupid but I didn't have time to do the extra work for client side. ", 
+            "For now, you can turn down Ambient sounds on client."})
+        @RangeDouble(min = 0.0, max = 64.0)
+        public double rumbleVolume = 16.0;
+    }
+    
     ////////////////////////////////////////////////////        
     // VOLCANO
     ////////////////////////////////////////////////////
     @LangKey("pyroclasm.config.volcano")
-    @Comment("Settings for Volcano feature.")
+    @Comment("Settings for Volcano Feature")
     public static Volcano VOLCANO = new Volcano();
 
     public static class Volcano

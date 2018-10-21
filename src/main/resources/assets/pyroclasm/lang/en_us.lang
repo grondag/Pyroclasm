@@ -63,6 +63,9 @@ pyroclasm.config.max_active_ticks=Max Active Ticks
 pyroclasm.config.max_lava_projectiles=Max Lava Projectiles
 pyroclasm.config.ops_per_tick=Volcano Operations Per Tick
 
+pyroclasm.config.sound=Volcano & Lava Sounds
+pyroclasm.config.launch_volume=Lava Bomb Launch Volume
+pyroclasm.config.rumble_volume=Volcano Rumble Volume
 
 #BLOCKS
 tile.pyroclasm:basalt_cobble.name=Basalt Cobblestone

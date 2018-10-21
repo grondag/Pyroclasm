@@ -311,7 +311,7 @@ public class VolcanoNode implements IReadWriteNBT, IDirtListener, ISimulationTic
         
         private void startRumble()
         {
-            lavaSim.world.playSound((EntityPlayer)null, position.getXStart() + 8, 48, position.getZStart() + 8, ModSounds.volcano_rumble, SoundCategory.AMBIENT, 16.0F, 1.0F);
+            lavaSim.world.playSound((EntityPlayer)null, position.getXStart() + 8, 48, position.getZStart() + 8, ModSounds.volcano_rumble, SoundCategory.AMBIENT, (float)Configurator.SOUND.rumbleVolume, 1.0F);
         }
         
         private void sustainRumble()
