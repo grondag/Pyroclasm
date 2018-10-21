@@ -26,6 +26,7 @@ import grondag.pyroclasm.world.AdjustmentTracker;
 import grondag.pyroclasm.world.BasaltTracker;
 import grondag.pyroclasm.world.BlockEventList;
 import grondag.pyroclasm.world.ChunkTracker;
+import grondag.pyroclasm.world.FireStarter;
 import grondag.pyroclasm.world.LavaTreeCutter;
 import grondag.pyroclasm.world.BlockEventList.BlockEvent;
 import grondag.pyroclasm.world.BlockEventList.BlockEventHandler;
@@ -88,6 +89,7 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
     public final LavaCells cells = new LavaCells(this);
     public final AbstractLavaConnections connections = new LavaConnections(this);
     public final LavaTreeCutter lavaTreeCutter;
+    public final FireStarter fireStarter;
 
     private boolean isDirty;
     
@@ -188,6 +190,7 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
         this.world = FMLCommonHandler.instance().getMinecraftServerInstance().worlds[0];
         this.world.addEventListener(this);
         this.lavaTreeCutter = new LavaTreeCutter(this.world);
+        this.fireStarter = new FireStarter(this.world);
         this.particleManager = new LavaBlobManager();
         this.basaltTracker = new BasaltTracker(perfCollectorOnTick, this.world, this.chunkTracker);
         this.adjustmentTracker = new AdjustmentTracker(this);
@@ -380,6 +383,7 @@ public class LavaSimulator implements ISimulationTopNode, ISimulationTickable, I
         this.doChunkUpdates();
         
         this.lavaTreeCutter.doOnTick();
+        this.fireStarter.doOnTick();
         
         // this part doesn't use tracker - uses world directly
         

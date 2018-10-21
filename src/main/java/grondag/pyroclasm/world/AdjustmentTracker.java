@@ -71,9 +71,13 @@ public class AdjustmentTracker extends TerrainWorldAdapter
         final boolean isNewHeight = TerrainBlockHelper.isFlowHeight(newBlockState.getBlock());
         final boolean isOldHeight = TerrainBlockHelper.isFlowHeight(oldBlockState.getBlock());
         final MutableBlockPos changePos = this.changePos;
+        final Block oldBlock = oldBlockState.getBlock();
         
-        if(oldBlockState.getBlock().isWood(oldWorld, PackedBlockPos.unpackTo(packedBlockPos, changePos)))
-            sim.lavaTreeCutter.queueTreeCheck(PackedBlockPos.up(packedBlockPos));
+        if(oldBlock.isWood(oldWorld, PackedBlockPos.unpackTo(packedBlockPos, changePos)))
+            sim.lavaTreeCutter.queueCheck(PackedBlockPos.up(packedBlockPos));
+        
+        if(oldBlock != newBlockState.getBlock() && oldBlock != ModBlocks.lava_dynamic_height && oldBlock != ModBlocks.lava_dynamic_filler)
+            sim.fireStarter.checkAround(packedBlockPos, false);
         
         if(isOldHeight)
         {
@@ -169,7 +173,7 @@ public class AdjustmentTracker extends TerrainWorldAdapter
         PackedBlockPos.unpackTo(packedBlockPos, targetPos);
         if(oldBlockState.getBlock().isWood(this, targetPos))
         {
-            sim.lavaTreeCutter.queueTreeCheck(PackedBlockPos.up(packedBlockPos));
+            sim.lavaTreeCutter.queueCheck(PackedBlockPos.up(packedBlockPos));
         }
         
         if(newBlockState.getBlock() instanceof CoolingBasaltBlock)

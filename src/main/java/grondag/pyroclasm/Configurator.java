@@ -2471,6 +2471,26 @@ public class Configurator
             "to equilibirum pressure surface in complex shapes with narrow junctions."})
         @RangeInt(min = 1, max = 20)
         public int pressureFactor = 5;
+        
+        @LangKey("pyroclasm.config.lava_fire_chance")
+        @Comment({"Controls chance for lava and lava bombs to set fire to nearby blocks.",
+            "A value of zero disables this feature.",  
+            "A value of 100 gives a normal (low) chance for wood to catch fire.",
+            "Highly flammable blocks like leaves will almost always catch fire at a setting of 100 or higher.",
+            "Values less than 100 give reduced chances for ignitiion.",
+            "At 6000, wood will always ignite.  At 30000, any flammable block will always ignite."})
+        @RangeInt(min = 0, max = 30000)
+        public int lavaFireChance = 3000;
+        
+        @LangKey("pyroclasm.config.lava_bomb_fire_chance")
+        @Comment({"Controls chance for lava bombs to set fire to passing blocks.",
+            "A value of zero disables this feature.",  
+            "A value of 100 gives a normal (low) chance for wood to catch fire.",
+            "Highly flammable blocks like leaves will almost always catch fire at a setting of 100 or higher.",
+            "Values less than 100 give reduced chances for ignitiion.",
+            "At 6000, wood will always ignite.  At 30000, any flammable block will always ignite."})
+        @RangeInt(min = 0, max = 30000)
+        public int lavaBombFireChance = 20;
     }
     
     ////////////////////////////////////////////////////        

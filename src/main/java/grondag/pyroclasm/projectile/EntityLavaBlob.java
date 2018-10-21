@@ -554,6 +554,10 @@ public class EntityLavaBlob extends Entity
         int j1 = MathHelper.ceil(bb.maxZ);
         BlockPos.PooledMutableBlockPos blockpos$pooledmutableblockpos = BlockPos.PooledMutableBlockPos.retain();
 
+        LavaSimulator sim = Simulator.instance().getNode(LavaSimulator.class);
+        if(sim != null && sim.world != this.world)
+            sim = null;
+        
         for (int k1 = i; k1 < j; ++k1)
         {
             for (int l1 = k; l1 < l; ++l1)
@@ -565,15 +569,13 @@ public class EntityLavaBlob extends Entity
                     if(!(state.getMaterial() == Material.AIR || state.getMaterial().isLiquid()) 
                              && LavaTerrainHelper.canLavaDisplace(state) && !TerrainBlockHelper.isFlowFiller(state.getBlock()))
                     {
-                        if(state.getBlock().isWood(world, blockpos$pooledmutableblockpos))
+                        if(sim != null)
                         {
-                            LavaSimulator sim = Simulator.instance().getNode(LavaSimulator.class);
-                            if(sim == null) return;
-                            
-                            if(sim.world == this.world)
-                                sim.lavaTreeCutter.queueTreeCheck(PackedBlockPos.pack(k1, l1 + 1, i2));
+                            if(state.getBlock().isWood(world, blockpos$pooledmutableblockpos))
+                                sim.lavaTreeCutter.queueCheck(PackedBlockPos.pack(k1, l1 + 1, i2));
+                                
+                            sim.fireStarter.checkAround(PackedBlockPos.pack(k1, l1, i2), true);
                         }
-                            
                         this.world.destroyBlock(blockpos$pooledmutableblockpos.toImmutable(), true);
                     }
                 }

@@ -47,6 +47,8 @@ pyroclasm.config.min_cooling_propagation_ticks=Min Cooling Propagation Ticks
 pyroclasm.config.max_cooling_propagation_ticks=Max Cooling Propagation Ticks
 pyroclasm.config.lava_keepalive_flow_threshold=Keepalive Flow Threshold
 pyroclasm.config.lava_flow_reversal_threshold=Flow Reversal Threshold
+pyroclasm.config.lava_fire_chance=Lava Fire Chance
+pyroclasm.config.lava_bomb_fire_chance=Lava Bomb Fire Chance
 
 pyroclasm.config.volcano=Volcano Settings
 pyroclasm.config.lava_blocks_per_second=Max Lava Blocks / Sec

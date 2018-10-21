@@ -8,7 +8,6 @@ import javax.annotation.Nullable;
 
 import grondag.exotic_matter.serialization.IReadWriteNBT;
 import grondag.exotic_matter.serialization.NBTDictionary;
-import grondag.exotic_matter.simulator.ISimulationTickable;
 import grondag.exotic_matter.varia.LongQueue;
 import grondag.exotic_matter.varia.Useful;
 import grondag.exotic_matter.world.PackedBlockPos;
@@ -35,7 +34,7 @@ import net.minecraft.world.World;
  * and leaf decay isn't immediate as desired / expected.  
  *
  */
-public class LavaTreeCutter implements ISimulationTickable, IReadWriteNBT
+public class LavaTreeCutter extends WorldBlockCheckQueue implements IReadWriteNBT
 {
     private enum Operation
     {
@@ -48,10 +47,6 @@ public class LavaTreeCutter implements ISimulationTickable, IReadWriteNBT
     private static final String NBT_LAVA_TREE_CUTTER_QUEUE = NBTDictionary.claim("lctQueue");
     private static final String NBT_LAVA_TREE_CUTTER_CUTS = NBTDictionary.claim("lctCuts");
     
-    private final World world;
-    
-    private final LongQueue queue = new LongQueue();
-
     private Operation operation = Operation.IDLE;
     
     /** if search in progress, starting state of search */
@@ -78,12 +73,6 @@ public class LavaTreeCutter implements ISimulationTickable, IReadWriteNBT
     
     private final LongQueue toTick = new LongQueue();
     
-    /**
-     * Used in all cases when mutable is appropriate. This class is not intended
-     * to be threadsafe and avoids recursion, so re-entrancy should not be a problem.
-     */
-    private final BlockPos.MutableBlockPos searchPos = new BlockPos.MutableBlockPos();
-
     private static final byte POS_TYPE_LOG_FROM_ABOVE = 0;
     private static final byte POS_TYPE_LOG = 1;
     private static final byte POS_TYPE_LOG_FROM_DIAGONAL = 2;
@@ -109,14 +98,9 @@ public class LavaTreeCutter implements ISimulationTickable, IReadWriteNBT
     
     public LavaTreeCutter(World world)
     {
-        this.world = world;
+        super(world);
     }
     
-    public void queueTreeCheck(long packedBlockPos)
-    {
-        queue.enqueue(packedBlockPos);
-    }
-
     private void reset()
     {
         this.visited.clear();
@@ -163,9 +147,9 @@ public class LavaTreeCutter implements ISimulationTickable, IReadWriteNBT
     
     private Operation startSearch()
     {
-        if(this.queue.isEmpty()) return Operation.IDLE;
+        if(this.isEmpty()) return Operation.IDLE;
         
-        final long packedPos = this.queue.dequeueLong();
+        final long packedPos = this.dequeueCheck();
         PackedBlockPos.unpackTo(packedPos, searchPos);
         
         IBlockState state = this.world.getBlockState(searchPos);
@@ -378,6 +362,12 @@ public class LavaTreeCutter implements ISimulationTickable, IReadWriteNBT
 
     private Operation doTicking()
     {
+        if(toTick.isEmpty())
+        {
+            this.reset();
+            return Operation.IDLE;
+        }
+        
         BlockPos pos = PackedBlockPos.unpack(toTick.dequeueLong());
         IBlockState state = this.world.getBlockState(pos);
         Block block = state.getBlock();
@@ -385,11 +375,7 @@ public class LavaTreeCutter implements ISimulationTickable, IReadWriteNBT
         if(block.isLeaves(state, world, pos))
             block.updateTick(world, pos, state, ThreadLocalRandom.current());
         
-        if(toTick.isEmpty())
-        {
-            this.reset();
-            return Operation.IDLE;
-        } else return Operation.TICKING;
+        return Operation.TICKING;
     }
     
     @Override
@@ -405,7 +391,7 @@ public class LavaTreeCutter implements ISimulationTickable, IReadWriteNBT
             int[] saveData = tag.getIntArray(NBT_LAVA_TREE_CUTTER_QUEUE);
             while(i < saveData.length)
             {
-                this.queue.enqueue(Useful.longFromInts(saveData[i++], saveData[i++]));
+                this.queueCheck((Useful.longFromInts(saveData[i++], saveData[i++])));
             }
         }
      
@@ -425,7 +411,7 @@ public class LavaTreeCutter implements ISimulationTickable, IReadWriteNBT
     @Override
     public void serializeNBT(NBTTagCompound tag)
     {
-        final int queueDepth = this.queue.size() + (this.startPosPacked == PackedBlockPos.NULL_POS ? 0 : 1);
+        final int queueDepth = this.size() + (this.startPosPacked == PackedBlockPos.NULL_POS ? 0 : 1);
         
         if(queueDepth > 0)
         {
@@ -438,7 +424,7 @@ public class LavaTreeCutter implements ISimulationTickable, IReadWriteNBT
                 saveData[i++] = Useful.longToIntLow(startPosPacked);
             }
             
-            for(long packedPos : this.queue.toArray())
+            for(long packedPos : this.toArray())
             {
                 saveData[i++] = Useful.longToIntHigh(packedPos);
                 saveData[i++] = Useful.longToIntLow(packedPos);
