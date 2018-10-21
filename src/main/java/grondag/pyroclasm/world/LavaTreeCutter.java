@@ -6,6 +6,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import javax.annotation.Nullable;
 
+import grondag.exotic_matter.ExoticMatter;
 import grondag.exotic_matter.serialization.IReadWriteNBT;
 import grondag.exotic_matter.serialization.NBTDictionary;
 import grondag.exotic_matter.simulator.ISimulationTickable;
@@ -41,7 +42,8 @@ public class LavaTreeCutter implements ISimulationTickable, IReadWriteNBT
     {
         IDLE,
         SEARCHING,
-        CLEARING
+        CLEARING,
+        TICKING
     }
     
     private static final String NBT_LAVA_TREE_CUTTER_QUEUE = NBTDictionary.claim("lctQueue");
@@ -74,6 +76,8 @@ public class LavaTreeCutter implements ISimulationTickable, IReadWriteNBT
     private final Long2ByteOpenHashMap visited = new Long2ByteOpenHashMap();
     
     private final LongQueue toClear = new LongQueue();
+    
+    private final LongQueue toTick = new LongQueue();
     
     /**
      * Used in all cases when mutable is appropriate. This class is not intended
@@ -146,6 +150,11 @@ public class LavaTreeCutter implements ISimulationTickable, IReadWriteNBT
                 
             case CLEARING:
                 this.operation = doClearing();
+                used += 10;
+                break;
+                
+            case TICKING:
+                this.operation = doTicking();
                 used += 10;
                 break;
             }
@@ -325,7 +334,12 @@ public class LavaTreeCutter implements ISimulationTickable, IReadWriteNBT
                 this.reset();
                 return Operation.IDLE;
             }
-            else return Operation.CLEARING;
+            else
+            {
+                // prep for leaves
+                toTick.clear();
+                return Operation.CLEARING;
+            }
         } 
         else return Operation.SEARCHING;
         
@@ -339,15 +353,13 @@ public class LavaTreeCutter implements ISimulationTickable, IReadWriteNBT
         
         if(type == POS_TYPE_LEAF && depth > 5) return;
 
-        // don't count blocks under logs as supporting if more than 5 from search start
-        if(type == POS_TYPE_LOG_FROM_ABOVE && depth > 5) type = POS_TYPE_LOG;
-
         this.toVisit.offer(new Visit(packedPos, type, depth));
     }
     
     private Operation doClearing()
     {
-        BlockPos pos = PackedBlockPos.unpack(this.toClear.dequeueLong());
+        long packedPos = this.toClear.dequeueLong();
+        BlockPos pos = PackedBlockPos.unpack(packedPos);
         IBlockState state = this.world.getBlockState(pos);
         Block block = state.getBlock();
         
@@ -358,20 +370,29 @@ public class LavaTreeCutter implements ISimulationTickable, IReadWriteNBT
         else if(block.isLeaves(state, world, pos))
         {
             block.beginLeavesDecay(state, world, pos);
-            
-//            if (!(this.worldBuffer.realWorld.isBlockTickPending(pos, state.getBlock()) || this.worldBuffer.realWorld.isUpdateScheduled(pos, state.getBlock())))
-//            {
-                block.updateTick(world, pos, state, ThreadLocalRandom.current());
-//            }
+            // do block ticks in reverse order
+            toTick.enqueueFirst(packedPos);
         }
         
-        if(this.toClear.isEmpty())
+        return this.toClear.isEmpty() ? Operation.TICKING:  Operation.CLEARING;
+    }
+
+    private Operation doTicking()
+    {
+        BlockPos pos = PackedBlockPos.unpack(toTick.dequeueLong());
+        IBlockState state = this.world.getBlockState(pos);
+        Block block = state.getBlock();
+        
+        if(block.isLeaves(state, world, pos))
+            block.updateTick(world, pos, state, ThreadLocalRandom.current());
+        
+        if(toTick.isEmpty())
         {
             this.reset();
             return Operation.IDLE;
-        } else return Operation.CLEARING;
+        } else return Operation.TICKING;
     }
-
+    
     @Override
     public void deserializeNBT(@Nullable NBTTagCompound tag)
     {

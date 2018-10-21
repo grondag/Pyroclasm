@@ -10,6 +10,7 @@ import grondag.exotic_matter.serialization.NBTDictionary;
 import grondag.exotic_matter.simulator.Simulator;
 import grondag.exotic_matter.terrain.TerrainBlockHelper;
 import grondag.exotic_matter.terrain.TerrainState;
+import grondag.exotic_matter.world.PackedBlockPos;
 import grondag.pyroclasm.Configurator;
 import grondag.pyroclasm.Pyroclasm;
 import grondag.pyroclasm.fluidsim.LavaSimulator;
@@ -564,6 +565,15 @@ public class EntityLavaBlob extends Entity
                     if(!(state.getMaterial() == Material.AIR || state.getMaterial().isLiquid()) 
                              && LavaTerrainHelper.canLavaDisplace(state) && !TerrainBlockHelper.isFlowFiller(state.getBlock()))
                     {
+                        if(state.getBlock().isWood(world, blockpos$pooledmutableblockpos))
+                        {
+                            LavaSimulator sim = Simulator.instance().getNode(LavaSimulator.class);
+                            if(sim == null) return;
+                            
+                            if(sim.world == this.world)
+                                sim.lavaTreeCutter.queueTreeCheck(PackedBlockPos.pack(k1, l1 + 1, i2));
+                        }
+                            
                         this.world.destroyBlock(blockpos$pooledmutableblockpos.toImmutable(), true);
                     }
                 }
