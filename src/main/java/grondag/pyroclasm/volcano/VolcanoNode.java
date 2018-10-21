@@ -230,7 +230,12 @@ public class VolcanoNode implements IReadWriteNBT, IDirtListener, ISimulationTic
                  
                  case COOLING:
                  {
-                     if(this.lavaSim.loadFactor() > Configurator.PERFORMANCE.cooldownTargetLoadFactor)
+                     if(Configurator.DEBUG.disablePerformanceThrottle)
+                     {
+                         startRumble();
+                         this.stage = VolcanoStage.FLOWING;
+                     }
+                     else if(this.lavaSim.loadFactor() > Configurator.PERFORMANCE.cooldownTargetLoadFactor)
                      {
                          this.lavaCooldownTicks = 0;
                      }
