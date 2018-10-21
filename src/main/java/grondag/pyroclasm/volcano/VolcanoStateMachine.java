@@ -479,7 +479,7 @@ public class VolcanoStateMachine implements ISimulationTickable
             double scale = Math.sqrt(dx * dx + dy * dy + dz * dz);
             
             // add velocity
-            scale *= (0.75 + Math.abs(r.nextGaussian()) * 0.5);
+            scale *= (1.00 + Math.abs(r.nextGaussian()) * 0.5);
             
             final int units = Math.max(LavaSimulator.FLUID_UNITS_PER_HALF_BLOCK, 
                     r.nextInt(LavaSimulator.FLUID_UNITS_PER_BLOCK) 

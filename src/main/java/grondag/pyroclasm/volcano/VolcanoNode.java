@@ -11,14 +11,17 @@ import grondag.exotic_matter.simulator.persistence.IDirtListener;
 import grondag.exotic_matter.varia.Useful;
 import grondag.exotic_matter.world.PackedChunkPos;
 import grondag.pyroclasm.Configurator;
+import grondag.pyroclasm.Pyroclasm;
 import grondag.pyroclasm.fluidsim.LavaSimulator;
 import grondag.pyroclasm.init.ModSounds;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.BlockPos.MutableBlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.Vec3i;
+import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
 
 public class VolcanoNode implements IReadWriteNBT, IDirtListener, ISimulationTickable
@@ -222,9 +225,34 @@ public class VolcanoNode implements IReadWriteNBT, IDirtListener, ISimulationTic
         @Override
         public boolean doesUpdateOnTick() { return true; }
         
+        private boolean loadCheck()
+        {
+            if((Simulator.currentTick() & 0xFF) == 0xFF)
+            {
+                int centerX = this.chunkPos().x << 4;
+                int centerZ = this.chunkPos().z << 4;
+                World world = this.volcanoManager.world;
+                assert !world.isRemote;
+
+                final MutableBlockPos pos = new MutableBlockPos();
+                
+                for(Vec3i offset : Useful.DISTANCE_SORTED_CIRCULAR_OFFSETS)
+                {
+                    if(offset.getY() > 7) break;
+                    
+                    pos.setPos(centerX + offset.getX() * 16, 64, centerZ + offset.getZ() * 16);
+                    if(!world.isBlockLoaded(pos, true))
+                        Pyroclasm.INSTANCE.warn("Chunk @ BlockPos X, Z = %d, %d not loaded when expected to be loaded.", pos.getX(), pos.getZ());
+                }
+            }
+            return true;
+        }
+        
         @Override
         public void doOnTick()
         {
+            assert loadCheck();
+            
             switch(this.stage)
             {
                  

@@ -127,8 +127,8 @@ commands.volcano.suspend.usage=Pauses all lava and volcano processing until game
 commands.volcano.suspend.success=All lava and volcano processing is suspended until game restart. Use /volcano resume to undo.
 commands.volcano.resume.usage=Continue lava and volcano processing paused by /volcano suspend
 commands.volcano.resume.success=Lava and volcano processing is resuming.
-commands.volcano.cleanup.usage=Solidifies nearby orphaned lava or hot basalt that aren't flowing or cooling
-commands.volcano.cleanup.success=Solidified %d orphaned lava and hot basalt blacks.
+commands.volcano.cleanup.usage=Solidifies nearby orphaned lava or hot basalt that aren't flowing or cooling. Also clears stalled lava bombs.
+commands.volcano.cleanup.success=Solidified %d orphaned lava and hot basalt blacks. Cleared %d stalled lava bombs.
 
 
 

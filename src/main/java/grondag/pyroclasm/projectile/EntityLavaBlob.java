@@ -1,5 +1,6 @@
 package grondag.pyroclasm.projectile;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
@@ -42,6 +43,7 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
+import net.minecraft.world.gen.structure.StructureBoundingBox;
 
 /**
  * Hat tip to Vaskii and Azanor for a working example (via Botania)
@@ -52,6 +54,7 @@ public class EntityLavaBlob extends Entity
     private static final String NBT_LAVA_PARTICLE_AMOUNT = NBTDictionary.claim("lavaPartAmt");
     
     private static int nextParticleID;
+    private static final HashSet<EntityLavaBlob> blobTracker = new HashSet<EntityLavaBlob>();
 
     public final int id;
 
@@ -59,9 +62,8 @@ public class EntityLavaBlob extends Entity
     
     private int cachedAmount;
     
-    private static int liveParticleCount = 0;
-
     private static final DataParameter<Integer> FLUID_AMOUNT = EntityDataManager.<Integer>createKey(EntityLavaBlob.class, DataSerializers.VARINT);
+    
     
     @Override
     public int hashCode()
@@ -69,15 +71,23 @@ public class EntityLavaBlob extends Entity
         return this.id;
     }
 
-    // FIXME: gets out of synch if entity lifecycle is abnormal
-    // and is never decremented, causing blobs to stop spawning
-    // Could instead have blobs check in each tick and not persist.
     /**
      * Server side count of particles still living
      */
     public static int getLiveParticleCount()
     {
-        return liveParticleCount;
+        return blobTracker.size();
+    }
+    
+    public static int clearAll()
+    {
+        int result = blobTracker.size();
+        if(result > 0)
+        {
+            for(Object blob : blobTracker.toArray())
+                ((EntityLavaBlob)blob).setDead();
+        }
+        return result;
     }
     
     public EntityLavaBlob(World world, int amount, Vec3d position, Vec3d velocity)
@@ -106,10 +116,11 @@ public class EntityLavaBlob extends Entity
     {
         super(world);
         this.id = nextParticleID++;
-
         if(!world.isRemote)
         {
-            liveParticleCount++;
+            if(Configurator.DEBUG.enableLavaBombTrace)
+                Pyroclasm.INSTANCE.info("Lava bomb %d created", this.id);
+            blobTracker.add(this);
             this.cachedAmount = amount;
             this.dataManager.set(FLUID_AMOUNT, Integer.valueOf(amount)); 
         }
@@ -233,6 +244,8 @@ public class EntityLavaBlob extends Entity
         return true;
     }
 
+    private static final StructureBoundingBox checkLoadBounds = new StructureBoundingBox();
+    
     @Override
     public void onUpdate()
     {
@@ -246,13 +259,15 @@ public class EntityLavaBlob extends Entity
                 
                 for(int i = 0; i < 20; i++)
                     world.spawnParticle(EnumParticleTypes.LAVA, this.posX - 1 + rand.nextFloat() * 2, this.posY + 1.0, this.posZ - 1 + rand.nextFloat() * 2, 0.0D, 0.0D, 0.0D);
-
             }
+            else if(Configurator.DEBUG.enableLavaBombTrace)
+                    Pyroclasm.INSTANCE.info("Lava bomb %d first tick @ %f, %f, %f", this.id, this.posX, this.posY, this.posZ);
         }
         
         if(this.ticksExisted > 600)
         {
-            Pyroclasm.INSTANCE.info("Ancient lava particle died of old age.");
+            if(Configurator.DEBUG.enableLavaBombTrace)
+                Pyroclasm.INSTANCE.info("Ancient lava bomb dying of old age.");
             this.setDead();
             return;
         }
@@ -269,23 +284,23 @@ public class EntityLavaBlob extends Entity
         
         super.onUpdate();
         
+        this.motionY -= 0.03999999910593033D;
+        
+        if(!world.isAreaLoaded(getMotionBounds(), false))
+        {
+            if(!world.isRemote && Configurator.DEBUG.enableLavaBombTrace)
+                    Pyroclasm.INSTANCE.info("Lava bomb discarded when it went out of loaded chunk @ x, z = %f, %f", this.posX, this.posZ);
+            this.setDead();
+            return;
+        }
+        
         this.impactNearbyEntities();
         
         this.prevPosX = this.posX;
         this.prevPosY = this.posY;
         this.prevPosZ = this.posZ;
 
-        this.motionY -= 0.03999999910593033D;
-
         this.move(MoverType.SELF, this.motionX, this.motionY, this.motionZ);
-
-        if(!this.world.isRemote && !((net.minecraft.world.gen.ChunkProviderServer)this.world.getChunkProvider()).chunkExists(((int)this.posX) >> 4, ((int)this.posZ) >> 4))
-        {
-            if(Configurator.DEBUG.enableLavaBombTrace)
-                    Pyroclasm.INSTANCE.info("Lava bomb discarded when it went out of loaded chunk @ x, z = %f, %f", this.posX, this.posZ);
-            this.setDead();
-            return;
-        }
         
         this.motionX *= 0.9800000190734863D;
         this.motionY *= 0.9800000190734863D;
@@ -339,6 +354,49 @@ public class EntityLavaBlob extends Entity
         this.prevPosX = pX;
         this.prevPosY = pY;
         this.prevPosZ = pZ;
+    }
+    
+    /**
+     * Result not safe for retention. Not thread-safe.
+     */
+    private StructureBoundingBox getMotionBounds()
+    {
+        double radius = this.width * 0.5;
+        StructureBoundingBox bounds = checkLoadBounds;
+        
+        if(motionX < 0)
+        {
+            bounds.minX = MathHelper.fastFloor(this.posX - radius - motionX);
+            bounds.maxX = MathHelper.fastFloor(this.posX + radius);
+        }
+        else
+        {
+            bounds.minX = MathHelper.fastFloor(this.posX - radius);
+            bounds.maxX = MathHelper.fastFloor(this.posX + radius + motionX);
+        }
+        
+        if(motionY < 0)
+        {
+            bounds.minY = MathHelper.fastFloor(this.posY - radius - motionY);
+            bounds.maxY = MathHelper.fastFloor(this.posY + radius);
+        }
+        else
+        {
+            bounds.minY = MathHelper.fastFloor(this.posY - radius);
+            bounds.maxY = MathHelper.fastFloor(this.posY + radius + motionY);
+        }
+        
+        if(motionZ < 0)
+        {
+            bounds.minZ = MathHelper.fastFloor(this.posZ - radius - motionZ);
+            bounds.maxZ = MathHelper.fastFloor(this.posZ + radius);
+        }
+        else
+        {
+            bounds.minZ = MathHelper.fastFloor(this.posZ - radius);
+            bounds.maxZ = MathHelper.fastFloor(this.posZ + radius + motionZ);
+        }
+        return bounds;
     }
     
     private void spawnBlobAround(double x, double y, double z, Random r)
@@ -421,7 +479,11 @@ public class EntityLavaBlob extends Entity
     public void setDead()
     {
         if(!this.world.isRemote)
-            liveParticleCount--;
+        {
+            if(Configurator.DEBUG.enableLavaBombTrace)
+                Pyroclasm.INSTANCE.info("Lava bomb %d dead @ %f, %f, %f", this.id, this.posX, this.posY, this.posZ);
+            blobTracker.remove(this);
+        }
         super.setDead();
     }
     

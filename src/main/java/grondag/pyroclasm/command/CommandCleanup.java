@@ -12,6 +12,7 @@ import grondag.pyroclasm.block.LavaBlock;
 import grondag.pyroclasm.fluidsim.CellChunk;
 import grondag.pyroclasm.fluidsim.LavaSimulator;
 import grondag.pyroclasm.init.ModBlocks;
+import grondag.pyroclasm.projectile.EntityLavaBlob;
 import grondag.pyroclasm.world.BasaltTracker;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
@@ -68,7 +69,8 @@ public class CommandCleanup extends CommandBase
                 cleancount += cleanHotBlocks(sim, access, x + 16, z - 16);
                 cleancount += cleanHotBlocks(sim, access, x + 16, z);
                 cleancount += cleanHotBlocks(sim, access, z + 16, z + 16);
-                sender.sendMessage(TextComponentHelper.createComponentTranslation(sender, "commands.volcano.cleanup.success", cleancount));
+                int blobCount = EntityLavaBlob.clearAll();
+                sender.sendMessage(TextComponentHelper.createComponentTranslation(sender, "commands.volcano.cleanup.success", cleancount, blobCount));
             }
             else
             {
