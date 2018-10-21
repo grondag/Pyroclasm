@@ -279,8 +279,13 @@ public class EntityLavaBlob extends Entity
 
         this.move(MoverType.SELF, this.motionX, this.motionY, this.motionZ);
 
-        if(Configurator.DEBUG.enableLavaBombTrace && !this.world.isRemote && !((net.minecraft.world.gen.ChunkProviderServer)this.world.getChunkProvider()).chunkExists(((int)this.posX) >> 4, ((int)this.posZ) >> 4))
-            Pyroclasm.INSTANCE.info("Lava bomb went out of loaded chunk @ x, z = %f, %f", this.posX, this.posZ);
+        if(!this.world.isRemote && !((net.minecraft.world.gen.ChunkProviderServer)this.world.getChunkProvider()).chunkExists(((int)this.posX) >> 4, ((int)this.posZ) >> 4))
+        {
+            if(Configurator.DEBUG.enableLavaBombTrace)
+                    Pyroclasm.INSTANCE.info("Lava bomb discarded when it went out of loaded chunk @ x, z = %f, %f", this.posX, this.posZ);
+            this.setDead();
+            return;
+        }
         
         this.motionX *= 0.9800000190734863D;
         this.motionY *= 0.9800000190734863D;
