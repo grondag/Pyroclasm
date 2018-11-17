@@ -34,7 +34,7 @@ public class TerrainWand extends RegistratingItem
     public TerrainWand() 
     {
         setRegistryName("terrain_wand"); 
-        setUnlocalizedName("terrain_wand");
+        setTranslationKey("terrain_wand");
         this.setMaxStackSize(1);
     }
 

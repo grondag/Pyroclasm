@@ -44,7 +44,7 @@ public class Pyroclasm  implements IGrondagMod
 	{
 		@Override
 		@SideOnly(Side.CLIENT)
-		public @Nonnull ItemStack getTabIconItem() 
+		public @Nonnull ItemStack createIcon() 
 		{
 			return ModItems.basalt_cobble.getDefaultInstance();
 		}

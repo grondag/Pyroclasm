@@ -634,7 +634,7 @@ public class VolcanoStateMachine implements ISimulationTickable
         {
             ;
         }
-        else if(fromState.getMobilityFlag() == EnumPushReaction.NORMAL || fromState.getMobilityFlag() == EnumPushReaction.PUSH_ONLY)
+        else if(fromState.getPushReaction() == EnumPushReaction.NORMAL || fromState.getPushReaction() == EnumPushReaction.PUSH_ONLY)
         {
             toState = fromState;
         }

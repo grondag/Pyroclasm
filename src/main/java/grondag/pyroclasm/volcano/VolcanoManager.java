@@ -349,7 +349,7 @@ public class VolcanoManager implements ISimulationTickable, ISimulationTopNode
         {
             this.lastCycleTick = nbt.getLong(NBT_VOLCANO_MANAGER_LAST_CYCLE_TICK);
             NBTTagList nbtSubNodes = nbt.getTagList(NBT_VOLCANO_NODES, 10);
-            if( !nbtSubNodes.hasNoTags())
+            if( !nbtSubNodes.isEmpty())
             {
                 for (int i = 0; i < nbtSubNodes.tagCount(); ++i)
                 {

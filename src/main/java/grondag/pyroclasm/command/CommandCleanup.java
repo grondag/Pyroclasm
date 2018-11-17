@@ -86,7 +86,7 @@ public class CommandCleanup extends CommandBase
     private int cleanHotBlocks(LavaSimulator sim, ISuperBlockAccess access, int xIn, int zIn)
     {
         final World world = sim.world;
-        final Chunk chunk = world.getChunkFromChunkCoords(xIn >> 4, zIn >> 4);
+        final Chunk chunk = world.getChunk(xIn >> 4, zIn >> 4);
         final int xBase = chunk.x * 16;
         final int zBase = chunk.z * 16;
         final int yLimit = chunk.getTopFilledSegment() + 16;

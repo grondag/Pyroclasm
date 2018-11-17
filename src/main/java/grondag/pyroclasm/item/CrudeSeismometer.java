@@ -20,8 +20,8 @@ public class CrudeSeismometer extends RegistratingItem
 {
     public CrudeSeismometer() 
     {
-        setRegistryName("crude_seismometer"); 
-        setUnlocalizedName("crude_seismometer");
+        setRegistryName("crude_seismometer");
+        this.setTranslationKey("crude_seismometer");
         this.setMaxStackSize(1);
     }
     

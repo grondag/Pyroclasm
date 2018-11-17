@@ -163,7 +163,7 @@ public class CellChunk
         if(Configurator.DEBUG.enableLavaCellChunkTrace)
             Pyroclasm.INSTANCE.info("Validating marked cells in chunk with corner x=%d, z=%d", this.xStart, this.zStart);
         
-        Chunk chunk = this.cells.sim.world.getChunkFromChunkCoords(PackedChunkPos.getChunkXPos(this.packedChunkPos), PackedChunkPos.getChunkZPos(this.packedChunkPos));
+        Chunk chunk = this.cells.sim.world.getChunk(PackedChunkPos.getChunkXPos(this.packedChunkPos), PackedChunkPos.getChunkZPos(this.packedChunkPos));
         
         CellStackBuilder builder = new CellStackBuilder();
 
@@ -207,7 +207,7 @@ public class CellChunk
             
             CellStackBuilder builder = new CellStackBuilder();
             
-            Chunk chunk = this.cells.sim.world.getChunkFromChunkCoords(PackedChunkPos.getChunkXPos(this.packedChunkPos), PackedChunkPos.getChunkZPos(this.packedChunkPos));
+            Chunk chunk = this.cells.sim.world.getChunk(PackedChunkPos.getChunkXPos(this.packedChunkPos), PackedChunkPos.getChunkZPos(this.packedChunkPos));
 
             for(int x = 0; x < 16; x++)
             {

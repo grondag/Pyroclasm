@@ -30,12 +30,12 @@ public class ModItems
     {
         IForgeRegistry<Item> itemReg = event.getRegistry();
  
-        itemReg.register(new RegistratingItem().setRegistryName("basalt_rubble").setUnlocalizedName("basalt_rubble").setCreativeTab(Pyroclasm.tabMod));
+        itemReg.register(new RegistratingItem().setRegistryName("basalt_rubble").setTranslationKey("basalt_rubble").setCreativeTab(Pyroclasm.tabMod));
         itemReg.register(new CrudeSeismometer().setCreativeTab(Pyroclasm.tabMod));
         
         if(Configurator.DEBUG.enableTestItems)
         {
-            itemReg.register(new LavaBlobItem().setRegistryName("lava_blob").setUnlocalizedName("lava_blob").setCreativeTab(Pyroclasm.tabMod));
+            itemReg.register(new LavaBlobItem().setRegistryName("lava_blob").setTranslationKey("lava_blob").setCreativeTab(Pyroclasm.tabMod));
             itemReg.register(new TerrainWand().setCreativeTab(Pyroclasm.tabMod));
         }
     }
