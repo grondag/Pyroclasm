@@ -122,8 +122,8 @@ dependencies {
     
 	deobfCompile "mezz.jei:jei_1.12.2:${jei_version}"
     deobfCompile "mcjty.theoneprobe:TheOneProbe-1.12:1.12-${top_version}"
-    deobfCompile "grondag:acuity:mc1.12.2-${acuity_version}"
-	deobfCompile "grondag:exotic_matter:mc1.12.2-${exotic_matter_version}"
+    //deobfCompile "grondag:acuity:mc1.12.2-${acuity_version}"
+	//deobfCompile "grondag:exotic_matter:mc1.12.2-${exotic_matter_version}"
 	
 	// not currently using these APIs
 	// here to support compatibility testing in dev environment
