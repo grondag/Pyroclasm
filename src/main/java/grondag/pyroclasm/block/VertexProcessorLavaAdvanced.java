@@ -3,7 +3,7 @@ package grondag.pyroclasm.block;
 import grondag.exotic_matter.model.painting.PaintLayer;
 import grondag.exotic_matter.model.painting.VertexProcessor;
 import grondag.exotic_matter.model.painting.VertexProcessors;
-import grondag.exotic_matter.model.primitives.IPaintableQuad;
+import grondag.exotic_matter.model.primitives.polygon.IPaintablePolygon;
 import grondag.exotic_matter.model.primitives.vertex.IPaintableVertex;
 import grondag.exotic_matter.model.primitives.QuadHelper;
 import grondag.exotic_matter.model.state.ISuperModelState;
@@ -39,7 +39,7 @@ public class VertexProcessorLavaAdvanced extends VertexProcessor
     }
 
     @Override
-    public void process(IPaintableQuad result, ISuperModelState modelState, PaintLayer paintLayer)
+    public void process(IPaintablePolygon result, ISuperModelState modelState, PaintLayer paintLayer)
     {
         result.setPipeline(Pyroclasm.proxy.lavaPipeline());
 
