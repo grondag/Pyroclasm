@@ -1,7 +1,7 @@
 package grondag.pyroclasm.world;
 
 import grondag.exotic_matter.simulator.ISimulationTickable;
-import grondag.exotic_matter.varia.LongQueue;
+import grondag.exotic_matter.varia.structures.LongQueue;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;

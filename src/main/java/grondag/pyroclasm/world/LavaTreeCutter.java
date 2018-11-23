@@ -8,7 +8,7 @@ import javax.annotation.Nullable;
 
 import grondag.exotic_matter.serialization.IReadWriteNBT;
 import grondag.exotic_matter.serialization.NBTDictionary;
-import grondag.exotic_matter.varia.LongQueue;
+import grondag.exotic_matter.varia.structures.LongQueue;
 import grondag.exotic_matter.varia.Useful;
 import grondag.exotic_matter.world.PackedBlockPos;
 import grondag.pyroclasm.Configurator;
