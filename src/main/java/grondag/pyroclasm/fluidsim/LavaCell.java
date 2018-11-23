@@ -208,7 +208,6 @@ public class LavaCell extends AbstractLavaCell
     }
     
     /** for the empty cell */
-    @SuppressWarnings("null")
     private LavaCell()
     {
     }

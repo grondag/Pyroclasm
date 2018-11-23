@@ -31,7 +31,6 @@ import net.minecraftforge.fml.common.registry.GameRegistry.ObjectHolder;
 
 @Mod.EventBusSubscriber
 @ObjectHolder(Pyroclasm.MODID)
-@SuppressWarnings("null")
 public class ModBlocks
 {
     public static final Block basalt_cobble = null;

@@ -42,7 +42,7 @@ public class VolcanoManager implements ISimulationTickable, ISimulationTopNode
     /**
      * Will be reliable initialized via {@link VolcanoManager#afterCreated(Simulator)}
      */
-    @SuppressWarnings("null") World world;
+    World world;
     
     private final Long2ObjectMap<VolcanoNode> nodes = Long2ObjectMaps.synchronize(new Long2ObjectOpenHashMap<VolcanoNode>());
     
@@ -55,10 +55,8 @@ public class VolcanoManager implements ISimulationTickable, ISimulationTopNode
     /**
      * Will be reliably initialized via {@link VolcanoManager#afterCreated(Simulator)}
      */
-    @SuppressWarnings("null")
     private BlueNoise noise;
     
-    @SuppressWarnings("null")
     @Override
     public void afterCreated(Simulator sim)
     {

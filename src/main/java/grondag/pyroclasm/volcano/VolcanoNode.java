@@ -73,7 +73,6 @@ public class VolcanoNode implements IReadWriteNBT, IDirtListener, ISimulationTic
         
         private int lavaCooldownTicks;
 
-        @SuppressWarnings("null")
         private VolcanoNode(VolcanoManager volcanoManager)
         {
             this.volcanoManager = volcanoManager;

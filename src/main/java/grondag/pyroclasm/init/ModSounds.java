@@ -11,7 +11,6 @@ import net.minecraftforge.registries.IForgeRegistry;
 
 @Mod.EventBusSubscriber
 @ObjectHolder(Pyroclasm.MODID)
-@SuppressWarnings("null")
 public class ModSounds
 {
     public static final SoundEvent lava_bubble = null;

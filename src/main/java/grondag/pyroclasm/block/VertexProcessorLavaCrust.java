@@ -4,7 +4,7 @@ import grondag.exotic_matter.model.painting.PaintLayer;
 import grondag.exotic_matter.model.painting.VertexProcessor;
 import grondag.exotic_matter.model.painting.VertexProcessors;
 import grondag.exotic_matter.model.primitives.QuadHelper;
-import grondag.exotic_matter.model.primitives.better.IPaintablePoly;
+import grondag.exotic_matter.model.primitives.better.IMutablePolygon;
 import grondag.exotic_matter.model.state.ISuperModelState;
 import grondag.exotic_matter.terrain.TerrainState;
 import net.minecraft.util.math.MathHelper;
@@ -24,7 +24,7 @@ public class VertexProcessorLavaCrust extends VertexProcessor
     }
 
     @Override
-    public void process(IPaintablePoly result, ISuperModelState modelState, PaintLayer paintLayer)
+    public void process(IMutablePolygon result, ISuperModelState modelState, PaintLayer paintLayer)
     {
         TerrainState flowState = modelState.getTerrainState();
         final int baseColor = modelState.getColorARGB(paintLayer) & 0xFFFFFF;

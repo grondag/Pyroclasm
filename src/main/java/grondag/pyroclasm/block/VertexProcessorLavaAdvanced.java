@@ -4,7 +4,7 @@ import grondag.exotic_matter.model.painting.PaintLayer;
 import grondag.exotic_matter.model.painting.VertexProcessor;
 import grondag.exotic_matter.model.painting.VertexProcessors;
 import grondag.exotic_matter.model.primitives.QuadHelper;
-import grondag.exotic_matter.model.primitives.better.IPaintablePoly;
+import grondag.exotic_matter.model.primitives.better.IMutablePolygon;
 import grondag.exotic_matter.model.state.ISuperModelState;
 import grondag.exotic_matter.terrain.IHotBlock;
 import grondag.exotic_matter.terrain.TerrainState;
@@ -37,8 +37,9 @@ public class VertexProcessorLavaAdvanced extends VertexProcessor
         return (i + j) / 2f - 0.5f;
     }
 
+    @SuppressWarnings("null")
     @Override
-    public void process(IPaintablePoly result, ISuperModelState modelState, PaintLayer paintLayer)
+    public void process(IMutablePolygon result, ISuperModelState modelState, PaintLayer paintLayer)
     {
         result.setPipeline(Pyroclasm.proxy.lavaPipeline());
 
