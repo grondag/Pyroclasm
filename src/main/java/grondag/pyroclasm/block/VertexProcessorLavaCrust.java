@@ -24,7 +24,7 @@ public class VertexProcessorLavaCrust extends VertexProcessor
     }
 
     @Override
-    public void process(IMutablePolygon result, ISuperModelState modelState, PaintLayer paintLayer)
+    public void process(IMutablePolygon result, int layerIndex, ISuperModelState modelState, PaintLayer paintLayer)
     {
         TerrainState flowState = modelState.getTerrainState();
         final int baseColor = modelState.getColorARGB(paintLayer) & 0xFFFFFF;
@@ -54,7 +54,7 @@ public class VertexProcessorLavaCrust extends VertexProcessor
             final float avgAlpha = jAvg + (kAvg-jAvg) * zDist;
             final int alpha =  MathHelper.clamp(Math.round(avgAlpha * 255), 0, 255);
 
-            result.setVertexColor(paintLayer.textureLayerIndex, i, (alpha << 24) | baseColor);
+            result.setVertexColor(layerIndex, i, (alpha << 24) | baseColor);
         }
     }
 }

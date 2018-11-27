@@ -37,9 +37,8 @@ public class VertexProcessorLavaAdvanced extends VertexProcessor
         return (i + j) / 2f - 0.5f;
     }
 
-    @SuppressWarnings("null")
     @Override
-    public void process(IMutablePolygon result, ISuperModelState modelState, PaintLayer paintLayer)
+    public void process(IMutablePolygon result, int layerIndex, ISuperModelState modelState, PaintLayer paintLayer)
     {
         result.setPipeline(Pyroclasm.proxy.lavaPipeline());
 
@@ -89,7 +88,7 @@ public class VertexProcessorLavaAdvanced extends VertexProcessor
             final float avgAlpha = 1 - (jAvg + (kAvg-jAvg) * zDist);
             final int alpha =  MathHelper.clamp(Math.round(avgAlpha * temp * 255), 0, 255);
 
-            result.setVertexColor(paintLayer.textureLayerIndex, i, (alpha << 24) | baseColor);
+            result.setVertexColor(layerIndex, i, (alpha << 24) | baseColor);
         }
     }
 }

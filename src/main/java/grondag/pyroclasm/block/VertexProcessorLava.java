@@ -38,7 +38,7 @@ public class VertexProcessorLava extends VertexProcessor
     }
 
     @Override
-    public void process(IMutablePolygon result, ISuperModelState modelState, PaintLayer paintLayer)
+    public void process(IMutablePolygon result, int layerIndex, ISuperModelState modelState, PaintLayer paintLayer)
     {
         TerrainState flowState = modelState.getTerrainState();
 
@@ -86,7 +86,7 @@ public class VertexProcessorLava extends VertexProcessor
             final int hotColor = ColorHelper.colorForTemperature(kelvin);
             final int color = 0xFF000000 | ColorHelper.interpolate(0x3c3e4a, hotColor, avgIntensity);
 
-            result.setVertexColorGlow(paintLayer.textureLayerIndex, i, color, 255);
+            result.setVertexColorGlow(layerIndex, i, color, 255);
         }
     }
 }
