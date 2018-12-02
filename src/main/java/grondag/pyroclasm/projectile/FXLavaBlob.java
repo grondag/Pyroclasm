@@ -6,7 +6,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import org.lwjgl.opengl.GL11;
 
 import grondag.exotic_matter.model.render.QuadBakery;
-import grondag.exotic_matter.varia.SimpleUnorderedArrayList;
+import grondag.exotic_matter.varia.structures.SimpleUnorderedArrayList;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.renderer.BufferBuilder;

@@ -6,7 +6,7 @@ import java.util.function.Consumer;
 import javax.annotation.Nullable;
 
 import grondag.exotic_matter.simulator.Simulator;
-import grondag.exotic_matter.varia.SimpleUnorderedArrayList;
+import grondag.exotic_matter.varia.structures.SimpleUnorderedArrayList;
 import grondag.exotic_matter.world.PackedChunkPos;
 import grondag.pyroclasm.Pyroclasm;
 import grondag.pyroclasm.Configurator;

@@ -86,7 +86,8 @@ public class VertexProcessorLava extends VertexProcessor
             final int hotColor = ColorHelper.colorForTemperature(kelvin);
             final int color = 0xFF000000 | ColorHelper.interpolate(0x3c3e4a, hotColor, avgIntensity);
 
-            result.setVertexColorGlow(layerIndex, i, color, 255);
+            result.setVertexColor(layerIndex, i, color);
+            result.setVertexGlow(i, 255);
         }
     }
 }
