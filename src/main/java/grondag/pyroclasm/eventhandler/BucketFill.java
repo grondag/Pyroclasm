@@ -8,63 +8,53 @@ import com.google.gson.Gson;
 
 import grondag.pyroclasm.Pyroclasm;
 import grondag.pyroclasm.block.LavaBlock;
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.util.math.RayTraceResult;
-import net.minecraft.util.text.TextComponentString;
-import net.minecraft.util.text.translation.I18n;
-import net.minecraftforge.event.entity.player.FillBucketEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.common.eventhandler.EventPriority;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraft.block.BlockState;
+import net.minecraft.client.resource.language.I18n;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.TranslatableText;
+import net.minecraft.util.hit.BlockHitResult;
+import net.minecraft.util.hit.HitResult;
 
-@Mod.EventBusSubscriber
-public class BucketFill
-{
+public class BucketFill {
     private @Nullable static String[] lazyDenialsUseMethodInstead;
-    
-    private static final String[] DEFAULT_DENIALS = {"DENIED"};
-    
-    private static String[] denials()
-    {
+
+    private static final String[] DEFAULT_DENIALS = { "DENIED" };
+
+    private static String[] denials() {
         String[] result = lazyDenialsUseMethodInstead;
-        if(result == null) 
-        {
-            try
-            {
+        if (result == null) {
+            try {
                 Gson g = new Gson();
-                String json = I18n.translateToLocal("misc.denials");
+                String json = I18n.translate("misc.denials");
                 result = g.fromJson(json, String[].class);
+            } catch (Exception e) {
+                Pyroclasm.LOG.warn("Unable to parse localized denial messages. Using default.");
             }
-            catch(Exception e)
-            {
-                Pyroclasm.INSTANCE.warn("Unable to parse localized denial messages. Using default.");
-            }
-            if(result == null) result = DEFAULT_DENIALS;
-            
+            if (result == null)
+                result = DEFAULT_DENIALS;
+
             lazyDenialsUseMethodInstead = result;
         }
         return result;
     }
-    
+
+    // TODO: find a way to call this
     /**
      * Troll user if they attempt to put volcanic lava in a bucket.
      */
-    @SubscribeEvent(priority = EventPriority.HIGH) 
-    public static void onFillBucket(FillBucketEvent event)
-    {
-        if(event.getEntityPlayer() != null && !event.getWorld().isRemote)
-        {
-            RayTraceResult target = event.getTarget();
-            if(target != null && target.typeOfHit == RayTraceResult.Type.BLOCK)
-            {
-                if(target.getBlockPos() != null)
-                {
-                    IBlockState state = event.getWorld().getBlockState(target.getBlockPos());
-                    if(state.getBlock() instanceof LavaBlock)
-                    {
+    public static void onFillBucket(ServerPlayerEntity player) {
+        if (player != null) {
+            // FIXME: probably not right
+            HitResult target = player.rayTrace(20.0D, 0.0F, true);
+            if (target != null && target.getType() == HitResult.Type.BLOCK) {
+                BlockHitResult hit = (BlockHitResult) target;
+                if (hit.getBlockPos() != null) {
+                    BlockState state = player.world.getBlockState(hit.getBlockPos());
+                    if (state.getBlock() instanceof LavaBlock) {
                         String[] denials = denials();
-                        event.getEntityPlayer().sendMessage(new TextComponentString(denials[ThreadLocalRandom.current().nextInt(denials.length)]));
-                        event.setCanceled(true);
+                        player.sendMessage(new TranslatableText(denials[ThreadLocalRandom.current().nextInt(denials.length)]));
+                        // TODO: prevent fill
+                        // event.setCanceled(true);
                     }
                 }
             }

@@ -1,18 +1,11 @@
 package grondag.pyroclasm.init;
 
 import grondag.pyroclasm.Pyroclasm;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.SoundEvent;
-import net.minecraftforge.event.RegistryEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.common.registry.GameRegistry.ObjectHolder;
-import net.minecraftforge.registries.IForgeRegistry;
+import net.minecraft.sound.SoundEvent;
+import net.minecraft.util.Identifier;
+import net.minecraft.util.registry.Registry;
 
-@Mod.EventBusSubscriber
-@ObjectHolder(Pyroclasm.MODID)
-public class ModSounds
-{
+public class ModSounds {
     public static final SoundEvent lava_bubble = null;
     public static final SoundEvent lava_hiss = null;
     public static final SoundEvent volcano_rumble = null;
@@ -20,11 +13,10 @@ public class ModSounds
     public static final SoundEvent bomb_whoosh = null;
     public static final SoundEvent bomb_launch = null;
     public static final SoundEvent bomb_impact = null;
-    
-    @SubscribeEvent
-    public static void registerSounds(RegistryEvent.Register<SoundEvent> event) 
-    {
-        IForgeRegistry<SoundEvent> soundReg = event.getRegistry();
+
+    public static void registerSounds() {
+
+        Registry<SoundEvent> soundReg = Registry.SOUND_EVENT;
         
         registerSound("lava_bubble", soundReg);
         registerSound("lava_hiss", soundReg);
@@ -34,10 +26,9 @@ public class ModSounds
         registerSound("bomb_launch", soundReg);
         registerSound("bomb_impact", soundReg);
     }
-    
-    private static void registerSound(String soundName, IForgeRegistry<SoundEvent> soundReg)
-    {
-        ResourceLocation loc = new ResourceLocation(Pyroclasm.MODID, soundName);
-        soundReg.register(new SoundEvent(loc).setRegistryName(loc));
+
+    private static void registerSound(String soundName, Registry<SoundEvent> soundReg) {
+        Identifier loc = new Identifier(Pyroclasm.MODID, soundName);
+        Registry.register(soundReg, loc, new SoundEvent(loc));
     }
 }

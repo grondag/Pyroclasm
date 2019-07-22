@@ -1,6 +1,5 @@
 package grondag.pyroclasm.fluidsim;
 
-public class ConnectionProcessor
-{
+public class ConnectionProcessor {
 
 }

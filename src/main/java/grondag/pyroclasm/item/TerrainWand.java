@@ -1,333 +1,261 @@
 package grondag.pyroclasm.item;
 
-import javax.annotation.Nonnull;
-
-import grondag.exotic_matter.block.ISuperBlock;
-import grondag.exotic_matter.init.RegistratingItem;
-import grondag.exotic_matter.terrain.TerrainBlockHelper;
-import grondag.exotic_matter.terrain.TerrainDynamicBlock;
-import grondag.exotic_matter.terrain.TerrainState;
-import grondag.exotic_matter.terrain.TerrainStaticBlock;
-import grondag.exotic_matter.terrain.TerrainWorldAdapter;
-import grondag.exotic_matter.world.PackedBlockPos;
+import grondag.fermion.world.PackedBlockPos;
 import grondag.pyroclasm.init.ModBlocks;
+import grondag.xm2.terrain.TerrainBlock;
+import grondag.xm2.terrain.TerrainBlockHelper;
+import grondag.xm2.terrain.TerrainDynamicBlock;
+import grondag.xm2.terrain.TerrainState;
+import grondag.xm2.terrain.TerrainStaticBlock;
+import grondag.xm2.terrain.TerrainWorldAdapter;
 import net.minecraft.block.Block;
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.client.resources.I18n;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.init.Blocks;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.item.ItemUsageContext;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.sound.SoundCategory;
+import net.minecraft.text.TranslatableText;
 import net.minecraft.util.ActionResult;
-import net.minecraft.util.EnumActionResult;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumHand;
-import net.minecraft.util.SoundCategory;
-import net.minecraft.util.math.AxisAlignedBB;
+import net.minecraft.util.Hand;
+import net.minecraft.util.TypedActionResult;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.text.TextComponentString;
+import net.minecraft.util.math.Box;
 import net.minecraft.world.World;
 
-
-public class TerrainWand extends RegistratingItem
-{
-    public TerrainWand() 
-    {
-        setRegistryName("terrain_wand"); 
-        setTranslationKey("terrain_wand");
-        this.setMaxStackSize(1);
+public class TerrainWand extends Item {
+    public TerrainWand() {
+        super(new Item.Settings().maxCount(1));
     }
 
     private static final String MODE_TAG = "mode";
 
-    private enum TerrainMode
-    {
-        HEIGHT,
-        STATE;
+    private enum TerrainMode {
+        HEIGHT, STATE;
     }
 
-    
-    
     @Override
-    public ActionResult<ItemStack> onItemRightClick(@Nonnull World worldIn, @Nonnull EntityPlayer playerIn, @Nonnull EnumHand hand)
-    {
-        ItemStack stack = playerIn.getHeldItem(hand);
-        
-        if(!worldIn.isRemote)
-        {
-            TerrainMode newMode = TerrainMode.STATE;
-            NBTTagCompound tag = stack.getTagCompound();
+    public TypedActionResult<ItemStack> use(World worldIn, PlayerEntity playerIn, Hand hand) {
+        ItemStack stack = playerIn.getStackInHand(hand);
 
-            if(tag != null)
-            {
-                if(tag.getString(MODE_TAG).equals(TerrainMode.STATE.name()))
-                {
+        if (!worldIn.isClient) {
+            TerrainMode newMode = TerrainMode.STATE;
+            CompoundTag tag = stack.getTag();
+
+            if (tag != null) {
+                if (tag.getString(MODE_TAG).equals(TerrainMode.STATE.name())) {
                     newMode = TerrainMode.HEIGHT;
                 }
-            }
-            else
-            {
-                tag = new NBTTagCompound();
+            } else {
+                tag = new CompoundTag();
 
             }
 
-            tag.setString(MODE_TAG, newMode.name());
-            stack.setTagCompound(tag);
+            tag.putString(MODE_TAG, newMode.name());
+            stack.setTag(tag);
 
-            String message = I18n.format("misc.mode_set", newMode.toString());
-            playerIn.sendMessage(new TextComponentString(message));
+            playerIn.sendMessage(new TranslatableText("misc.mode_set", newMode.toString()));
 
         }
-        return new ActionResult<ItemStack>(EnumActionResult.SUCCESS, stack);
-    }    
+        return new TypedActionResult<ItemStack>(ActionResult.SUCCESS, stack);
+    }
 
-    @SuppressWarnings("null")
-    public TerrainMode getMode(ItemStack itemStackIn)
-    {
-        if(itemStackIn.hasTagCompound() && itemStackIn.getTagCompound().getString(MODE_TAG).equals(TerrainMode.STATE.name()))
-        {
+    public TerrainMode getMode(ItemStack itemStackIn) {
+        if (itemStackIn.hasTag() && itemStackIn.getTag().getString(MODE_TAG).equals(TerrainMode.STATE.name())) {
             return TerrainMode.STATE;
-        }
-        else
-        {
+        } else {
             return TerrainMode.HEIGHT;
         }
 
     }
 
-
+    
     @Override
-    public EnumActionResult onItemUse(@Nonnull EntityPlayer playerIn, @Nonnull World worldIn, @Nonnull BlockPos pos, @Nonnull EnumHand hand, @Nonnull EnumFacing facing, float hitX, float hitY, float hitZ)
-    {
-        if(worldIn.isRemote) return EnumActionResult.SUCCESS;
-        
-        ItemStack stack = playerIn.getHeldItem(hand);
-        
-        if(getMode(stack) == TerrainMode.HEIGHT)
-        {
+    public ActionResult useOnBlock(ItemUsageContext context) {
+        if (context.getWorld().isClient)
+            return ActionResult.SUCCESS;
+
+        ItemStack stack = context.getStack();
+
+        if (getMode(stack) == TerrainMode.HEIGHT) {
 //            if(playerIn.isSneaking())
 //            {
 //                return handleUseSmoothMode(stack, playerIn, worldIn, pos);
 //            }
 //            else
 //            {
-                return handleUseHeightMode(stack, playerIn, worldIn, pos);
+            return handleUseHeightMode(stack, context.getPlayer(), context.getWorld(), context.getBlockPos());
 //            }
-        }
-        else
-        {
-            return handleUseStateMode(stack, playerIn, worldIn, pos);
+        } else {
+            return handleUseStateMode(stack, context.getPlayer(), context.getWorld(), context.getBlockPos());
         }
     }
 
-    public EnumActionResult handleUseStateMode(ItemStack stack, EntityPlayer playerIn, World worldIn, BlockPos pos)
-    {
-        IBlockState stateIn = worldIn.getBlockState(pos);
+    public ActionResult handleUseStateMode(ItemStack stack, PlayerEntity playerIn, World worldIn, BlockPos pos) {
+        BlockState stateIn = worldIn.getBlockState(pos);
         Block blockIn = stateIn.getBlock();
 
-        if(TerrainBlockHelper.isFlowBlock(blockIn))
-        {
-            
-            if(blockIn == ModBlocks.basalt_cool_static_height)
-            {
-                IBlockState targetState = ModBlocks.lava_dynamic_height.getDefaultState()
-                        .withProperty(ISuperBlock.META, stateIn.getValue(ISuperBlock.META));
+        if (TerrainBlockHelper.isFlowBlock(stateIn)) {
+
+            if (blockIn == ModBlocks.basalt_cool_static_height) {
+                BlockState targetState = ModBlocks.lava_dynamic_height.getDefaultState().with(TerrainBlock.TERRAIN_TYPE, stateIn.get(TerrainBlock.TERRAIN_TYPE));
                 worldIn.setBlockState(pos, targetState);
-             
-            }
-            else if(blockIn == ModBlocks.basalt_cool_static_filler)
-            {
-                IBlockState targetState = ModBlocks.lava_dynamic_filler.getDefaultState()
-                        .withProperty(ISuperBlock.META, stateIn.getValue(ISuperBlock.META));
+
+            } else if (blockIn == ModBlocks.basalt_cool_static_filler) {
+                BlockState targetState = ModBlocks.lava_dynamic_filler.getDefaultState().with(TerrainBlock.TERRAIN_TYPE, stateIn.get(TerrainBlock.TERRAIN_TYPE));
                 worldIn.setBlockState(pos, targetState);
-            }
-            else if(blockIn instanceof TerrainDynamicBlock)
-            {
-                ((TerrainDynamicBlock)blockIn).makeStatic(stateIn, worldIn, pos);
-            }
-            else if(blockIn instanceof TerrainStaticBlock)
-            {
-                ((TerrainStaticBlock)blockIn).makeDynamic(stateIn, worldIn, pos);
+            } else if (blockIn instanceof TerrainDynamicBlock) {
+                ((TerrainDynamicBlock) blockIn).makeStatic(stateIn, worldIn, pos);
+            } else if (blockIn instanceof TerrainStaticBlock) {
+                ((TerrainStaticBlock) blockIn).makeDynamic(stateIn, worldIn, pos);
             }
         }
-        
-        return EnumActionResult.SUCCESS;
+
+        return ActionResult.SUCCESS;
     }
-    
+
     /** for testing box filter smoothing on flowing terrain - not for release */
-    public EnumActionResult handleUseSmoothMode(ItemStack stack, EntityPlayer playerIn, World worldIn, BlockPos pos)
-    {
+    public ActionResult handleUseSmoothMode(ItemStack stack, PlayerEntity playerIn, World worldIn, BlockPos pos) {
         int height[][] = new int[33][33];
-        
-        for(int x = 0; x < 33; x++)
-        {
-            for(int z = 0; z < 33; z++)
-            {
+
+        for (int x = 0; x < 33; x++) {
+            for (int z = 0; z < 33; z++) {
                 height[x][z] = getHeightAt(worldIn, pos.getX() - 16 + x, pos.getY(), pos.getZ() - 16 + z);
             }
         }
-        
-        for(int x = 1; x < 32; x++)
-        {
-            for(int z = 1; z < 32; z++)
-            {
-                int avg = (height[x - 1][z] + height[x - 1][z] + height[x - 1][z + 1]
-                        + height[x][z] + height[x][z] + height[x][z + 1]
-                        + height[x + 1][z] + height[x + 1][z] + height[x + 1][z + 1]) / 9;
-                
+
+        for (int x = 1; x < 32; x++) {
+            for (int z = 1; z < 32; z++) {
+                int avg = (height[x - 1][z] + height[x - 1][z] + height[x - 1][z + 1] + height[x][z] + height[x][z] + height[x][z + 1] + height[x + 1][z]
+                        + height[x + 1][z] + height[x + 1][z + 1]) / 9;
+
                 int currentLevel = height[x][z];
-                
 
                 int currentY = (int) Math.floor((currentLevel - 1) / TerrainState.BLOCK_LEVELS_FLOAT);
                 BlockPos targetPos = new BlockPos(pos.getX() - 16 + x, currentY, pos.getZ() - 16 + z);
-                IBlockState currentState = worldIn.getBlockState(targetPos);
-                
-                if(TerrainBlockHelper.isFlowHeight(currentState.getBlock()))
-                {
-                    if(avg > currentLevel)
-                    {
+                BlockState currentState = worldIn.getBlockState(targetPos);
+
+                if (TerrainBlockHelper.isFlowHeight(currentState)) {
+                    if (avg > currentLevel) {
                         int newLevel = Math.min(currentLevel + TerrainState.BLOCK_LEVELS_INT, avg);
                         int newY = (int) Math.floor((newLevel - 1) / TerrainState.BLOCK_LEVELS_FLOAT);
-                        
-                        if(newY == currentY)
-                        {
-                            worldIn.setBlockState(targetPos, TerrainBlockHelper.stateWithDiscreteFlowHeight(currentState, newLevel - (newY * TerrainState.BLOCK_LEVELS_INT)));
-                        }
-                        else
-                        {
+
+                        if (newY == currentY) {
+                            worldIn.setBlockState(targetPos,
+                                    TerrainBlockHelper.stateWithDiscreteFlowHeight(currentState, newLevel - (newY * TerrainState.BLOCK_LEVELS_INT)));
+                        } else {
                             worldIn.setBlockState(targetPos, TerrainBlockHelper.stateWithDiscreteFlowHeight(currentState, TerrainState.BLOCK_LEVELS_INT));
-                            worldIn.setBlockState(targetPos.up(), TerrainBlockHelper.stateWithDiscreteFlowHeight(currentState, newLevel - (newY * TerrainState.BLOCK_LEVELS_INT)));
+                            worldIn.setBlockState(targetPos.up(),
+                                    TerrainBlockHelper.stateWithDiscreteFlowHeight(currentState, newLevel - (newY * TerrainState.BLOCK_LEVELS_INT)));
                         }
-                    }
-                    else if(avg < currentLevel)
-                    {
+                    } else if (avg < currentLevel) {
                         int newLevel = Math.max(currentLevel - TerrainState.BLOCK_LEVELS_INT, avg);
                         int newY = (int) Math.floor((newLevel - 1) / TerrainState.BLOCK_LEVELS_FLOAT);
-                        
-                        if(newY == currentY)
-                        {
-                            worldIn.setBlockState(targetPos, TerrainBlockHelper.stateWithDiscreteFlowHeight(currentState, newLevel - (newY * TerrainState.BLOCK_LEVELS_INT)));
-                        }
-                        else
-                        {
-                            worldIn.setBlockToAir(targetPos);
-                            worldIn.setBlockState(targetPos.down(), TerrainBlockHelper.stateWithDiscreteFlowHeight(currentState, newLevel - (newY * TerrainState.BLOCK_LEVELS_INT)));
+
+                        if (newY == currentY) {
+                            worldIn.setBlockState(targetPos,
+                                    TerrainBlockHelper.stateWithDiscreteFlowHeight(currentState, newLevel - (newY * TerrainState.BLOCK_LEVELS_INT)));
+                        } else {
+                            worldIn.setBlockState(targetPos, Blocks.AIR.getDefaultState());
+                            worldIn.setBlockState(targetPos.down(),
+                                    TerrainBlockHelper.stateWithDiscreteFlowHeight(currentState, newLevel - (newY * TerrainState.BLOCK_LEVELS_INT)));
                         }
                     }
                 }
             }
         }
-        return EnumActionResult.SUCCESS;
+        return ActionResult.SUCCESS;
     }
-    
-    private static int getHeightAt(World world, int x, int y, int z)
-    {
+
+    private static int getHeightAt(World world, int x, int y, int z) {
         BlockPos pos = new BlockPos(x, y, z);
-        IBlockState state = world.getBlockState(pos);
+        BlockState state = world.getBlockState(pos);
         int h = TerrainBlockHelper.getFlowHeightFromState(state);
-        
-        if(h != 0) return y * TerrainState.BLOCK_LEVELS_INT + h;
-        
-        if(state.getMaterial().isReplaceable())
-        {
-            //go down
+
+        if (h != 0)
+            return y * TerrainState.BLOCK_LEVELS_INT + h;
+
+        if (state.getMaterial().isReplaceable()) {
+            // go down
             int downCount = 1;
             state = world.getBlockState(pos.down(downCount));
-            
-            while(y - downCount > 0 && (state.getMaterial().isReplaceable() || TerrainBlockHelper.isFlowFiller(state.getBlock())))
-            {
+
+            while (y - downCount > 0 && (state.getMaterial().isReplaceable() || TerrainBlockHelper.isFlowFiller(state))) {
                 downCount++;
                 state = world.getBlockState(pos.down(downCount));
             }
             h = TerrainBlockHelper.getFlowHeightFromState(state);
             return (y - downCount) * TerrainState.BLOCK_LEVELS_INT + h;
-        }
-        else
-        {
+        } else {
             // go up
             int upCount = 1;
             state = world.getBlockState(pos.up(upCount));
             h = TerrainBlockHelper.getFlowHeightFromState(state);
-            
-            while(h == 0 && y + upCount < 255 && !(state.getMaterial().isReplaceable() || TerrainBlockHelper.isFlowFiller(state.getBlock())))
-            {
+
+            while (h == 0 && y + upCount < 255 && !(state.getMaterial().isReplaceable() || TerrainBlockHelper.isFlowFiller(state))) {
                 upCount++;
                 state = world.getBlockState(pos.up(upCount));
                 h = TerrainBlockHelper.getFlowHeightFromState(state);
             }
             return (y + upCount) * TerrainState.BLOCK_LEVELS_INT + h;
         }
-            
-    }
-    
-    public EnumActionResult handleUseHeightMode(ItemStack stack, EntityPlayer playerIn, World worldIn, BlockPos pos)
-    {
 
-        if(TerrainBlockHelper.isFlowHeight(worldIn.getBlockState(pos.up()).getBlock()))
-        {
+    }
+
+    public ActionResult handleUseHeightMode(ItemStack stack, PlayerEntity playerIn, World worldIn, BlockPos pos) {
+
+        if (TerrainBlockHelper.isFlowHeight(worldIn.getBlockState(pos.up()))) {
             return handleUseHeightMode(stack, playerIn, worldIn, pos.up());
         }
 
-        IBlockState stateIn = worldIn.getBlockState(pos);
+        BlockState stateIn = worldIn.getBlockState(pos);
         Block blockIn = stateIn.getBlock();
 
-        IBlockState targetState = null;
+        BlockState targetState = null;
         BlockPos targetPos = null;
 
         int level = TerrainBlockHelper.getFlowHeightFromState(stateIn);
-        if(level > 0)
-        {
-            if(playerIn.isSneaking())
-            {	
-                if(level > 1)
-                {	
+        if (level > 0) {
+            if (playerIn.isSneaking()) {
+                if (level > 1) {
                     targetPos = pos;
                     targetState = TerrainBlockHelper.stateWithDiscreteFlowHeight(stateIn, level - 1);
-                    playerIn.sendMessage(new TextComponentString("Level " + (level - 1)));
+                    playerIn.sendMessage(new TranslatableText("Level " + (level - 1)));
 
-                }
-                else if(TerrainBlockHelper.isFlowHeight(worldIn.getBlockState(pos.down()).getBlock()))
-                {
+                } else if (TerrainBlockHelper.isFlowHeight(worldIn.getBlockState(pos.down()))) {
                     targetPos = pos;
                     targetState = Blocks.AIR.getDefaultState();
-                    playerIn.sendMessage(new TextComponentString("Level 0 (removed a block)"));
+                    playerIn.sendMessage(new TranslatableText("Level 0 (removed a block)"));
+                } else {
+                    // prevent mode change
+                    return ActionResult.SUCCESS;
                 }
-                else
-                {
-                    //prevent mode change
-                    return EnumActionResult.SUCCESS;
-                }
-            }
-            else
-            {
-                if(level < TerrainState.BLOCK_LEVELS_INT)
-                {
+            } else {
+                if (level < TerrainState.BLOCK_LEVELS_INT) {
                     targetPos = pos;
                     targetState = TerrainBlockHelper.stateWithDiscreteFlowHeight(stateIn, level + 1);
-                    playerIn.sendMessage(new TextComponentString("Level " + (level + 1)));
-                }
-                else if(worldIn.getBlockState(pos.up()).getBlock().isReplaceable(worldIn, pos.up())
-                        || TerrainBlockHelper.isFlowFiller(worldIn.getBlockState(pos.up()).getBlock()))
-                {
+                    playerIn.sendMessage(new TranslatableText("Level " + (level + 1)));
+                } else if (worldIn.getBlockState(pos.up()).getMaterial().isReplaceable()
+                        || TerrainBlockHelper.isFlowFiller(worldIn.getBlockState(pos.up()))) {
                     targetPos = pos.up();
                     targetState = TerrainBlockHelper.stateWithDiscreteFlowHeight(stateIn, 1);
-                    playerIn.sendMessage(new TextComponentString("Level 1 (added new block)"));
-                }
-                else
-                {
-                    //prevent mode change
-                    return EnumActionResult.SUCCESS;
+                    playerIn.sendMessage(new TranslatableText("Level 1 (added new block)"));
+                } else {
+                    // prevent mode change
+                    return ActionResult.SUCCESS;
                 }
             }
         }
 
-        if(targetPos == null || targetState == null)
-        {
-            return EnumActionResult.FAIL;
+        if (targetPos == null || targetState == null) {
+            return ActionResult.FAIL;
         }
 
-        AxisAlignedBB axisalignedbb = targetState.getSelectedBoundingBox(worldIn, targetPos);
-        if(!worldIn.checkNoEntityCollision(axisalignedbb.offset(pos), playerIn)) return EnumActionResult.FAIL;
+        Box axisalignedbb = targetState.getCollisionShape(worldIn, targetPos).getBoundingBox();
+        if (!worldIn.doesNotCollide(playerIn, axisalignedbb))
+            return ActionResult.FAIL;
 
         TerrainWorldAdapter twa = new TerrainWorldAdapter(worldIn);
         long packedTargetPos = PackedBlockPos.pack(targetPos);
@@ -343,13 +271,11 @@ public class TerrainWand extends RegistratingItem
         TerrainBlockHelper.adjustFillIfNeeded(twa, PackedBlockPos.add(packedTargetPos, 1, 0, -1));
         TerrainBlockHelper.adjustFillIfNeeded(twa, PackedBlockPos.add(packedTargetPos, 1, 0, 1));
 
-        worldIn.playSound((double)((float)targetPos.getX() + 0.5F), 
-                (double)((float)targetPos.getY() + 0.5F), 
-                (double)((float)targetPos.getZ() + 0.5F), 
-                blockIn.getSoundType().getPlaceSound(), SoundCategory.BLOCKS, 
-                (blockIn.getSoundType().getVolume() + 1.0F) / 2.0F, blockIn.getSoundType().getPitch() * 0.8F, true);
+        worldIn.playSound((double) ((float) targetPos.getX() + 0.5F), (double) ((float) targetPos.getY() + 0.5F), (double) ((float) targetPos.getZ() + 0.5F),
+                blockIn.getSoundGroup(targetState).getPlaceSound(), SoundCategory.BLOCKS, (blockIn.getSoundGroup(targetState).getVolume() + 1.0F) / 2.0F,
+                blockIn.getSoundGroup(targetState).getPitch() * 0.8F, true);
 
-        return EnumActionResult.SUCCESS;
+        return ActionResult.SUCCESS;
 
     }
 

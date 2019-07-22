@@ -5,9 +5,6 @@ Thumbs.db
 *_anim.png
 *_anim_low.png
 
-## sounds - licensing may not be appropriate for GitHub
-*.ogg
-
 # eclipse
 bin
 *.launch
@@ -18,11 +15,18 @@ bin
 eclipse
 
 ## gradle
+gradlew*
 gradle
 .gradle
 build
 run
 gradle.properties
+
+
+##idea
+*.iml
+*.ipr
+*.iws
 
 ## Jars
 *.jar
@@ -42,7 +46,6 @@ logs
 discarded textures
 *.nps
 /.apt_generated/
-
-gradle.properties
-/gradlew
-/gradlew.bat
+notes.txt
+*.csv
+.mixin.out/audit/mixin_implementation_report.txt

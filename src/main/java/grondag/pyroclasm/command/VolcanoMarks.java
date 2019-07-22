@@ -1,21 +1,19 @@
 package grondag.pyroclasm.command;
 
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 
-public class VolcanoMarks
-{
+//TODO: redo w/ Brigadier
+public class VolcanoMarks {
     static private long[] marks = new long[0];
 
-    @SideOnly(Side.CLIENT)
-    public static void setMarks(long[] marks)
-    {
+    @Environment(EnvType.CLIENT)
+    public static void setMarks(long[] marks) {
         VolcanoMarks.marks = marks;
     }
-    
-    @SideOnly(Side.CLIENT)
-    public static long[] getMarks()
-    {
+
+    @Environment(EnvType.CLIENT)
+    public static long[] getMarks() {
         return marks;
     }
 }

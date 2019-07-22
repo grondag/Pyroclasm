@@ -1,109 +1,40 @@
-buildscript {
-    repositories {
-        mavenCentral()
-		
-	    maven {
-            name = "forge"
-            url = "http://files.minecraftforge.net/maven"
+plugins {
+	id 'fabric-loom' version '0.2.4-SNAPSHOT'
+	id 'maven-publish'
+}
+
+sourceCompatibility = JavaVersion.VERSION_1_8
+targetCompatibility = JavaVersion.VERSION_1_8
+
+ext.getVersionCode = { ->
+    try {
+        def stdout = new ByteArrayOutputStream()
+        exec {
+            commandLine 'git', 'rev-list', '--first-parent', '--count', 'origin/master'
+            standardOutput = stdout
         }
-        
-        maven {
-            name = "sonatype"
-            url = "https://oss.sonatype.org/content/repositories/snapshots/"
-        }
+        return Integer.parseInt(stdout.toString().trim())
     }
-    
-    dependencies {
-        classpath 'net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT'
-        classpath 'org.ajoberstar:gradle-git:0.10.1'
+    catch (ignored) {
+        return -1;
     }
 }
 
-// see https://github.com/passsy/gradle-GitVersioner
-ext.gitVersioner = [
-        defaultBranch           : "master",  // default "master"
-        stableBranches          : ["master"], // default [], the feature branch postfix (-dm4(6)) will not be appended on stable branches, all commits are included into the version number calculation
-        yearFactor              : 1200, 	  // default "1000", increasing every 8.57h
-        snapshotEnabled         : true,      // default false, the "-SNAPSHOT" postfix
-        localChangesCountEnabled: false,       // default false, the (<commitCount>) before -SNAPSHOT
-        shortName: { gitVersion ->            // optional closure to build a short name
-          // allows you to add your own short name logic
-          // All properties from gitVersion are available
-          // can be used for CI `System.getenv("BUILD_NUMBER")`
-
-          // i.e. use short sha1
-          return gitVersion.commit.subSequence(0, 7)
-        }
-]
-
-// import the script which runs the version generation
-apply from: 'https://raw.githubusercontent.com/passsy/gradle-GitVersioner/master/git-versioner.gradle'
-
-// variable `gitVersionName` can be used everywhere to get the revision name
-println("versionName: $gitVersionName") // output: "versionName: 1083-dm4(6)-SNAPSHOT"
-
-apply plugin: 'net.minecraftforge.gradle.forge'
-apply plugin: 'maven-publish'
-apply plugin: 'java'
-apply plugin: 'maven'
-
-version = "mc${minecraft_version}-${mod_version}.${gitVersionName}-${release_type}"
-group= "grondag" // http://maven.apache.org/guides/mini/guide-naming-conventions.html
-archivesBaseName = "pyroclasm"
-
-
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
-
-// Need this here so eclipse task generates correctly.
-compileJava {
-    sourceCompatibility = targetCompatibility = '1.8'
-}
+archivesBaseName = project.archives_base_name
+group = project.maven_group
+version = project.mod_version + "+build." + project.getVersionCode();
 
 minecraft {
-    version = "${minecraft_version}-${forge_version}"
-    runDir = "run"
-    mappings = "stable_39"
-    useDepAts = true
-    
-    replaceIn "Reference.java"
-    replace "@VERSION@", project.version
-}
-
-task deobfJar(type: Jar) {
-    from sourceSets.main.output
-    classifier = 'dev'
 }
 
 repositories {
-
-	maven { // CTM & TOP
-		url "http://maven.tterrag.com/"
-	}
-	
-	maven { // WAILA
-		url "http://mobiusstrip.eu/maven"
-	}
-	
-    maven { // JEI
-        url "http://dvs1.progwml6.com/files/maven"
-    }
+    maven { url "https://tehnut.info/maven"}
+    maven { url "http://maven.sargunv.s3-website-us-west-2.amazonaws.com/" }
+    maven { url "https://minecraft.curseforge.com/api/maven" }
+    maven { url "https://maven.fabricmc.net/io/github/prospector/modmenu/ModMenu/" }
+    maven { url "https://maven.jamieswhiteshirt.com/libs-release/"}
     
-    maven { // Multipart
-    		url "http://maven.amadornes.com/"
-	}
-    
-    maven {
-        name = "sonatype"
-        url = "https://oss.sonatype.org/content/repositories/snapshots/"
-    }
-    
-    maven {
-        name = "CoFH Maven"
-        url = "http://maven.covers1624.net"
-    }
-    
-     maven {
+ 	maven {
     	name = "grondag"
     	url = "https://grondag-repo.appspot.com"
     	credentials {
@@ -113,55 +44,36 @@ repositories {
     }
 }
 
-artifacts {
-    archives sourceJar
-    archives deobfJar
-}
-
-dependencies {
-    
-	deobfCompile "mezz.jei:jei_1.12.2:${jei_version}"
-    deobfCompile "mcjty.theoneprobe:TheOneProbe-1.12:1.12-${top_version}"
-    //deobfCompile "grondag:acuity:mc1.12.2-${acuity_version}"
-	//deobfCompile "grondag:exotic_matter:mc1.12.2-${exotic_matter_version}"
+processResources {
+	inputs.property "version", version
 	
-	// not currently using these APIs
-	// here to support compatibility testing in dev environment
-	// or because thinking about using the APIs
-    // deobfCompile "MCMultiPart2:MCMultiPart:${mcmp_version}"
+	from(sourceSets.main.resources.srcDirs) {
+		include "fabric.mod.json"
+		expand "version": version
+	}
+	
+	from(sourceSets.main.resources.srcDirs) {
+		exclude "fabric.mod.json"
+	}
 }
 
-processResources
-{
-    // this will ensure that this task is redone when the versions change.
-    inputs.property "version", project.version
-    inputs.property "mcversion", project.minecraft.version
-
-    // replace stuff in mcmod.info, nothing else
-    from(sourceSets.main.resources.srcDirs) {
-        include 'mcmod.info'
-                
-        // replace version and mcversion
-        expand 'version':project.version, 'mcversion':project.minecraft.version
-    }
-        
-    // copy everything else, thats not the mcmod.info
-    from(sourceSets.main.resources.srcDirs) {
-        exclude 'mcmod.info'
-    }
+// Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
+// if it is present.
+// If you remove this task, sources will not be generated.
+task sourcesJar(type: Jar, dependsOn: classes) {
+	classifier = "sources"
+	from sourceSets.main.allSource
 }
 
-uploadArchives {
-    repositories {
-        mavenDeployer {
-            repository(url: "https://grondag-repo.appspot.com") {
-                authentication(userName: "admin", password: "${maven_password}")
-            }
-            pom.version = project.version
-            pom.artifactId = project.archivesBaseName
-            pom.groupId = project.group
-        }
-    }
+// ensure that the encoding is set to UTF-8, no matter what the system default is
+// this fixes some edge cases with special characters not displaying correctly
+// see http://yodaconditions.net/blog/fix-for-java-file-encoding-problems-with-gradle.html
+tasks.withType(JavaCompile) {
+	options.encoding = "UTF-8"
+}
+
+jar {
+	from "LICENSE"
 }
 
 sourceSets {
@@ -183,3 +95,47 @@ sourceSets {
     }
 }
 
+dependencies {
+	minecraft "com.mojang:minecraft:${project.minecraft_version}"
+	mappings "net.fabricmc:yarn:${project.yarn_mappings}"
+	modCompile "net.fabricmc:fabric-loader:${project.loader_version}"
+	modCompile "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+	
+	// dev env annotation support
+	compile "org.apiguardian:apiguardian-api:1.0.0"
+	compile "com.google.code.findbugs:jsr305:3.0.2"
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+			artifact ("${project.buildDir.absolutePath}/libs/${archivesBaseName}-${project.version}.jar") { 
+				classifier null
+				builtBy remapJar
+			}
+
+			artifact ("${project.buildDir.absolutePath}/libs/${archivesBaseName}-${project.version}-dev.jar") { 
+				classifier "dev"
+				builtBy remapJar
+			}
+			
+			artifact(sourcesJar) {
+				builtBy remapSourcesJar
+			}
+        }
+    }
+    
+    repositories {
+        maven {
+            url "https://grondag-repo.appspot.com"
+            credentials {
+            	if (project.hasProperty('maven_user')){
+					username = project.getProperty('maven_user')
+				}
+				if (project.hasProperty('maven_password')){
+					password = project.getProperty('maven_password')
+				}
+			}
+        }
+    }
+}

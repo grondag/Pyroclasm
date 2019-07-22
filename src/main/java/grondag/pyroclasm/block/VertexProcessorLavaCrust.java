@@ -1,41 +1,38 @@
 package grondag.pyroclasm.block;
 
-import grondag.exotic_matter.model.painting.PaintLayer;
-import grondag.exotic_matter.model.painting.VertexProcessor;
-import grondag.exotic_matter.model.painting.VertexProcessors;
-import grondag.exotic_matter.model.primitives.QuadHelper;
-import grondag.exotic_matter.model.primitives.polygon.IMutablePolygon;
-import grondag.exotic_matter.model.state.ISuperModelState;
-import grondag.exotic_matter.terrain.TerrainState;
+import grondag.xm2.api.model.ModelState;
+import grondag.xm2.api.paint.XmPaint;
+import grondag.xm2.api.surface.XmSurface;
+import grondag.xm2.mesh.helper.QuadHelper;
+import grondag.xm2.mesh.polygon.IMutablePolygon;
+import grondag.xm2.painting.VertexProcessor;
+import grondag.xm2.painting.VertexProcessors;
+import grondag.xm2.terrain.TerrainState;
 import net.minecraft.util.math.MathHelper;
 
-public class VertexProcessorLavaCrust extends VertexProcessor
-{
-    public final static VertexProcessorLavaCrust INSTANCE = new VertexProcessorLavaCrust() {};
+public class VertexProcessorLavaCrust extends VertexProcessor {
+    public final static VertexProcessorLavaCrust INSTANCE = new VertexProcessorLavaCrust() {
+    };
 
-    static
-    {
+    static {
         VertexProcessors.register(INSTANCE);
     }
 
-    private VertexProcessorLavaCrust()
-    {
+    private VertexProcessorLavaCrust() {
         super("lava_crust");
     }
 
     @Override
-    public void process(IMutablePolygon result, int layerIndex, ISuperModelState modelState, PaintLayer paintLayer)
-    {
+    public void process(IMutablePolygon result, int layerIndex, ModelState modelState, XmSurface surface, XmPaint paint) {
         TerrainState flowState = modelState.getTerrainState();
-        final int baseColor = modelState.getColorARGB(paintLayer) & 0xFFFFFF;
-        
-        for(int i = 0; i < result.vertexCount(); i++)
-        {
-            float x = result.getVertexX(i);
-            float z = result.getVertexZ(i);
-            
+        final int baseColor = paint.textureColor(0) & 0xFFFFFF;
+
+        for (int i = 0; i < result.vertexCount(); i++) {
+            float x = result.x(i);
+            float z = result.z(i);
+
             // Subtract 0.5 to so that lower qudrant/half uses lower neighbor as low bound
-            // for heat interpolation.  Add epsilon so we don't round down ~edge points.
+            // for heat interpolation. Add epsilon so we don't round down ~edge points.
             final int xMin = MathHelper.floor(x - 0.5f + QuadHelper.EPSILON);
             final int zMin = MathHelper.floor(z - 0.5f + QuadHelper.EPSILON);
             final int xMax = xMin + 1;
@@ -51,10 +48,10 @@ public class VertexProcessorLavaCrust extends VertexProcessor
             final float a11 = flowState.crustAlpha(xMax, zMax);
             final float jAvg = a00 + (a10 - a00) * xDist;
             final float kAvg = a01 + (a11 - a01) * xDist;
-            final float avgAlpha = jAvg + (kAvg-jAvg) * zDist;
-            final int alpha =  MathHelper.clamp(Math.round(avgAlpha * 255), 0, 255);
+            final float avgAlpha = jAvg + (kAvg - jAvg) * zDist;
+            final int alpha = MathHelper.clamp(Math.round(avgAlpha * 255), 0, 255);
 
-            result.setVertexColor(layerIndex, i, (alpha << 24) | baseColor);
+            result.spriteColor(i, layerIndex, (alpha << 24) | baseColor);
         }
     }
 }

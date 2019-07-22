@@ -4,70 +4,52 @@ import grondag.exotic_matter.simulator.Simulator;
 import grondag.pyroclasm.Pyroclasm;
 import grondag.pyroclasm.volcano.VolcanoManager;
 import grondag.pyroclasm.volcano.VolcanoNode;
-import net.minecraft.command.CommandBase;
-import net.minecraft.command.CommandException;
-import net.minecraft.command.ICommandSender;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.TranslatableText;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
-import net.minecraftforge.server.command.TextComponentHelper;
 
-public class CommandSleep extends CommandBase
-{
+//TODO: redo w/ Brigadier
+public class CommandSleep { //extends CommandBase {
 
-    @Override
-    public String getName()
-    {
-        return "sleep";
-    }
+//    @Override
+//    public String getName() {
+//        return "sleep";
+//    }
+//
+//    @Override
+//    public int getRequiredPermissionLevel() {
+//        return 2;
+//    }
+//
+//    @Override
+//    public String getUsage(ICommandSender sender) {
+//        return "commands.volcano.sleep.usage";
+//    }
 
-    @Override
-    public int getRequiredPermissionLevel()
-    {
-        return 2;
-    }
-    
-    @Override
-    public String getUsage(ICommandSender sender)
-    {
-        return "commands.volcano.sleep.usage";
-    }
-
-    @SuppressWarnings("null")
-    @Override
-    public void execute(MinecraftServer server, ICommandSender sender, String[] args) throws CommandException
-    {
-        try
-        {
+    public void execute(MinecraftServer server, ServerPlayerEntity sender, String[] args) { //throws CommandException {
+        try {
             VolcanoManager vm = Simulator.instance().getNode(VolcanoManager.class);
             World world = sender.getEntityWorld();
-            if(vm.dimension() == world.provider.getDimension())
-            {
-                VolcanoNode node = vm.nearestActiveVolcano(sender.getPosition());
-                
-                if(node == null)
-                {
-                    sender.sendMessage(TextComponentHelper.createComponentTranslation(sender, "commands.volcano.sleep.no_active_found"));
-                }
-                else
-                {
+            if (vm.dimension() == world.dimension.getType().getRawId()) {
+                VolcanoNode node = vm.nearestActiveVolcano(sender.getBlockPos());
+
+                if (node == null) {
+                    sender.sendMessage(new TranslatableText("commands.volcano.sleep.no_active_found"));
+                } else {
                     node.sleep(true);
-                    if(node.isActive())
-                    {
-                        sender.sendMessage(TextComponentHelper.createComponentTranslation(sender, "commands.volcano.sleep.fail"));
-                    }
-                    else
-                    {
+                    if (node.isActive()) {
+                        sender.sendMessage(new TranslatableText("commands.volcano.sleep.fail"));
+                    } else {
                         BlockPos pos = node.blockPos();
-                        sender.sendMessage(TextComponentHelper.createComponentTranslation(sender, "commands.volcano.sleep.success", pos.getX(), pos.getZ()));
+                        sender.sendMessage(new TranslatableText("commands.volcano.sleep.success", pos.getX(), pos.getZ()));
                     }
                 }
             }
+        } catch (Exception e) {
+            Pyroclasm.LOG.error("Unhandled error putting volcano to sleep", e);
         }
-        catch(Exception e)
-        {
-            Pyroclasm.INSTANCE.error("Unhandled error putting volcano to sleep", e);
-        }        
     }
 
 }

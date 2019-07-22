@@ -1,45 +1,32 @@
 package grondag.pyroclasm.command;
 
-import grondag.exotic_matter.network.PacketHandler;
 import grondag.pyroclasm.Pyroclasm;
-import net.minecraft.command.CommandBase;
-import net.minecraft.command.CommandException;
-import net.minecraft.command.ICommandSender;
-import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.network.ServerPlayerEntity;
 
-public class CommandUnmark extends CommandBase
-{
+//TODO: redo w/ Brigadier
+public class CommandUnmark { //extends CommandBase {
 
-    @Override
-    public String getName()
-    {
-        return "unmark";
-    }
+//    @Override
+//    public String getName() {
+//        return "unmark";
+//    }
+//
+//    @Override
+//    public int getRequiredPermissionLevel() {
+//        return 2;
+//    }
+//
+//    @Override
+//    public String getUsage(ICommandSender sender) {
+//        return "commands.volcano.unmark.usage";
+//    }
 
-    @Override
-    public int getRequiredPermissionLevel()
-    {
-        return 2;
-    }
-    
-    @Override
-    public String getUsage(ICommandSender sender)
-    {
-        return "commands.volcano.unmark.usage";
-    }
-
-    @Override
-    public void execute(MinecraftServer server, ICommandSender sender, String[] args) throws CommandException
-    {
-        try
-        {
-            EntityPlayerMP player = (EntityPlayerMP) sender.getCommandSenderEntity();
-            PacketHandler.CHANNEL.sendTo(new PacketUpdateVolcanoMarks(new long[0]), player);
-        }
-        catch(Exception e)
-        {
-            Pyroclasm.INSTANCE.error("Error unmarking volcanos", e);
+    public void execute(MinecraftServer server, ServerPlayerEntity player, String[] args) { //throws CommandException {
+        try {
+            //PacketHandler.CHANNEL.sendTo(new PacketUpdateVolcanoMarks(new long[0]), player);
+        } catch (Exception e) {
+            Pyroclasm.LOG.error("Error unmarking volcanos", e);
         }
     }
 

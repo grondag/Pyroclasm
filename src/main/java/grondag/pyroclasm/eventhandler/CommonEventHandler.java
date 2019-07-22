@@ -2,58 +2,42 @@ package grondag.pyroclasm.eventhandler;
 
 import grondag.exotic_matter.simulator.Simulator;
 import grondag.pyroclasm.Configurator;
-import grondag.pyroclasm.Pyroclasm;
 import grondag.pyroclasm.volcano.VolcanoManager;
-import net.minecraft.item.Item;
-import net.minecraftforge.common.config.Config.Type;
-import net.minecraftforge.common.config.ConfigManager;
-import net.minecraftforge.event.RegistryEvent;
-import net.minecraftforge.event.world.ChunkEvent;
-import net.minecraftforge.fml.client.event.ConfigChangedEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraft.world.World;
+import net.minecraft.world.chunk.Chunk;
 
-@Mod.EventBusSubscriber
-public class CommonEventHandler 
-{
-    
-    @SubscribeEvent
-    public static void onConfigChanged(ConfigChangedEvent.OnConfigChangedEvent event) 
-    {
-        if (event.getModID().equals(Pyroclasm.MODID))
-        {
-            ConfigManager.sync(Pyroclasm.MODID, Type.INSTANCE);
+//TODO: re-create hooks for these or get rid of them
+public class CommonEventHandler {
+
+    public static void onConfigChanged() { //ConfigChangedEvent.OnConfigChangedEvent event) {
+//        if (event.getModID().equals(Pyroclasm.MODID)) {
+//            ConfigManager.sync(Pyroclasm.MODID, Type.INSTANCE);
             Configurator.recalcDerived();
             Configurator.recalcBlocks();
-        }
+//        }
     }
-    
-    @SubscribeEvent
-    public static void onChunkLoad(ChunkEvent.Load event) 
-    {
-        if (event.getWorld().isRemote)
+
+    public static void onChunkLoad(World world, Chunk chunk) {
+        if (world.isClient)
             return;
-        
+
         VolcanoManager vm = Simulator.instance().getNode(VolcanoManager.class);
-        if(vm != null)
-            vm.handleChunkLoad(event.getWorld(), event.getChunk());
+        if (vm != null)
+            vm.handleChunkLoad(world, chunk);
     }
-    
-    @SubscribeEvent
-    public static void onChunkUnload(ChunkEvent.Unload event) 
-    {
-        if (event.getWorld().isRemote)
+
+    public static void onChunkUnload(World world, Chunk chunk) { 
+        if (world.isClient)
             return;
-        
+
         VolcanoManager vm = Simulator.instance().getNode(VolcanoManager.class);
-        if(vm != null)
-            vm.handleChunkUnload(event.getWorld(), event.getChunk());
+        if (vm != null)
+            vm.handleChunkUnload(world, chunk);
     }
-    
-    @SubscribeEvent
-    public static void registerItems(RegistryEvent.Register<Item> event) 
-    {
-        grondag.exotic_matter.CommonEventHandler.handleRegisterItems(Pyroclasm.MODID, event);
+
+    public static void registerItems() {
+        // TODO: wut?
+//        grondag.exotic_matter.CommonEventHandler.handleRegisterItems(Pyroclasm.MODID, event);
     }
-    
+
 }
