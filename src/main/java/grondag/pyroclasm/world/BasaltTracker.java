@@ -3,6 +3,8 @@ package grondag.pyroclasm.world;
 import javax.annotation.Nullable;
 
 import grondag.exotic_matter.simulator.Simulator;
+import grondag.fermion.sc.concurrency.PerformanceCollector;
+import grondag.fermion.sc.concurrency.PerformanceCounter;
 import grondag.fermion.serialization.NBTDictionary;
 import grondag.fermion.varia.Useful;
 import grondag.fermion.world.PackedBlockPos;
@@ -10,8 +12,6 @@ import grondag.fermion.world.PackedChunkPos;
 import grondag.pyroclasm.Configurator;
 import grondag.pyroclasm.Pyroclasm;
 import grondag.pyroclasm.block.CoolingBasaltBlock;
-import grondag.sc.concurrency.PerformanceCollector;
-import grondag.sc.concurrency.PerformanceCounter;
 import it.unimi.dsi.fastutil.longs.Long2IntMap.Entry;
 import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;

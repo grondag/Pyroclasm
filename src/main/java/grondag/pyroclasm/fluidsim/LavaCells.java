@@ -9,12 +9,12 @@ import javax.annotation.Nullable;
 
 import com.google.common.collect.ComparisonChain;
 
+import grondag.fermion.sc.concurrency.PerformanceCounter;
 import grondag.fermion.serialization.NBTDictionary;
 import grondag.fermion.world.PackedChunkPos;
 import grondag.pyroclasm.Configurator;
 import grondag.pyroclasm.Pyroclasm;
 import grondag.pyroclasm.world.ChunkTracker;
-import grondag.sc.concurrency.PerformanceCounter;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.math.BlockPos;

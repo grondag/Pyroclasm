@@ -2,8 +2,8 @@ package grondag.pyroclasm.fluidsim;
 
 import grondag.pyroclasm.Pyroclasm;
 import grondag.pyroclasm.fluidsim.LavaConnection.Flowable;
-import grondag.sc.concurrency.PerformanceCounter;
-import grondag.sc.concurrency.SimpleConcurrentList;
+import grondag.fermion.sc.concurrency.PerformanceCounter;
+import grondag.fermion.sc.concurrency.SimpleConcurrentList;
 import grondag.pyroclasm.Configurator;
 
 public abstract class AbstractLavaConnections {

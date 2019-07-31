@@ -6,9 +6,9 @@ import java.util.function.Consumer;
 import javax.annotation.Nullable;
 
 import grondag.exotic_matter.simulator.Simulator;
+import grondag.fermion.sc.unordered.SimpleUnorderedArrayList;
 import grondag.fermion.world.PackedChunkPos;
 import grondag.pyroclasm.Pyroclasm;
-import grondag.sc.structures.SimpleUnorderedArrayList;
 import grondag.pyroclasm.Configurator;
 import net.minecraft.world.chunk.Chunk;
 

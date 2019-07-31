@@ -7,11 +7,11 @@ import javax.annotation.Nullable;
 
 import grondag.fermion.serialization.IReadWriteNBT;
 import grondag.fermion.serialization.NBTDictionary;
+import grondag.fermion.structures.LongQueue;
 import grondag.fermion.varia.Useful;
 import grondag.fermion.world.PackedBlockPos;
 import grondag.pyroclasm.Configurator;
 import grondag.pyroclasm.init.ModBlocks;
-import grondag.sc.structures.LongQueue;
 import it.unimi.dsi.fastutil.longs.Long2ByteMap;
 import it.unimi.dsi.fastutil.longs.Long2ByteMap.Entry;
 import it.unimi.dsi.fastutil.longs.Long2ByteOpenHashMap;

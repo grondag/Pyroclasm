@@ -7,13 +7,13 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import grondag.exotic_matter.simulator.Simulator;
+import grondag.fermion.sc.unordered.SimpleUnorderedArrayList;
 import grondag.fermion.world.PackedBlockPos;
 import grondag.pyroclasm.Configurator;
 import grondag.pyroclasm.fluidsim.LavaConnection.Flowable;
 import grondag.pyroclasm.init.ModBlocks;
 import grondag.pyroclasm.world.AdjustmentTracker;
 import grondag.pyroclasm.world.LavaTerrainHelper;
-import grondag.sc.structures.SimpleUnorderedArrayList;
 import grondag.xm2.terrain.TerrainBlockHelper;
 import grondag.xm2.terrain.TerrainState;
 import io.netty.util.internal.ThreadLocalRandom;

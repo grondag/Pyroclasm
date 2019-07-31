@@ -7,7 +7,7 @@ import org.lwjgl.opengl.GL11;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 
-import grondag.sc.structures.SimpleUnorderedArrayList;
+import grondag.fermion.sc.unordered.SimpleUnorderedArrayList;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;

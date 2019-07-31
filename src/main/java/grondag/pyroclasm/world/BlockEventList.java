@@ -4,12 +4,12 @@ import java.util.Arrays;
 import java.util.function.Predicate;
 
 import grondag.exotic_matter.simulator.Simulator;
+import grondag.fermion.sc.concurrency.PerformanceCollector;
+import grondag.fermion.sc.concurrency.PerformanceCounter;
+import grondag.fermion.sc.concurrency.SimpleConcurrentList;
 import grondag.fermion.world.PackedBlockPos;
 import grondag.pyroclasm.Configurator;
 import grondag.pyroclasm.Pyroclasm;
-import grondag.sc.concurrency.PerformanceCollector;
-import grondag.sc.concurrency.PerformanceCounter;
-import grondag.sc.concurrency.SimpleConcurrentList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.math.BlockPos;
 
