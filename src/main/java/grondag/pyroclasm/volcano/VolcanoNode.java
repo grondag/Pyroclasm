@@ -5,7 +5,7 @@ import javax.annotation.Nullable;
 import grondag.exotic_matter.simulator.ISimulationTickable;
 import grondag.exotic_matter.simulator.Simulator;
 import grondag.exotic_matter.simulator.persistence.IDirtListener;
-import grondag.fermion.serialization.IReadWriteNBT;
+import grondag.fermion.serialization.ReadWriteNBT;
 import grondag.fermion.serialization.NBTDictionary;
 import grondag.fermion.varia.Useful;
 import grondag.fermion.world.PackedChunkPos;
@@ -22,7 +22,7 @@ import net.minecraft.util.math.Vec3i;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
 
-public class VolcanoNode implements IReadWriteNBT, IDirtListener, ISimulationTickable {
+public class VolcanoNode implements ReadWriteNBT, IDirtListener, ISimulationTickable {
     static final String NBT_VOLCANO_NODE_TAG_LAST_ACTIVATION_TICK = NBTDictionary.claim("volcLastTick");
     static final String NBT_VOLCANO_NODE_TAG_COOLDOWN_TICKS = NBTDictionary.claim("volcCooldownTicks");
     static final String NBT_VOLCANO_NODE_TAG_POSITION = NBTDictionary.claim("volPos");
@@ -83,7 +83,7 @@ public class VolcanoNode implements IReadWriteNBT, IDirtListener, ISimulationTic
 
     public VolcanoNode(VolcanoManager volcanoManager, CompoundTag tag) {
         this(volcanoManager);
-        this.deserializeNBT(tag);
+        this.writeTag(tag);
     }
 
     public ChunkPos chunkPos() {
@@ -106,7 +106,7 @@ public class VolcanoNode implements IReadWriteNBT, IDirtListener, ISimulationTic
      */
     @SuppressWarnings("null")
     @Override
-    public void deserializeNBT(CompoundTag nbt) {
+    public void writeTag(CompoundTag nbt) {
         this.inhabitedTicks = nbt.getLong(NBT_VOLCANO_NODE_TAG_WEIGHT);
         this.height = nbt.getInt(NBT_VOLCANO_NODE_TAG_HEIGHT);
         this.stage = VolcanoStage.values()[nbt.getInt(NBT_VOLCANO_NODE_TAG_STAGE)];
@@ -118,7 +118,7 @@ public class VolcanoNode implements IReadWriteNBT, IDirtListener, ISimulationTic
     }
 
     @Override
-    public void serializeNBT(CompoundTag nbt) {
+    public void readTag(CompoundTag nbt) {
         synchronized (this) {
             nbt.putLong(NBT_VOLCANO_NODE_TAG_WEIGHT, this.inhabitedTicks);
             nbt.putInt(NBT_VOLCANO_NODE_TAG_HEIGHT, this.height);

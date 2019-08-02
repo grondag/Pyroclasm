@@ -295,7 +295,7 @@ public class LavaSimulator extends SimulationTopNode implements ISimulationTicka
         this.saveLavaNBT(nbt);
         this.particleManager.writeToNBT(nbt);
         this.basaltTracker.serializeNBT(nbt);
-        this.lavaTreeCutter.serializeNBT(nbt);
+        this.lavaTreeCutter.readTag(nbt);
         return nbt;
     }
 
@@ -306,7 +306,7 @@ public class LavaSimulator extends SimulationTopNode implements ISimulationTicka
             this.readLavaNBT(nbt);
         }
         this.basaltTracker.deserializeNBT(nbt);
-        this.lavaTreeCutter.deserializeNBT(nbt);
+        this.lavaTreeCutter.writeTag(nbt);
     }
 
     public void saveLavaNBT(CompoundTag nbt) {

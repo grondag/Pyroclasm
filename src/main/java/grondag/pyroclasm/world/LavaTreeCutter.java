@@ -5,13 +5,13 @@ import java.util.PriorityQueue;
 
 import javax.annotation.Nullable;
 
-import grondag.fermion.serialization.IReadWriteNBT;
+import grondag.fermion.serialization.ReadWriteNBT;
 import grondag.fermion.serialization.NBTDictionary;
-import grondag.fermion.structures.LongQueue;
 import grondag.fermion.varia.Useful;
 import grondag.fermion.world.PackedBlockPos;
 import grondag.pyroclasm.Configurator;
 import grondag.pyroclasm.init.ModBlocks;
+import grondag.pyroclasm.varia.LongQueue;
 import it.unimi.dsi.fastutil.longs.Long2ByteMap;
 import it.unimi.dsi.fastutil.longs.Long2ByteMap.Entry;
 import it.unimi.dsi.fastutil.longs.Long2ByteOpenHashMap;
@@ -36,7 +36,7 @@ import net.minecraft.world.World;
  * leaf decay isn't immediate as desired / expected.
  *
  */
-public class LavaTreeCutter extends WorldBlockCheckQueue implements IReadWriteNBT {
+public class LavaTreeCutter extends WorldBlockCheckQueue implements ReadWriteNBT {
     private enum Operation {
         IDLE, SEARCHING, CLEARING, TICKING
     }
@@ -345,7 +345,7 @@ public class LavaTreeCutter extends WorldBlockCheckQueue implements IReadWriteNB
     }
 
     @Override
-    public void deserializeNBT(@Nullable CompoundTag tag) {
+    public void writeTag(@Nullable CompoundTag tag) {
         this.reset();
 
         if (tag == null)
@@ -372,7 +372,7 @@ public class LavaTreeCutter extends WorldBlockCheckQueue implements IReadWriteNB
     }
 
     @Override
-    public void serializeNBT(CompoundTag tag) {
+    public void readTag(CompoundTag tag) {
         final int queueDepth = this.size() + (this.startPosPacked == PackedBlockPos.NULL_POS ? 0 : 1);
 
         if (queueDepth > 0) {

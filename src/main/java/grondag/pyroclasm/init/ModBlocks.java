@@ -1,6 +1,6 @@
 package grondag.pyroclasm.init;
 
-import grondag.fermion.color.BlockColorMapProvider;
+import grondag.fermion.color.ColorAtlas;
 import grondag.fermion.color.Color;
 import grondag.frex.Frex;
 import grondag.pyroclasm.Configurator;
@@ -63,7 +63,7 @@ public class ModBlocks {
         final TextureSet texCooling = Configurator.RENDER.largeTextureScale ? PyroclasmTextures.BIGTEX_BASALT_COOLING_ZOOM_X2
                 : PyroclasmTextures.BIGTEX_BASALT_COOLING_ZOOM;
 
-        final XmPaint cobblePaint = XmPaint.finder().texture(0, XmTextures.BLOCK_COBBLE).textureColor(0, BlockColorMapProvider.COLOR_BASALT).find();
+        final XmPaint cobblePaint = XmPaint.finder().texture(0, XmTextures.BLOCK_COBBLE).textureColor(0, ColorAtlas.COLOR_BASALT).find();
         
         //TODO: rework material properties
         OwnedModelState workingModel = XmPrimitives.CUBE.newState();
@@ -71,8 +71,8 @@ public class ModBlocks {
         basalt_cobble = register(new XmSimpleBlock(FabricBlockSettings.of(Material.STONE).strength(1, 1).build(), workingModel), "basalt_cobble");
         workingModel.release();
 
-        final XmPaint cutPaint = XmPaint.finder().texture(0, texCut).textureColor(0, BlockColorMapProvider.COLOR_BASALT).find();
-        final XmPaint coolPaint = XmPaint.finder().texture(0, texCool).textureColor(0, BlockColorMapProvider.COLOR_BASALT).find();
+        final XmPaint cutPaint = XmPaint.finder().texture(0, texCut).textureColor(0, ColorAtlas.COLOR_BASALT).find();
+        final XmPaint coolPaint = XmPaint.finder().texture(0, texCool).textureColor(0, ColorAtlas.COLOR_BASALT).find();
 
         
         workingModel = XmPrimitives.TERRAIN_HEIGHT.newState();
@@ -126,42 +126,42 @@ public class ModBlocks {
         workingModel.release();
         
         // TODO: need a way to assign shader here
-        final XmPaint shaderPaint = XmPaint.finder().texture(0, texCool).textureColor(0, BlockColorMapProvider.COLOR_BASALT)
+        final XmPaint shaderPaint = XmPaint.finder().texture(0, texCool).textureColor(0, ColorAtlas.COLOR_BASALT)
                 .vertexProcessor(0, VertexProcessorLavaAdvanced.INSTANCE).find();
         
         // UGLY: current non-shader lava and very hot are same. Should distinguish if keeping.
         final XmPaint lavaPaint = Frex.isAvailable() ? shaderPaint : XmPaint.finder()
                 .texture(0, texLava).textureColor(0, Color.WHITE).emissive(0, true)
                 .vertexProcessor(0, VertexProcessorLava.INSTANCE)
-                .texture(1, texVeryHot).textureColor(1, BlockColorMapProvider.COLOR_BASALT)
+                .texture(1, texVeryHot).textureColor(1, ColorAtlas.COLOR_BASALT)
                 .vertexProcessor(1, VertexProcessorLavaCrust.INSTANCE)
                 .find();
         
         final XmPaint veryHotPaint = Frex.isAvailable() ? shaderPaint : XmPaint.finder()
                 .texture(0, texLava).textureColor(0, Color.WHITE).emissive(0, true)
                 .vertexProcessor(0, VertexProcessorLava.INSTANCE)
-                .texture(1, texVeryHot).textureColor(1, BlockColorMapProvider.COLOR_BASALT)
+                .texture(1, texVeryHot).textureColor(1, ColorAtlas.COLOR_BASALT)
                 .vertexProcessor(1, VertexProcessorLavaCrust.INSTANCE)
                 .find();
 
         final XmPaint hotPaint = Frex.isAvailable() ? shaderPaint : XmPaint.finder()
                 .texture(0, texLava).textureColor(0, Color.WHITE).emissive(0, true)
                 .vertexProcessor(0, VertexProcessorLava.INSTANCE)
-                .texture(1, texHot).textureColor(1, BlockColorMapProvider.COLOR_BASALT)
+                .texture(1, texHot).textureColor(1, ColorAtlas.COLOR_BASALT)
                 .vertexProcessor(1, VertexProcessorLavaCrust.INSTANCE)
                 .find();
         
         final XmPaint warmPaint = Frex.isAvailable() ? shaderPaint : XmPaint.finder()
                 .texture(0, texLava).textureColor(0, Color.WHITE).emissive(0, true)
                 .vertexProcessor(0, VertexProcessorLava.INSTANCE)
-                .texture(1, texWarm).textureColor(1, BlockColorMapProvider.COLOR_BASALT)
+                .texture(1, texWarm).textureColor(1, ColorAtlas.COLOR_BASALT)
                 .vertexProcessor(1, VertexProcessorLavaCrust.INSTANCE)
                 .find();
         
         final XmPaint coolingPaint = Frex.isAvailable() ? shaderPaint : XmPaint.finder()
                 .texture(0, texLava).textureColor(0, Color.WHITE).emissive(0, true)
                 .vertexProcessor(0, VertexProcessorLava.INSTANCE)
-                .texture(1, texCooling).textureColor(1, BlockColorMapProvider.COLOR_BASALT)
+                .texture(1, texCooling).textureColor(1, ColorAtlas.COLOR_BASALT)
                 .vertexProcessor(1, VertexProcessorLavaCrust.INSTANCE)
                 .find();
         

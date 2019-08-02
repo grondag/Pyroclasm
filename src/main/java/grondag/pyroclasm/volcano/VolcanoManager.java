@@ -350,7 +350,7 @@ public class VolcanoManager extends SimulationTopNode implements ISimulationTick
         if (!this.nodes.isEmpty()) {
             for (VolcanoNode node : this.nodes.values()) {
                 CompoundTag nodeTag = new CompoundTag();
-                node.serializeNBT(nodeTag);
+                node.readTag(nodeTag);
                 nbtSubNodes.add(nodeTag);
             }
         }
