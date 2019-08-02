@@ -12,10 +12,10 @@ import com.google.common.collect.ImmutableMap;
 import grondag.exotic_matter.simulator.ISimulationTickable;
 import grondag.exotic_matter.simulator.Simulator;
 import grondag.exotic_matter.simulator.persistence.SimulationTopNode;
-import grondag.fermion.serialization.NBTDictionary;
+import grondag.fermion.position.PackedChunkPos;
 import grondag.fermion.varia.BlueNoise;
+import grondag.fermion.varia.NBTDictionary;
 import grondag.fermion.varia.Useful;
-import grondag.fermion.world.PackedChunkPos;
 import grondag.pyroclasm.Configurator;
 import grondag.pyroclasm.command.VolcanoCommandException;
 import grondag.pyroclasm.fluidsim.LavaSimulator;
@@ -331,6 +331,7 @@ public class VolcanoManager extends SimulationTopNode implements ISimulationTick
         }
     }
     
+    @Override
     public CompoundTag toTag(CompoundTag nbt) {
         
         if(nbt == null) {

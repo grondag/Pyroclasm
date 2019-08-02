@@ -3,7 +3,7 @@ package grondag.pyroclasm.world;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
-import grondag.fermion.world.PackedBlockPos;
+import grondag.fermion.position.PackedBlockPos;
 import grondag.pyroclasm.Configurator;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;

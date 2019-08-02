@@ -5,10 +5,10 @@ import java.util.PriorityQueue;
 
 import javax.annotation.Nullable;
 
-import grondag.fermion.serialization.ReadWriteNBT;
-import grondag.fermion.serialization.NBTDictionary;
+import grondag.fermion.position.PackedBlockPos;
+import grondag.fermion.varia.NBTDictionary;
+import grondag.fermion.varia.ReadWriteNBT;
 import grondag.fermion.varia.Useful;
-import grondag.fermion.world.PackedBlockPos;
 import grondag.pyroclasm.Configurator;
 import grondag.pyroclasm.init.ModBlocks;
 import grondag.pyroclasm.varia.LongQueue;
@@ -56,7 +56,6 @@ public class LavaTreeCutter extends WorldBlockCheckQueue implements ReadWriteNBT
     private long startPosPacked = PackedBlockPos.NULL_POS;
 
     private final PriorityQueue<Visit> toVisit = new PriorityQueue<>(new Comparator<Visit>() {
-        @SuppressWarnings("null")
         @Override
         public int compare(Visit o1, Visit o2) {
             return Byte.compare(o1.type, o2.type);
@@ -275,8 +274,6 @@ public class LavaTreeCutter extends WorldBlockCheckQueue implements ReadWriteNBT
 
         if (this.toVisit.isEmpty()) {
             this.visited.long2ByteEntrySet().stream().filter(e -> e.getByteValue() != POS_TYPE_IGNORE).sorted(new Comparator<Long2ByteMap.Entry>() {
-
-                @SuppressWarnings("null")
                 @Override
                 public int compare(Entry o1, Entry o2) {
                     // logs before leaves

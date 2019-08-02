@@ -5,10 +5,10 @@ import javax.annotation.Nullable;
 import grondag.exotic_matter.simulator.ISimulationTickable;
 import grondag.exotic_matter.simulator.Simulator;
 import grondag.exotic_matter.simulator.persistence.IDirtListener;
-import grondag.fermion.serialization.ReadWriteNBT;
-import grondag.fermion.serialization.NBTDictionary;
+import grondag.fermion.position.PackedChunkPos;
+import grondag.fermion.varia.NBTDictionary;
+import grondag.fermion.varia.ReadWriteNBT;
 import grondag.fermion.varia.Useful;
-import grondag.fermion.world.PackedChunkPos;
 import grondag.pyroclasm.Configurator;
 import grondag.pyroclasm.Pyroclasm;
 import grondag.pyroclasm.fluidsim.LavaSimulator;
@@ -104,7 +104,6 @@ public class VolcanoNode implements ReadWriteNBT, IDirtListener, ISimulationTick
      * 
      * {@inheritDoc}
      */
-    @SuppressWarnings("null")
     @Override
     public void writeTag(CompoundTag nbt) {
         this.inhabitedTicks = nbt.getLong(NBT_VOLCANO_NODE_TAG_WEIGHT);

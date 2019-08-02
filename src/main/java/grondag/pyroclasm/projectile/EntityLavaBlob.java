@@ -6,8 +6,8 @@ import java.util.Random;
 import javax.annotation.Nonnull;
 
 import grondag.exotic_matter.simulator.Simulator;
-import grondag.fermion.serialization.NBTDictionary;
-import grondag.fermion.world.PackedBlockPos;
+import grondag.fermion.position.PackedBlockPos;
+import grondag.fermion.varia.NBTDictionary;
 import grondag.pyroclasm.Configurator;
 import grondag.pyroclasm.Pyroclasm;
 import grondag.pyroclasm.PyroclasmClient;

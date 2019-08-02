@@ -9,9 +9,9 @@ import javax.annotation.Nullable;
 
 import com.google.common.collect.ComparisonChain;
 
+import grondag.fermion.position.PackedChunkPos;
 import grondag.fermion.sc.concurrency.PerformanceCounter;
-import grondag.fermion.serialization.NBTDictionary;
-import grondag.fermion.world.PackedChunkPos;
+import grondag.fermion.varia.NBTDictionary;
 import grondag.pyroclasm.Configurator;
 import grondag.pyroclasm.Pyroclasm;
 import grondag.pyroclasm.world.ChunkTracker;

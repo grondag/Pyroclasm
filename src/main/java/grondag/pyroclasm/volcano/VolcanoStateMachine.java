@@ -7,8 +7,8 @@ import javax.annotation.Nullable;
 
 import grondag.exotic_matter.simulator.ISimulationTickable;
 import grondag.exotic_matter.simulator.Simulator;
+import grondag.fermion.position.PackedBlockPos;
 import grondag.fermion.varia.Useful;
-import grondag.fermion.world.PackedBlockPos;
 import grondag.pyroclasm.Pyroclasm;
 import grondag.pyroclasm.fluidsim.LavaCell;
 import grondag.pyroclasm.fluidsim.LavaSimulator;

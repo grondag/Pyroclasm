@@ -7,8 +7,8 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import grondag.exotic_matter.simulator.Simulator;
+import grondag.fermion.position.PackedBlockPos;
 import grondag.fermion.sc.unordered.SimpleUnorderedArrayList;
-import grondag.fermion.world.PackedBlockPos;
 import grondag.pyroclasm.Configurator;
 import grondag.pyroclasm.fluidsim.LavaConnection.Flowable;
 import grondag.pyroclasm.init.ModBlocks;

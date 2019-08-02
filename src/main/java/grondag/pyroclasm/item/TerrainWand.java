@@ -1,6 +1,6 @@
 package grondag.pyroclasm.item;
 
-import grondag.fermion.world.PackedBlockPos;
+import grondag.fermion.position.PackedBlockPos;
 import grondag.pyroclasm.init.ModBlocks;
 import grondag.xm2.terrain.TerrainBlock;
 import grondag.xm2.terrain.TerrainBlockHelper;

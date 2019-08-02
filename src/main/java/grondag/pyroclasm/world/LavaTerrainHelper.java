@@ -6,8 +6,8 @@ import java.util.Comparator;
 
 import javax.annotation.Nullable;
 
+import grondag.fermion.position.PackedBlockPos;
 import grondag.fermion.varia.Useful;
-import grondag.fermion.world.PackedBlockPos;
 import grondag.pyroclasm.Configurator;
 import grondag.pyroclasm.block.CoolingBasaltBlock;
 import grondag.pyroclasm.init.ModBlocks;
@@ -73,7 +73,6 @@ public class LavaTerrainHelper {
         }
 
         result.sort(new Comparator<VisibilityNode>() {
-            @SuppressWarnings("null")
             @Override
             public int compare(@Nullable VisibilityNode o1, @Nullable VisibilityNode o2) {
                 return Float.compare(o1.distance, o2.distance);

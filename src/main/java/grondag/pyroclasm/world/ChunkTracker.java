@@ -7,7 +7,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.annotation.Nullable;
 
-import grondag.fermion.world.PackedChunkPos;
+import grondag.fermion.position.PackedChunkPos;
 import net.minecraft.server.world.ServerWorld;
 
 public class ChunkTracker {

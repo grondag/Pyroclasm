@@ -1,6 +1,6 @@
 package grondag.pyroclasm.world;
 
-import grondag.fermion.world.PackedBlockPos;
+import grondag.fermion.position.PackedBlockPos;
 import grondag.pyroclasm.block.CoolingBasaltBlock;
 import grondag.pyroclasm.fluidsim.LavaSimulator;
 import grondag.pyroclasm.init.ModBlocks;

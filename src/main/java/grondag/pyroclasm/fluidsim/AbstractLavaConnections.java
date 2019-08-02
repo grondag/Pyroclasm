@@ -29,6 +29,7 @@ public abstract class AbstractLavaConnections {
                 sim.perfCollectorOffTick);
     }
 
+    @SuppressWarnings("unused")
     public final void createConnectionIfNotPresent(LavaCell first, LavaCell second) {
         boolean isIncomplete = true;
         do {

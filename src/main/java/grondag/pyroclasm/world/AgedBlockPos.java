@@ -2,7 +2,7 @@ package grondag.pyroclasm.world;
 
 import javax.annotation.Nullable;
 
-import grondag.fermion.world.PackedBlockPos;
+import grondag.fermion.position.PackedBlockPos;
 import it.unimi.dsi.fastutil.HashCommon;
 import net.minecraft.util.math.BlockPos;
 
