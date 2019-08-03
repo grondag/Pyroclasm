@@ -7,11 +7,11 @@ import javax.annotation.Nullable;
 
 import grondag.pyroclasm.init.ModBlocks;
 import grondag.pyroclasm.init.ModSounds;
-import grondag.xm2.api.model.ModelState;
-import grondag.xm2.block.BlockSubstance;
-import grondag.xm2.terrain.TerrainBlock;
-import grondag.xm2.terrain.TerrainBlockHelper;
-import grondag.xm2.terrain.TerrainDynamicBlock;
+import grondag.xm.api.model.ModelState;
+import grondag.xm.block.BlockSubstance;
+import grondag.xm.terrain.TerrainBlock;
+import grondag.xm.terrain.TerrainBlockHelper;
+import grondag.xm.terrain.TerrainDynamicBlock;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.block.FabricBlockSettings;

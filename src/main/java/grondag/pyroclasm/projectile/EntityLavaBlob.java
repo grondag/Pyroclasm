@@ -15,7 +15,7 @@ import grondag.pyroclasm.fluidsim.LavaSimulator;
 import grondag.pyroclasm.init.ModEntities;
 import grondag.pyroclasm.init.ModSounds;
 import grondag.pyroclasm.world.LavaTerrainHelper;
-import grondag.xm2.terrain.TerrainBlockHelper;
+import grondag.xm.terrain.TerrainBlockHelper;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.Material;

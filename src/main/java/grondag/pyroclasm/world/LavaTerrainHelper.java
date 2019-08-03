@@ -11,7 +11,7 @@ import grondag.fermion.varia.Useful;
 import grondag.pyroclasm.Configurator;
 import grondag.pyroclasm.block.CoolingBasaltBlock;
 import grondag.pyroclasm.init.ModBlocks;
-import grondag.xm2.terrain.TerrainBlockHelper;
+import grondag.xm.terrain.TerrainBlockHelper;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.minecraft.block.Block;

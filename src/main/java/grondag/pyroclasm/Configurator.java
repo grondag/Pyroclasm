@@ -3,8 +3,8 @@ package grondag.pyroclasm;
 import java.util.IdentityHashMap;
 
 import grondag.pyroclasm.fluidsim.LavaCell;
-import grondag.xm2.block.BlockHarvestTool;
-import grondag.xm2.init.SubstanceConfig;
+import grondag.xm.block.BlockHarvestTool;
+import grondag.xm.init.SubstanceConfig;
 import net.minecraft.block.Block;
 import net.minecraft.entity.ai.pathing.PathNodeType;
 import net.minecraft.util.Identifier;

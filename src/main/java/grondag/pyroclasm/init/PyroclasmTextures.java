@@ -1,11 +1,11 @@
 package grondag.pyroclasm.init;
 
 import static grondag.pyroclasm.Pyroclasm.MODID;
-import static grondag.xm2.texture.TextureSetHelper.addBigTex;
-import static grondag.xm2.texture.TextureSetHelper.addZoom;
-import static grondag.xm2.texture.TextureSetHelper.addZoom2;
+import static grondag.xm.texture.TextureSetHelper.addBigTex;
+import static grondag.xm.texture.TextureSetHelper.addZoom;
+import static grondag.xm.texture.TextureSetHelper.addZoom2;
 
-import grondag.xm2.api.texture.TextureSet;
+import grondag.xm.api.texture.TextureSet;
 
 
 

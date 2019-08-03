@@ -16,7 +16,7 @@ import grondag.pyroclasm.fluidsim.CellChunk;
 import grondag.pyroclasm.fluidsim.LavaCell;
 import grondag.pyroclasm.fluidsim.LavaSimulator;
 import grondag.pyroclasm.projectile.FXLavaBlob;
-import grondag.xm2.render.XmRenderHelper;
+import grondag.xm.render.XmRenderHelper;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.BufferBuilder;

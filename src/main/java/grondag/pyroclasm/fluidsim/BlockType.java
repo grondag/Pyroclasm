@@ -2,7 +2,7 @@ package grondag.pyroclasm.fluidsim;
 
 import grondag.pyroclasm.init.ModBlocks;
 import grondag.pyroclasm.world.LavaTerrainHelper;
-import grondag.xm2.terrain.TerrainBlockHelper;
+import grondag.xm.terrain.TerrainBlockHelper;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;

@@ -1,7 +1,7 @@
 package grondag.pyroclasm.fluidsim;
 
 import grondag.pyroclasm.Configurator;
-import grondag.xm2.terrain.TerrainState;
+import grondag.xm.terrain.TerrainState;
 
 public abstract class AbstractLavaCell {
     public static final int PRESSURE_FACTOR = Configurator.LAVA.pressureFactor;

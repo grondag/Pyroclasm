@@ -1,13 +1,13 @@
 package grondag.pyroclasm.block;
 
-import grondag.xm2.api.model.ModelState;
-import grondag.xm2.api.paint.XmPaint;
-import grondag.xm2.api.surface.XmSurface;
-import grondag.xm2.mesh.helper.QuadHelper;
-import grondag.xm2.mesh.polygon.IMutablePolygon;
-import grondag.xm2.painting.VertexProcessor;
-import grondag.xm2.painting.VertexProcessors;
-import grondag.xm2.terrain.TerrainState;
+import grondag.xm.api.model.ModelState;
+import grondag.xm.api.paint.XmPaint;
+import grondag.xm.api.surface.XmSurface;
+import grondag.xm.mesh.helper.QuadHelper;
+import grondag.xm.mesh.polygon.IMutablePolygon;
+import grondag.xm.painting.VertexProcessor;
+import grondag.xm.painting.VertexProcessors;
+import grondag.xm.terrain.TerrainState;
 import net.minecraft.util.math.MathHelper;
 
 public class VertexProcessorLavaCrust extends VertexProcessor {

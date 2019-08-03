@@ -2,12 +2,12 @@ package grondag.pyroclasm.item;
 
 import grondag.fermion.position.PackedBlockPos;
 import grondag.pyroclasm.init.ModBlocks;
-import grondag.xm2.terrain.TerrainBlock;
-import grondag.xm2.terrain.TerrainBlockHelper;
-import grondag.xm2.terrain.TerrainDynamicBlock;
-import grondag.xm2.terrain.TerrainState;
-import grondag.xm2.terrain.TerrainStaticBlock;
-import grondag.xm2.terrain.TerrainWorldAdapter;
+import grondag.xm.terrain.TerrainBlock;
+import grondag.xm.terrain.TerrainBlockHelper;
+import grondag.xm.terrain.TerrainDynamicBlock;
+import grondag.xm.terrain.TerrainState;
+import grondag.xm.terrain.TerrainStaticBlock;
+import grondag.xm.terrain.TerrainWorldAdapter;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;

@@ -5,7 +5,7 @@ import grondag.fermion.color.Chroma;
 import grondag.fermion.color.Hue;
 import grondag.fermion.color.Luminance;
 import grondag.pyroclasm.Configurator;
-import grondag.xm2.block.BlockSubstance;
+import grondag.xm.block.BlockSubstance;
 import net.minecraft.block.Material;
 import net.minecraft.sound.BlockSoundGroup;
 
