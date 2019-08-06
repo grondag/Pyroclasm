@@ -6,7 +6,7 @@ import grondag.exotic_matter.simulator.Simulator;
 import grondag.pyroclasm.Configurator;
 import grondag.pyroclasm.fluidsim.LavaSimulator;
 import grondag.pyroclasm.init.ModSounds;
-import grondag.xm.api.model.ModelState;
+import grondag.xm.api.modelstate.ModelState;
 import grondag.xm.block.BlockSubstance;
 import grondag.xm.terrain.TerrainDynamicBlock;
 import net.fabricmc.api.EnvType;

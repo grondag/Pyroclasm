@@ -9,7 +9,7 @@ import grondag.pyroclasm.block.CoolingBasaltBlock;
 import grondag.pyroclasm.block.VertexProcessorLava;
 import grondag.pyroclasm.block.VertexProcessorLavaAdvanced;
 import grondag.pyroclasm.block.VertexProcessorLavaCrust;
-import grondag.xm.api.model.OwnedModelState;
+import grondag.xm.api.modelstate.OwnedModelState;
 import grondag.xm.api.paint.XmPaint;
 import grondag.xm.api.texture.TextureSet;
 import grondag.xm.block.XmSimpleBlock;
