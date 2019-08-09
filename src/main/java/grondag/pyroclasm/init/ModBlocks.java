@@ -1,7 +1,7 @@
 package grondag.pyroclasm.init;
 
-import grondag.fermion.color.ColorAtlas;
 import grondag.fermion.color.Color;
+import grondag.fermion.color.ColorAtlas;
 import grondag.frex.Frex;
 import grondag.pyroclasm.Configurator;
 import grondag.pyroclasm.Pyroclasm;
@@ -9,7 +9,7 @@ import grondag.pyroclasm.block.CoolingBasaltBlock;
 import grondag.pyroclasm.block.VertexProcessorLava;
 import grondag.pyroclasm.block.VertexProcessorLavaAdvanced;
 import grondag.pyroclasm.block.VertexProcessorLavaCrust;
-import grondag.xm.api.modelstate.OwnedModelState;
+import grondag.xm.api.modelstate.MutableModelState;
 import grondag.xm.api.paint.XmPaint;
 import grondag.xm.api.texture.TextureSet;
 import grondag.xm.block.XmSimpleBlock;
@@ -66,7 +66,7 @@ public class ModBlocks {
         final XmPaint cobblePaint = XmPaint.finder().texture(0, XmTextures.BLOCK_COBBLE).textureColor(0, ColorAtlas.COLOR_BASALT).find();
         
         //TODO: rework material properties
-        OwnedModelState workingModel = XmPrimitives.CUBE.newState();
+        MutableModelState workingModel = XmPrimitives.CUBE.newState();
         workingModel.paintAll(cobblePaint);
         basalt_cobble = register(new XmSimpleBlock(FabricBlockSettings.of(Material.STONE).strength(1, 1).build(), workingModel), "basalt_cobble");
         workingModel.release();
