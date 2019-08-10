@@ -1,10 +1,11 @@
 package grondag.pyroclasm.block;
 
-import grondag.xm.api.modelstate.ModelState;
 import grondag.xm.api.paint.XmPaint;
 import grondag.xm.api.surface.XmSurface;
 import grondag.xm.mesh.helper.QuadHelper;
 import grondag.xm.mesh.polygon.IMutablePolygon;
+import grondag.xm.model.state.AbstractPrimitiveModelState;
+import grondag.xm.model.state.TerrainModelState;
 import grondag.xm.painting.VertexProcessor;
 import grondag.xm.painting.VertexProcessors;
 import grondag.xm.terrain.TerrainState;
@@ -23,8 +24,8 @@ public class VertexProcessorLavaCrust extends VertexProcessor {
     }
 
     @Override
-    public void process(IMutablePolygon result, int layerIndex, ModelState modelState, XmSurface surface, XmPaint paint) {
-        TerrainState flowState = modelState.getTerrainState();
+    public void process(IMutablePolygon result, int layerIndex, AbstractPrimitiveModelState<?> modelState, XmSurface surface, XmPaint paint) {
+        TerrainState flowState = ((TerrainModelState)modelState).getTerrainState();
         final int baseColor = paint.textureColor(0) & 0xFFFFFF;
 
         for (int i = 0; i < result.vertexCount(); i++) {

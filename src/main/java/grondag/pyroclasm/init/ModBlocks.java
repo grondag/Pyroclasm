@@ -9,12 +9,11 @@ import grondag.pyroclasm.block.CoolingBasaltBlock;
 import grondag.pyroclasm.block.VertexProcessorLava;
 import grondag.pyroclasm.block.VertexProcessorLavaAdvanced;
 import grondag.pyroclasm.block.VertexProcessorLavaCrust;
-import grondag.xm.api.modelstate.MutableModelState;
 import grondag.xm.api.paint.XmPaint;
 import grondag.xm.api.texture.TextureSet;
-import grondag.xm.block.XmSimpleBlock;
 import grondag.xm.init.XmPrimitives;
 import grondag.xm.init.XmTextures;
+import grondag.xm.model.state.TerrainModelState;
 import grondag.xm.placement.XmBlockItem;
 import grondag.xm.terrain.TerrainBlockRegistry;
 import grondag.xm.terrain.TerrainDynamicBlock;
@@ -66,43 +65,44 @@ public class ModBlocks {
         final XmPaint cobblePaint = XmPaint.finder().texture(0, XmTextures.BLOCK_COBBLE).textureColor(0, ColorAtlas.COLOR_BASALT).find();
         
         //TODO: rework material properties
-        MutableModelState workingModel = XmPrimitives.CUBE.newState();
+        TerrainModelState workingModel = XmPrimitives.TERRAIN_CUBE.newState();
         workingModel.paintAll(cobblePaint);
-        basalt_cobble = register(new XmSimpleBlock(FabricBlockSettings.of(Material.STONE).strength(1, 1).build(), workingModel), "basalt_cobble");
+        //TODO: assign model
+        basalt_cobble = register(new Block(FabricBlockSettings.of(Material.STONE).strength(1, 1).build()), "basalt_cobble");
         workingModel.release();
 
         final XmPaint cutPaint = XmPaint.finder().texture(0, texCut).textureColor(0, ColorAtlas.COLOR_BASALT).find();
         final XmPaint coolPaint = XmPaint.finder().texture(0, texCool).textureColor(0, ColorAtlas.COLOR_BASALT).find();
 
         
-        workingModel = XmPrimitives.TERRAIN_HEIGHT.newState();
+        TerrainModelState terrainModel = XmPrimitives.TERRAIN_HEIGHT.newState();
         // TODO: use real surface references
-        workingModel.paint(workingModel.primitive().surfaces(workingModel).get(0), coolPaint);
-        workingModel.paint(workingModel.primitive().surfaces(workingModel).get(1), cutPaint);
+        terrainModel.paint(terrainModel.primitive().surfaces(terrainModel).get(0), coolPaint);
+        terrainModel.paint(terrainModel.primitive().surfaces(terrainModel).get(1), cutPaint);
         
-        basalt_cool_dynamic_height = register(new TerrainDynamicBlock(FabricBlockSettings.of(Material.STONE).strength(1, 1).build(), workingModel, false),
+        basalt_cool_dynamic_height = register(new TerrainDynamicBlock(FabricBlockSettings.of(Material.STONE).strength(1, 1).build(), terrainModel, false),
                 "basalt_cool_dynamic_height");
         
-        workingModel.setStatic(true);
-        basalt_cool_static_height = register(new TerrainDynamicBlock(FabricBlockSettings.of(Material.STONE).strength(1, 1).build(), workingModel, false),
+        terrainModel.setStatic(true);
+        basalt_cool_static_height = register(new TerrainDynamicBlock(FabricBlockSettings.of(Material.STONE).strength(1, 1).build(), terrainModel, false),
                 "basalt_cool_static_height");
 
-        workingModel.release();
+        terrainModel.release();
         
         
-        workingModel = XmPrimitives.TERRAIN_FILLER.newState();
+        terrainModel = XmPrimitives.TERRAIN_FILLER.newState();
         // TODO: use real surface references
-        workingModel.paint(workingModel.primitive().surfaces(workingModel).get(0), coolPaint);
-        workingModel.paint(workingModel.primitive().surfaces(workingModel).get(1), cutPaint);
+        terrainModel.paint(terrainModel.primitive().surfaces(terrainModel).get(0), coolPaint);
+        terrainModel.paint(terrainModel.primitive().surfaces(terrainModel).get(1), cutPaint);
 
-        basalt_cool_dynamic_filler = register(new TerrainDynamicBlock(FabricBlockSettings.of(Material.STONE).strength(1, 1).build(), workingModel, true),
+        basalt_cool_dynamic_filler = register(new TerrainDynamicBlock(FabricBlockSettings.of(Material.STONE).strength(1, 1).build(), terrainModel, true),
                 "basalt_cool_dynamic_filler");
         
-        workingModel.setStatic(true);
-        basalt_cool_static_filler = register(new TerrainDynamicBlock(FabricBlockSettings.of(Material.STONE).strength(1, 1).build(), workingModel, true),
+        terrainModel.setStatic(true);
+        basalt_cool_static_filler = register(new TerrainDynamicBlock(FabricBlockSettings.of(Material.STONE).strength(1, 1).build(), terrainModel, true),
                 "basalt_cool_static_filler");
         
-        workingModel.release();
+        terrainModel.release();
         
         
         TerrainBlockRegistry.TERRAIN_STATE_REGISTRY.registerFiller(basalt_cool_dynamic_height, basalt_cool_dynamic_filler);
@@ -112,7 +112,7 @@ public class ModBlocks {
         TerrainBlockRegistry.TERRAIN_STATE_REGISTRY.registerStateTransition(basalt_cool_dynamic_filler, basalt_cool_static_filler);
 
         //FIXME: probably won't work as cube - 1.12 had a dedicated cubic terrain block
-        workingModel = XmPrimitives.CUBE.newState();
+        workingModel = XmPrimitives.TERRAIN_CUBE.newState();
         workingModel.paintAll(cutPaint);
         workingModel.setTerrainStateKey(TerrainState.FULL_BLOCK_STATE_KEY);
         basalt_cut = register(new TerrainDynamicBlock(FabricBlockSettings.of(Material.STONE).strength(1, 1).build(), workingModel, false),

@@ -8,6 +8,7 @@ import com.google.gson.Gson;
 
 import grondag.pyroclasm.Pyroclasm;
 import grondag.pyroclasm.block.LavaBlock;
+import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.client.resource.language.I18n;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -50,7 +51,8 @@ public class BucketFill {
                 BlockHitResult hit = (BlockHitResult) target;
                 if (hit.getBlockPos() != null) {
                     BlockState state = player.world.getBlockState(hit.getBlockPos());
-                    if (state.getBlock() instanceof LavaBlock) {
+                    final Block block = state.getBlock();
+                    if (block instanceof LavaBlock) {
                         String[] denials = denials();
                         player.sendMessage(new TranslatableText(denials[ThreadLocalRandom.current().nextInt(denials.length)]));
                         // TODO: prevent fill

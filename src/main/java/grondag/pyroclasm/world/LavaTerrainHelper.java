@@ -107,8 +107,7 @@ public class LavaTerrainHelper {
      * canLavaDisplace except returns true if contains lava height block.
      */
     public static boolean isOpenTerrainSpace(BlockState state) {
-
-        Block block = state.getBlock();
+        final Block block = state.getBlock();
         return block == ModBlocks.lava_dynamic_height || block == ModBlocks.basalt_cool_dynamic_height || block == ModBlocks.basalt_cool_static_height
                 || block == ModBlocks.basalt_cut || (block instanceof CoolingBasaltBlock && TerrainBlockHelper.isFlowHeight(state))
                 || LavaTerrainHelper.canLavaDisplace(state);
