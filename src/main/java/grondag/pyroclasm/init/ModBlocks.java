@@ -65,7 +65,7 @@ public class ModBlocks {
         final XmPaint cobblePaint = XmPaint.finder().texture(0, XmTextures.BLOCK_COBBLE).textureColor(0, ColorAtlas.COLOR_BASALT).find();
         
         //TODO: rework material properties
-        TerrainModelState workingModel = XmPrimitives.TERRAIN_CUBE.newState();
+        TerrainModelState.Mutable workingModel = XmPrimitives.TERRAIN_CUBE.newState();
         workingModel.paintAll(cobblePaint);
         //TODO: assign model
         basalt_cobble = register(new Block(FabricBlockSettings.of(Material.STONE).strength(1, 1).build()), "basalt_cobble");
@@ -75,7 +75,7 @@ public class ModBlocks {
         final XmPaint coolPaint = XmPaint.finder().texture(0, texCool).textureColor(0, ColorAtlas.COLOR_BASALT).find();
 
         
-        TerrainModelState terrainModel = XmPrimitives.TERRAIN_HEIGHT.newState();
+        TerrainModelState.Mutable terrainModel = XmPrimitives.TERRAIN_HEIGHT.newState();
         // TODO: use real surface references
         terrainModel.paint(terrainModel.primitive().surfaces(terrainModel).get(0), coolPaint);
         terrainModel.paint(terrainModel.primitive().surfaces(terrainModel).get(1), cutPaint);
