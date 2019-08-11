@@ -9,10 +9,10 @@ import javax.annotation.Nullable;
 
 import com.google.common.collect.ImmutableMap;
 
-import grondag.exotic_matter.simulator.ISimulationTickable;
-import grondag.exotic_matter.simulator.Simulator;
-import grondag.exotic_matter.simulator.persistence.SimulationTopNode;
 import grondag.fermion.position.PackedChunkPos;
+import grondag.fermion.simulator.ISimulationTickable;
+import grondag.fermion.simulator.Simulator;
+import grondag.fermion.simulator.persistence.SimulationTopNode;
 import grondag.fermion.varia.BlueNoise;
 import grondag.fermion.varia.NBTDictionary;
 import grondag.fermion.varia.Useful;

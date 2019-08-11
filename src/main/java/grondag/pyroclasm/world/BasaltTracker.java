@@ -2,11 +2,11 @@ package grondag.pyroclasm.world;
 
 import javax.annotation.Nullable;
 
-import grondag.exotic_matter.simulator.Simulator;
 import grondag.fermion.position.PackedBlockPos;
 import grondag.fermion.position.PackedChunkPos;
 import grondag.fermion.sc.concurrency.PerformanceCollector;
 import grondag.fermion.sc.concurrency.PerformanceCounter;
+import grondag.fermion.simulator.Simulator;
 import grondag.fermion.varia.NBTDictionary;
 import grondag.fermion.varia.Useful;
 import grondag.pyroclasm.Configurator;

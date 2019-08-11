@@ -11,8 +11,8 @@ import javax.annotation.Nullable;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.ImmutableList;
 
-import grondag.exotic_matter.simulator.Simulator;
 import grondag.fermion.position.PackedBlockPos;
+import grondag.fermion.simulator.Simulator;
 import grondag.fermion.varia.NBTDictionary;
 import grondag.pyroclasm.Pyroclasm;
 import grondag.pyroclasm.fluidsim.LavaSimulator;

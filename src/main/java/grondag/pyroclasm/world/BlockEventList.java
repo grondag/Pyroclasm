@@ -3,11 +3,11 @@ package grondag.pyroclasm.world;
 import java.util.Arrays;
 import java.util.function.Predicate;
 
-import grondag.exotic_matter.simulator.Simulator;
 import grondag.fermion.position.PackedBlockPos;
 import grondag.fermion.sc.concurrency.PerformanceCollector;
 import grondag.fermion.sc.concurrency.PerformanceCounter;
 import grondag.fermion.sc.concurrency.SimpleConcurrentList;
+import grondag.fermion.simulator.Simulator;
 import grondag.pyroclasm.Configurator;
 import grondag.pyroclasm.Pyroclasm;
 import net.minecraft.nbt.CompoundTag;

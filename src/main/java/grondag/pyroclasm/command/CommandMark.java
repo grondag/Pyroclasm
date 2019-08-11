@@ -2,8 +2,8 @@ package grondag.pyroclasm.command;
 
 import java.util.Map;
 
-import grondag.exotic_matter.simulator.Simulator;
 import grondag.fermion.position.PackedBlockPos;
+import grondag.fermion.simulator.Simulator;
 import grondag.pyroclasm.Pyroclasm;
 import grondag.pyroclasm.volcano.VolcanoManager;
 import grondag.pyroclasm.volcano.VolcanoNode;

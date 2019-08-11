@@ -2,11 +2,11 @@ package grondag.pyroclasm.fluidsim;
 
 import java.util.function.Consumer;
 
-import grondag.exotic_matter.simulator.Simulator;
 import grondag.fermion.sc.concurrency.ScatterGatherThreadPool;
 import grondag.fermion.sc.concurrency.SimpleConcurrentList;
 import grondag.fermion.sc.concurrency.ScatterGatherThreadPool.ArrayMappingConsumer;
 import grondag.fermion.sc.concurrency.ScatterGatherThreadPool.ISharableTask;
+import grondag.fermion.simulator.Simulator;
 import grondag.pyroclasm.Configurator;
 import grondag.pyroclasm.fluidsim.LavaConnection.Flowable;
 

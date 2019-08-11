@@ -1,6 +1,6 @@
 package grondag.pyroclasm.command;
 
-import grondag.exotic_matter.simulator.Simulator;
+import grondag.fermion.simulator.Simulator;
 import grondag.pyroclasm.Pyroclasm;
 import grondag.pyroclasm.volcano.VolcanoManager;
 import net.minecraft.server.MinecraftServer;

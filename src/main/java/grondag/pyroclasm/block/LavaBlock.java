@@ -2,7 +2,7 @@ package grondag.pyroclasm.block;
 
 import java.util.Random;
 
-import grondag.exotic_matter.simulator.Simulator;
+import grondag.fermion.simulator.Simulator;
 import grondag.pyroclasm.Configurator;
 import grondag.pyroclasm.fluidsim.LavaSimulator;
 import grondag.pyroclasm.init.ModSounds;

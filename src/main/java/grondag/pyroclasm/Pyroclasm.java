@@ -3,7 +3,7 @@ package grondag.pyroclasm;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import grondag.exotic_matter.simulator.Simulator;
+import grondag.fermion.simulator.Simulator;
 import grondag.pyroclasm.fluidsim.LavaSimulator;
 import grondag.pyroclasm.init.ModBlocks;
 import grondag.pyroclasm.init.ModEntities;

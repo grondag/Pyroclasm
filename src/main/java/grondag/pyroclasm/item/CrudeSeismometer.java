@@ -1,6 +1,6 @@
 package grondag.pyroclasm.item;
 
-import grondag.exotic_matter.simulator.Simulator;
+import grondag.fermion.simulator.Simulator;
 import grondag.pyroclasm.volcano.VolcanoManager;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;

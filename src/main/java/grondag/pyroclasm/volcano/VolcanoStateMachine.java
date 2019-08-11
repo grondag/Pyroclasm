@@ -5,9 +5,9 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import javax.annotation.Nullable;
 
-import grondag.exotic_matter.simulator.ISimulationTickable;
-import grondag.exotic_matter.simulator.Simulator;
 import grondag.fermion.position.PackedBlockPos;
+import grondag.fermion.simulator.ISimulationTickable;
+import grondag.fermion.simulator.Simulator;
 import grondag.fermion.varia.Useful;
 import grondag.pyroclasm.Pyroclasm;
 import grondag.pyroclasm.fluidsim.LavaCell;

@@ -1,7 +1,7 @@
 package grondag.pyroclasm.command;
 
-import grondag.exotic_matter.simulator.Simulator;
 import grondag.fermion.position.PackedBlockPos;
+import grondag.fermion.simulator.Simulator;
 import grondag.pyroclasm.Pyroclasm;
 import grondag.pyroclasm.block.CoolingBasaltBlock;
 import grondag.pyroclasm.block.LavaBlock;

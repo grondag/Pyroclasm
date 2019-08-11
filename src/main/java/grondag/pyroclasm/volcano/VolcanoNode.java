@@ -2,10 +2,10 @@ package grondag.pyroclasm.volcano;
 
 import javax.annotation.Nullable;
 
-import grondag.exotic_matter.simulator.ISimulationTickable;
-import grondag.exotic_matter.simulator.Simulator;
-import grondag.exotic_matter.simulator.persistence.IDirtListener;
 import grondag.fermion.position.PackedChunkPos;
+import grondag.fermion.simulator.ISimulationTickable;
+import grondag.fermion.simulator.Simulator;
+import grondag.fermion.simulator.persistence.IDirtListener;
 import grondag.fermion.varia.NBTDictionary;
 import grondag.fermion.varia.ReadWriteNBT;
 import grondag.fermion.varia.Useful;
