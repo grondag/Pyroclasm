@@ -5,7 +5,7 @@ import grondag.xm.api.paint.XmPaint;
 import grondag.xm.api.surface.XmSurface;
 import grondag.xm.api.terrain.TerrainModelState;
 import grondag.xm.mesh.helper.QuadHelper;
-import grondag.xm.mesh.polygon.IMutablePolygon;
+import grondag.xm.mesh.polygon.MutablePolygon;
 import grondag.xm.painting.VertexProcessor;
 import grondag.xm.painting.VertexProcessors;
 import grondag.xm.terrain.IHotBlock;
@@ -38,7 +38,7 @@ public class VertexProcessorLavaAdvanced extends VertexProcessor {
 
     @SuppressWarnings("rawtypes")
     @Override
-    public void process(IMutablePolygon result, int layerIndex, PrimitiveModelState modelState, XmSurface surface, XmPaint paint) {
+    public void process(MutablePolygon result, int layerIndex, PrimitiveModelState modelState, XmSurface surface, XmPaint paint) {
         //TODO: implement way to set render material
         //result.setPipeline(PyroclasmClient.lavaPipeline());
 

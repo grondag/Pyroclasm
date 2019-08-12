@@ -6,7 +6,7 @@ import grondag.xm.api.paint.XmPaint;
 import grondag.xm.api.surface.XmSurface;
 import grondag.xm.api.terrain.TerrainModelState;
 import grondag.xm.mesh.helper.QuadHelper;
-import grondag.xm.mesh.polygon.IMutablePolygon;
+import grondag.xm.mesh.polygon.MutablePolygon;
 import grondag.xm.painting.VertexProcessor;
 import grondag.xm.painting.VertexProcessors;
 import grondag.xm.terrain.IHotBlock;
@@ -39,7 +39,7 @@ public class VertexProcessorLava extends VertexProcessor {
 
     @SuppressWarnings("rawtypes")
     @Override
-    public void process(IMutablePolygon result, int layerIndex, PrimitiveModelState modelState, XmSurface surface, XmPaint paint) {
+    public void process(MutablePolygon result, int layerIndex, PrimitiveModelState modelState, XmSurface surface, XmPaint paint) {
         TerrainState flowState = ((TerrainModelState)modelState).getTerrainState();
 
         for (int i = 0; i < result.vertexCount(); i++) {
@@ -86,7 +86,7 @@ public class VertexProcessorLava extends VertexProcessor {
             final int color = 0xFF000000 | ColorHelper.interpolate(0x3c3e4a, hotColor, avgIntensity);
 
             result.spriteColor(i, layerIndex, color);
-            result.setVertexGlow(i, 255);
+            result.vertexGlow(i, 255);
         }
     }
 }
