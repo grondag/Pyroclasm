@@ -86,7 +86,7 @@ public class VertexProcessorLava extends VertexProcessor {
             final int color = 0xFF000000 | ColorHelper.interpolate(0x3c3e4a, hotColor, avgIntensity);
 
             result.spriteColor(i, layerIndex, color);
-            result.vertexGlow(i, 255);
+            result.glow(i, 255);
         }
     }
 }
