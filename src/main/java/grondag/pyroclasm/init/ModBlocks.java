@@ -12,8 +12,8 @@ import grondag.pyroclasm.block.VertexProcessorLavaCrust;
 import grondag.xm.api.paint.XmPaint;
 import grondag.xm.api.terrain.TerrainModelState;
 import grondag.xm.api.texture.TextureSet;
+import grondag.xm.api.texture.XmTextures;
 import grondag.xm.init.XmPrimitives;
-import grondag.xm.init.XmTextures;
 import grondag.xm.placement.XmBlockItem;
 import grondag.xm.terrain.TerrainBlockRegistry;
 import grondag.xm.terrain.TerrainDynamicBlock;
@@ -62,7 +62,7 @@ public class ModBlocks {
         final TextureSet texCooling = Configurator.RENDER.largeTextureScale ? PyroclasmTextures.BIGTEX_BASALT_COOLING_ZOOM_X2
                 : PyroclasmTextures.BIGTEX_BASALT_COOLING_ZOOM;
 
-        final XmPaint cobblePaint = XmPaint.finder().texture(0, XmTextures.BLOCK_COBBLE).textureColor(0, ColorAtlas.COLOR_BASALT).find();
+        final XmPaint cobblePaint = XmPaint.finder().texture(0, XmTextures.TILE_COBBLE).textureColor(0, ColorAtlas.COLOR_BASALT).find();
         
         //TODO: rework material properties
         TerrainModelState.Mutable workingModel = XmPrimitives.TERRAIN_CUBE.newState();
