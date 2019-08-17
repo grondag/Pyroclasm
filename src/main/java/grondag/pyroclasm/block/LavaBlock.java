@@ -7,7 +7,7 @@ import grondag.pyroclasm.Configurator;
 import grondag.pyroclasm.fluidsim.LavaSimulator;
 import grondag.pyroclasm.init.ModSounds;
 import grondag.xm.api.modelstate.ModelState;
-import grondag.xm.block.BlockSubstance;
+import grondag.xm.relics.BlockSubstance;
 import grondag.xm.terrain.TerrainDynamicBlock;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;

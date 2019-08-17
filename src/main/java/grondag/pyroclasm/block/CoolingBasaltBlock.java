@@ -8,7 +8,7 @@ import javax.annotation.Nullable;
 import grondag.pyroclasm.init.ModBlocks;
 import grondag.pyroclasm.init.ModSounds;
 import grondag.xm.api.modelstate.ModelState;
-import grondag.xm.block.BlockSubstance;
+import grondag.xm.relics.BlockSubstance;
 import grondag.xm.terrain.TerrainBlock;
 import grondag.xm.terrain.TerrainBlockHelper;
 import grondag.xm.terrain.TerrainDynamicBlock;
