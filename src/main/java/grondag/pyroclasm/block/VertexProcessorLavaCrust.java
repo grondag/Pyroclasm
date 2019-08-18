@@ -1,11 +1,11 @@
 package grondag.pyroclasm.block;
 
-import grondag.xm.api.mesh.QuadHelper;
+import grondag.xm.api.mesh.polygon.MutablePolygon;
+import grondag.xm.api.mesh.polygon.PolyHelper;
 import grondag.xm.api.modelstate.PrimitiveModelState;
 import grondag.xm.api.paint.XmPaint;
 import grondag.xm.api.primitive.surface.XmSurface;
 import grondag.xm.api.terrain.TerrainModelState;
-import grondag.xm.mesh.polygon.MutablePolygon;
 import grondag.xm.painting.VertexProcessor;
 import grondag.xm.painting.VertexProcessors;
 import grondag.xm.terrain.TerrainState;
@@ -35,8 +35,8 @@ public class VertexProcessorLavaCrust extends VertexProcessor {
 
             // Subtract 0.5 to so that lower qudrant/half uses lower neighbor as low bound
             // for heat interpolation. Add epsilon so we don't round down ~edge points.
-            final int xMin = MathHelper.floor(x - 0.5f + QuadHelper.EPSILON);
-            final int zMin = MathHelper.floor(z - 0.5f + QuadHelper.EPSILON);
+            final int xMin = MathHelper.floor(x - 0.5f + PolyHelper.EPSILON);
+            final int zMin = MathHelper.floor(z - 0.5f + PolyHelper.EPSILON);
             final int xMax = xMin + 1;
             final int zMax = zMin + 1;
 

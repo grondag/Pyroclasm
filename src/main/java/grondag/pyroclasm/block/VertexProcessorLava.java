@@ -1,12 +1,12 @@
 package grondag.pyroclasm.block;
 
 import grondag.fermion.color.ColorHelper;
-import grondag.xm.api.mesh.QuadHelper;
+import grondag.xm.api.mesh.polygon.MutablePolygon;
+import grondag.xm.api.mesh.polygon.PolyHelper;
 import grondag.xm.api.modelstate.PrimitiveModelState;
 import grondag.xm.api.paint.XmPaint;
 import grondag.xm.api.primitive.surface.XmSurface;
 import grondag.xm.api.terrain.TerrainModelState;
-import grondag.xm.mesh.polygon.MutablePolygon;
 import grondag.xm.painting.VertexProcessor;
 import grondag.xm.painting.VertexProcessors;
 import grondag.xm.terrain.IHotBlock;
@@ -49,8 +49,8 @@ public class VertexProcessorLava extends VertexProcessor {
 //            IPaintableVertex v = result.getPaintableVertex(i);
             // Subtract 0.5 to so that lower qudrant/half uses lower neighbor as low bound
             // for heat interpolation. Add epsilon so we don't round down ~edge points.
-            final int xMin = MathHelper.floor(x - 0.5f + QuadHelper.EPSILON);
-            final int zMin = MathHelper.floor(z - 0.5f + QuadHelper.EPSILON);
+            final int xMin = MathHelper.floor(x - 0.5f + PolyHelper.EPSILON);
+            final int zMin = MathHelper.floor(z - 0.5f + PolyHelper.EPSILON);
             final int xMax = xMin + 1;
             final int zMax = zMin + 1;
 
@@ -65,10 +65,10 @@ public class VertexProcessorLava extends VertexProcessor {
 
             final int x2 = modelState.posX() * 2;
             final int z2 = modelState.posZ() * 2;
-            final float v00 = h00 < QuadHelper.EPSILON ? 0 : h00 + vary(x2 + xMin, z2 + zMin);
-            final float v10 = h10 < QuadHelper.EPSILON ? 0 : h10 + vary(x2 + xMax, z2 + zMin);
-            final float v01 = h01 < QuadHelper.EPSILON ? 0 : h01 + vary(x2 + xMin, z2 + zMax);
-            final float v11 = h11 < QuadHelper.EPSILON ? 0 : h11 + vary(x2 + xMax, z2 + zMax);
+            final float v00 = h00 < PolyHelper.EPSILON ? 0 : h00 + vary(x2 + xMin, z2 + zMin);
+            final float v10 = h10 < PolyHelper.EPSILON ? 0 : h10 + vary(x2 + xMax, z2 + zMin);
+            final float v01 = h01 < PolyHelper.EPSILON ? 0 : h01 + vary(x2 + xMin, z2 + zMax);
+            final float v11 = h11 < PolyHelper.EPSILON ? 0 : h11 + vary(x2 + xMax, z2 + zMax);
 
             final float v_0Avg = v00 + (float) (v10 - v00) * xDist;
             final float v_1Avg = v01 + (float) (v11 - v01) * xDist;
