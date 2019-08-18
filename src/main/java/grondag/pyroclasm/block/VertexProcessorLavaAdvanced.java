@@ -1,10 +1,10 @@
 package grondag.pyroclasm.block;
 
+import grondag.xm.api.mesh.QuadHelper;
 import grondag.xm.api.modelstate.PrimitiveModelState;
 import grondag.xm.api.paint.XmPaint;
 import grondag.xm.api.primitive.surface.XmSurface;
 import grondag.xm.api.terrain.TerrainModelState;
-import grondag.xm.mesh.helper.QuadHelper;
 import grondag.xm.mesh.polygon.MutablePolygon;
 import grondag.xm.painting.VertexProcessor;
 import grondag.xm.painting.VertexProcessors;
