@@ -13,7 +13,7 @@ import grondag.xm.api.paint.XmPaint;
 import grondag.xm.api.terrain.TerrainModelState;
 import grondag.xm.api.texture.TextureSet;
 import grondag.xm.api.texture.XmTextures;
-import grondag.xm.placement.XmBlockItem;
+import grondag.xm.relics.placement.XmBlockItem;
 import grondag.xm.terrain.TerrainBlockRegistry;
 import grondag.xm.terrain.TerrainCubePrimitive;
 import grondag.xm.terrain.TerrainDynamicBlock;
