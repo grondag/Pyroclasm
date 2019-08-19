@@ -4,26 +4,23 @@ import grondag.fermion.color.ColorHelper;
 import grondag.xm.api.mesh.polygon.MutablePolygon;
 import grondag.xm.api.mesh.polygon.PolyHelper;
 import grondag.xm.api.modelstate.PrimitiveModelState;
+import grondag.xm.api.paint.VertexProcessor;
+import grondag.xm.api.paint.VertexProcessorRegistry;
 import grondag.xm.api.paint.XmPaint;
 import grondag.xm.api.primitive.surface.XmSurface;
 import grondag.xm.api.terrain.TerrainModelState;
-import grondag.xm.painting.VertexProcessor;
-import grondag.xm.painting.VertexProcessors;
 import grondag.xm.terrain.IHotBlock;
 import grondag.xm.terrain.TerrainState;
 import it.unimi.dsi.fastutil.HashCommon;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.math.MathHelper;
 
-public class VertexProcessorLava extends VertexProcessor {
+public class VertexProcessorLava implements VertexProcessor {
     public final static VertexProcessorLava INSTANCE = new VertexProcessorLava() {
     };
 
     static {
-        VertexProcessors.register(INSTANCE);
-    }
-
-    private VertexProcessorLava() {
-        super("lava");
+        VertexProcessorRegistry.INSTANCE.add(new Identifier("pyroclasm:lava"), INSTANCE);
     }
 
     /**
@@ -39,7 +36,7 @@ public class VertexProcessorLava extends VertexProcessor {
 
     @SuppressWarnings("rawtypes")
     @Override
-    public void process(MutablePolygon result, int layerIndex, PrimitiveModelState modelState, XmSurface surface, XmPaint paint) {
+    public void process(MutablePolygon result, PrimitiveModelState modelState, XmSurface surface, XmPaint paint, int layerIndex) {
         TerrainState flowState = ((TerrainModelState)modelState).getTerrainState();
 
         for (int i = 0; i < result.vertexCount(); i++) {

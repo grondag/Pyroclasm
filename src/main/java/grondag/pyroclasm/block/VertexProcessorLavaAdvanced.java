@@ -3,28 +3,27 @@ package grondag.pyroclasm.block;
 import grondag.xm.api.mesh.polygon.MutablePolygon;
 import grondag.xm.api.mesh.polygon.PolyHelper;
 import grondag.xm.api.modelstate.PrimitiveModelState;
+import grondag.xm.api.paint.VertexProcessor;
+import grondag.xm.api.paint.VertexProcessorRegistry;
 import grondag.xm.api.paint.XmPaint;
 import grondag.xm.api.primitive.surface.XmSurface;
 import grondag.xm.api.terrain.TerrainModelState;
-import grondag.xm.painting.VertexProcessor;
-import grondag.xm.painting.VertexProcessors;
 import grondag.xm.terrain.IHotBlock;
 import grondag.xm.terrain.TerrainState;
 import it.unimi.dsi.fastutil.HashCommon;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.math.MathHelper;
 
-public class VertexProcessorLavaAdvanced extends VertexProcessor {
+public class VertexProcessorLavaAdvanced implements VertexProcessor {
     public final static VertexProcessorLavaAdvanced INSTANCE = new VertexProcessorLavaAdvanced() {
     };
 
     static {
-        VertexProcessors.register(INSTANCE);
+        VertexProcessorRegistry.INSTANCE.add(new Identifier("pyroclasm:lava_advanced"), INSTANCE);
     }
 
-    private VertexProcessorLavaAdvanced() {
-        super("lava_advanced");
-    }
-
+    private VertexProcessorLavaAdvanced() { }
+    
     /**
      * Generates a normal(ish) distribution around 0 with a range of -0.5 to 0.5.
      * Results are deterministic, based on a hash of the inputs.
@@ -38,7 +37,7 @@ public class VertexProcessorLavaAdvanced extends VertexProcessor {
 
     @SuppressWarnings("rawtypes")
     @Override
-    public void process(MutablePolygon result, int layerIndex, PrimitiveModelState modelState, XmSurface surface, XmPaint paint) {
+    public void process(MutablePolygon result, PrimitiveModelState modelState, XmSurface surface, XmPaint paint, int layerIndex) {
         //TODO: implement way to set render material
         //result.setPipeline(PyroclasmClient.lavaPipeline());
 

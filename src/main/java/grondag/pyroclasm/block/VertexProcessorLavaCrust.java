@@ -3,29 +3,28 @@ package grondag.pyroclasm.block;
 import grondag.xm.api.mesh.polygon.MutablePolygon;
 import grondag.xm.api.mesh.polygon.PolyHelper;
 import grondag.xm.api.modelstate.PrimitiveModelState;
+import grondag.xm.api.paint.VertexProcessor;
+import grondag.xm.api.paint.VertexProcessorRegistry;
 import grondag.xm.api.paint.XmPaint;
 import grondag.xm.api.primitive.surface.XmSurface;
 import grondag.xm.api.terrain.TerrainModelState;
-import grondag.xm.painting.VertexProcessor;
-import grondag.xm.painting.VertexProcessors;
 import grondag.xm.terrain.TerrainState;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.math.MathHelper;
 
-public class VertexProcessorLavaCrust extends VertexProcessor {
+public class VertexProcessorLavaCrust implements VertexProcessor {
     public final static VertexProcessorLavaCrust INSTANCE = new VertexProcessorLavaCrust() {
     };
 
     static {
-        VertexProcessors.register(INSTANCE);
+        VertexProcessorRegistry.INSTANCE.add(new Identifier("pyroclasm:lava_crust"), INSTANCE);
     }
 
-    private VertexProcessorLavaCrust() {
-        super("lava_crust");
-    }
+    private VertexProcessorLavaCrust() {}
 
     @SuppressWarnings("rawtypes")
     @Override
-    public void process(MutablePolygon result, int layerIndex, PrimitiveModelState modelState, XmSurface surface, XmPaint paint) {
+    public void process(MutablePolygon result, PrimitiveModelState modelState, XmSurface surface, XmPaint paint, int layerIndex) {
         TerrainState flowState = ((TerrainModelState)modelState).getTerrainState();
         final int baseColor = paint.textureColor(0) & 0xFFFFFF;
 
