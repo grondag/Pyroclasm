@@ -3,9 +3,9 @@ package grondag.pyroclasm.volcano;
 import javax.annotation.Nullable;
 
 import grondag.fermion.position.PackedChunkPos;
-import grondag.fermion.simulator.ISimulationTickable;
+import grondag.fermion.simulator.SimulationTickable;
 import grondag.fermion.simulator.Simulator;
-import grondag.fermion.simulator.persistence.IDirtListener;
+import grondag.fermion.simulator.persistence.DirtListener;
 import grondag.fermion.varia.NBTDictionary;
 import grondag.fermion.varia.ReadWriteNBT;
 import grondag.fermion.varia.Useful;
@@ -22,7 +22,7 @@ import net.minecraft.util.math.Vec3i;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
 
-public class VolcanoNode implements ReadWriteNBT, IDirtListener, ISimulationTickable {
+public class VolcanoNode implements ReadWriteNBT, DirtListener, SimulationTickable {
     static final String NBT_VOLCANO_NODE_TAG_LAST_ACTIVATION_TICK = NBTDictionary.claim("volcLastTick");
     static final String NBT_VOLCANO_NODE_TAG_COOLDOWN_TICKS = NBTDictionary.claim("volcCooldownTicks");
     static final String NBT_VOLCANO_NODE_TAG_POSITION = NBTDictionary.claim("volPos");
@@ -95,8 +95,8 @@ public class VolcanoNode implements ReadWriteNBT, IDirtListener, ISimulationTick
     }
 
     @Override
-    public void setDirty() {
-        this.volcanoManager.setDirty();
+    public void makeDirty() {
+        this.volcanoManager.makeDirty();
     }
 
     /**
@@ -139,7 +139,7 @@ public class VolcanoNode implements ReadWriteNBT, IDirtListener, ISimulationTick
                 this.lastActivationTick = Simulator.currentTick();
                 this.volcanoManager.activeNodes.put(this.packedChunkPos(), this);
                 this.loadChunks(true);
-                this.setDirty();
+                this.makeDirty();
             }
         }
     }
@@ -169,7 +169,7 @@ public class VolcanoNode implements ReadWriteNBT, IDirtListener, ISimulationTick
                 if (doRemoval)
                     this.volcanoManager.activeNodes.remove(this.packedChunkPos());
                 this.loadChunks(false);
-                this.setDirty();
+                this.makeDirty();
             }
         }
     }
@@ -180,7 +180,7 @@ public class VolcanoNode implements ReadWriteNBT, IDirtListener, ISimulationTick
                 this.stage = VolcanoStage.DEAD;
                 this.volcanoManager.activeNodes.remove(this.packedChunkPos());
                 this.loadChunks(false);
-                this.setDirty();
+                this.makeDirty();
             }
         }
     }
@@ -333,7 +333,7 @@ public class VolcanoNode implements ReadWriteNBT, IDirtListener, ISimulationTick
             final long t = chunk.getInhabitedTime();
             if (t != this.inhabitedTicks) {
                 this.inhabitedTicks = t;
-                this.setDirty();
+                this.makeDirty();
             }
         } else
             assert !this.stage.isActive;

@@ -1,6 +1,6 @@
 package grondag.pyroclasm.world;
 
-import grondag.fermion.simulator.ISimulationTickable;
+import grondag.fermion.simulator.SimulationTickable;
 import grondag.pyroclasm.varia.LongQueue;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import net.minecraft.util.math.BlockPos;
@@ -10,7 +10,7 @@ import net.minecraft.world.World;
  * Maintains ordered queue of packed block positions that need handling. Will
  * not add a position if it is already in the queue.
  */
-public abstract class WorldBlockCheckQueue implements ISimulationTickable {
+public abstract class WorldBlockCheckQueue implements SimulationTickable {
     protected final World world;
 
     private final LongQueue queue = new LongQueue();

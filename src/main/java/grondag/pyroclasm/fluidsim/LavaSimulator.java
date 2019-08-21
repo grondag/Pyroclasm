@@ -5,7 +5,7 @@ import java.util.Collection;
 import grondag.fermion.position.PackedBlockPos;
 import grondag.fermion.sc.concurrency.PerformanceCollector;
 import grondag.fermion.sc.concurrency.PerformanceCounter;
-import grondag.fermion.simulator.ISimulationTickable;
+import grondag.fermion.simulator.SimulationTickable;
 import grondag.fermion.simulator.Simulator;
 import grondag.fermion.simulator.persistence.SimulationTopNode;
 import grondag.fermion.varia.NBTDictionary;
@@ -37,7 +37,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 
-public class LavaSimulator extends SimulationTopNode implements ISimulationTickable {
+public class LavaSimulator extends SimulationTopNode implements SimulationTickable {
     private static final String NBT_LAVA_ADD_EVENTS = NBTDictionary.claim("lavaAddEvents");
     private static final String NBT_LAVA_PLACEMENT_EVENTS = NBTDictionary.claim("lavaPlaceEvents");
     public static final String NBT_LAVA_SIMULATOR = NBTDictionary.claim("lavaSim");
@@ -212,7 +212,7 @@ public class LavaSimulator extends SimulationTopNode implements ISimulationTicka
         // ignore fillers
         if (state.getBlock() == ModBlocks.lava_dynamic_height) {
             this.lavaBlockPlacementEvents.addEvent(pos, -TerrainBlockHelper.getFlowHeightFromState(state));
-            this.setDirty();
+            this.makeDirty();
         }
     }
 
@@ -251,14 +251,14 @@ public class LavaSimulator extends SimulationTopNode implements ISimulationTicka
                 target.setValidationNeeded(true);
             }
 
-            this.setDirty();
+            this.makeDirty();
         }
     }
 
     /** used by world update to notify when fillers are placed */
     public void trackCoolingBlock(long packedBlockPos) {
         this.basaltTracker.trackCoolingBlock(packedBlockPos);
-        this.setDirty();
+        this.makeDirty();
     }
 
     /**
@@ -354,7 +354,7 @@ public class LavaSimulator extends SimulationTopNode implements ISimulationTicka
 
         this.cells.validateChunks();
 
-        this.setDirty();
+        this.makeDirty();
 
         perfOnTick.endRun();
         perfOnTick.addCount(1);
@@ -423,7 +423,7 @@ public class LavaSimulator extends SimulationTopNode implements ISimulationTicka
         // unloading
         this.cells.unloadInactiveCellChunks();
 
-        this.setDirty();
+        this.makeDirty();
 
         if (Configurator.DEBUG.enablePerformanceLogging) {
             perfOffTick.endRun();
@@ -539,11 +539,6 @@ public class LavaSimulator extends SimulationTopNode implements ISimulationTicka
     }
 
     @Override
-    public void setDirty(boolean isDirty) {
-        this.isDirty = isDirty;
-    }
-
-    @Override
     public void unload() {
     }
 
@@ -590,7 +585,7 @@ public class LavaSimulator extends SimulationTopNode implements ISimulationTicka
     }
 
     @Override
-    public void setDirty() {
-        setDirty(true);
+    public void makeDirty() {
+        makeDirty(true);
     }
 }

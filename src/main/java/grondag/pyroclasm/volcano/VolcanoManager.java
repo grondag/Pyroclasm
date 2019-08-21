@@ -10,7 +10,7 @@ import javax.annotation.Nullable;
 import com.google.common.collect.ImmutableMap;
 
 import grondag.fermion.position.PackedChunkPos;
-import grondag.fermion.simulator.ISimulationTickable;
+import grondag.fermion.simulator.SimulationTickable;
 import grondag.fermion.simulator.Simulator;
 import grondag.fermion.simulator.persistence.SimulationTopNode;
 import grondag.fermion.varia.BlueNoise;
@@ -34,7 +34,7 @@ import net.minecraft.util.math.Vec3i;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
 
-public class VolcanoManager extends SimulationTopNode implements ISimulationTickable {
+public class VolcanoManager extends SimulationTopNode implements SimulationTickable {
     public VolcanoManager() {
         super(NBT_VOLCANO_MANAGER);
     }
@@ -107,7 +107,7 @@ public class VolcanoManager extends SimulationTopNode implements ISimulationTick
         node = this.nodes.computeIfAbsent(packedChunkPos, new Function<Long, VolcanoNode>() {
             @Override
             public VolcanoNode apply(@Nullable Long k) {
-                VolcanoManager.this.setDirty();
+                VolcanoManager.this.makeDirty();
                 return new VolcanoNode(VolcanoManager.this, PackedChunkPos.unpackChunkPos(packedChunkPos));
             }
         });
@@ -277,7 +277,7 @@ public class VolcanoManager extends SimulationTopNode implements ISimulationTick
                 if (targetWeight < 0) {
                     candidate.getKey().activate();
                     lastCycleTick = Simulator.currentTick();
-                    setDirty();
+                    makeDirty();
                     return;
                 }
             }
@@ -308,7 +308,7 @@ public class VolcanoManager extends SimulationTopNode implements ISimulationTick
             node.sleep(false);
             it.remove();
             lastCycleTick = Simulator.currentTick();
-            setDirty();
+            makeDirty();
         }
     }
 
@@ -344,7 +344,7 @@ public class VolcanoManager extends SimulationTopNode implements ISimulationTick
 
         // Do start because any changes made after this point aren't guaranteed to be
         // saved
-        this.setDirty(false);
+        this.makeDirty(false);
 
         ListTag nbtSubNodes = new ListTag();
 
@@ -363,12 +363,6 @@ public class VolcanoManager extends SimulationTopNode implements ISimulationTick
     @Override
     public boolean isDirty() {
         return this.isDirty;
-    }
-
-    @Override
-    public void setDirty(boolean isDirty) {
-        this.isDirty = isDirty;
-
     }
 
     public void handleChunkLoad(World world, Chunk chunk) {
@@ -392,7 +386,7 @@ public class VolcanoManager extends SimulationTopNode implements ISimulationTick
     }
 
     @Override
-    public void setDirty() {
-        setDirty(true);
+    public void makeDirty() {
+        makeDirty(true);
     }
 }

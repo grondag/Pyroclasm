@@ -6,7 +6,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import javax.annotation.Nullable;
 
 import grondag.fermion.position.PackedBlockPos;
-import grondag.fermion.simulator.ISimulationTickable;
+import grondag.fermion.simulator.SimulationTickable;
 import grondag.fermion.simulator.Simulator;
 import grondag.fermion.varia.Useful;
 import grondag.pyroclasm.Pyroclasm;
@@ -78,7 +78,7 @@ import net.minecraft.world.World;
  * blockage does happen somehow.
  * 
  */
-public class VolcanoStateMachine implements ISimulationTickable {
+public class VolcanoStateMachine implements SimulationTickable {
     private static final int BORE_RADIUS = 7;
 
     private static final int MAX_BORE_OFFSET = Useful.getLastDistanceSortedOffsetIndex(BORE_RADIUS);
