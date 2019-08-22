@@ -86,7 +86,7 @@ public class VertexProcessorLavaAdvanced implements VertexProcessor {
             final float avgAlpha = 1 - (jAvg + (kAvg - jAvg) * zDist);
             final int alpha = MathHelper.clamp(Math.round(avgAlpha * temp * 255), 0, 255);
 
-            result.spriteColor(i, layerIndex, (alpha << 24) | baseColor);
+            result.color(i, layerIndex, (alpha << 24) | baseColor);
         }
     }
 }

@@ -82,7 +82,7 @@ public class VertexProcessorLava implements VertexProcessor {
             final int hotColor = ColorHelper.colorForTemperature(kelvin);
             final int color = 0xFF000000 | ColorHelper.interpolate(0x3c3e4a, hotColor, avgIntensity);
 
-            result.spriteColor(i, layerIndex, color);
+            result.color(i, layerIndex, color);
             result.glow(i, 255);
         }
     }

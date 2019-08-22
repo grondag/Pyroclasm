@@ -52,7 +52,7 @@ public class VertexProcessorLavaCrust implements VertexProcessor {
             final float avgAlpha = jAvg + (kAvg - jAvg) * zDist;
             final int alpha = MathHelper.clamp(Math.round(avgAlpha * 255), 0, 255);
 
-            result.spriteColor(i, layerIndex, (alpha << 24) | baseColor);
+            result.color(i, layerIndex, (alpha << 24) | baseColor);
         }
     }
 }
