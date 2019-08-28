@@ -3,7 +3,7 @@ package grondag.pyroclasm.block;
 import grondag.fermion.color.ColorHelper;
 import grondag.xm.api.mesh.polygon.MutablePolygon;
 import grondag.xm.api.mesh.polygon.PolyHelper;
-import grondag.xm.api.modelstate.PrimitiveModelState;
+import grondag.xm.api.modelstate.base.BaseModelState;
 import grondag.xm.api.paint.VertexProcessor;
 import grondag.xm.api.paint.VertexProcessorRegistry;
 import grondag.xm.api.paint.XmPaint;
@@ -36,7 +36,7 @@ public class VertexProcessorLava implements VertexProcessor {
 
     @SuppressWarnings("rawtypes")
     @Override
-    public void process(MutablePolygon result, PrimitiveModelState modelState, XmSurface surface, XmPaint paint, int layerIndex) {
+    public void process(MutablePolygon result, BaseModelState modelState, XmSurface surface, XmPaint paint, int layerIndex) {
         TerrainState flowState = ((TerrainModelState)modelState).getTerrainState();
 
         for (int i = 0; i < result.vertexCount(); i++) {

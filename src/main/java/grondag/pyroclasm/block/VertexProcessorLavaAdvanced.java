@@ -2,7 +2,7 @@ package grondag.pyroclasm.block;
 
 import grondag.xm.api.mesh.polygon.MutablePolygon;
 import grondag.xm.api.mesh.polygon.PolyHelper;
-import grondag.xm.api.modelstate.PrimitiveModelState;
+import grondag.xm.api.modelstate.base.BaseModelState;
 import grondag.xm.api.paint.VertexProcessor;
 import grondag.xm.api.paint.VertexProcessorRegistry;
 import grondag.xm.api.paint.XmPaint;
@@ -37,7 +37,7 @@ public class VertexProcessorLavaAdvanced implements VertexProcessor {
 
     @SuppressWarnings("rawtypes")
     @Override
-    public void process(MutablePolygon result, PrimitiveModelState modelState, XmSurface surface, XmPaint paint, int layerIndex) {
+    public void process(MutablePolygon result, BaseModelState modelState, XmSurface surface, XmPaint paint, int layerIndex) {
         //TODO: implement way to set render material
         //result.setPipeline(PyroclasmClient.lavaPipeline());
 
