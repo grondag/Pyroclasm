@@ -12,39 +12,38 @@ import net.minecraft.util.math.BlockPos;
  * collide (as intended).
  */
 public class AgedBlockPos {
-    private int tick;
-    public final long packedBlockPos;
+	private int tick;
+	public final long packedBlockPos;
 
-    public AgedBlockPos(BlockPos pos, int tick) {
-        this(PackedBlockPos.pack(pos), tick);
-    }
+	public AgedBlockPos(BlockPos pos, int tick) {
+		this(PackedBlockPos.pack(pos), tick);
+	}
 
-    public AgedBlockPos(long packedBlockPos, int tick) {
-        this.packedBlockPos = packedBlockPos;
-        this.tick = tick;
-    }
+	public AgedBlockPos(long packedBlockPos, int tick) {
+		this.packedBlockPos = packedBlockPos;
+		this.tick = tick;
+	}
 
-    public void setTick(int tickIn) {
-        this.tick = tickIn;
-    }
+	public void setTick(int tickIn) {
+		tick = tickIn;
+	}
 
-    public int getTick() {
-        return this.tick;
-    }
+	public int getTick() {
+		return tick;
+	}
 
-    @Override
-    public int hashCode() {
-        return (int) (HashCommon.mix(this.packedBlockPos) & 0xFFFFFFFF);
-    }
+	@Override
+	public int hashCode() {
+		return (int) (HashCommon.mix(packedBlockPos) & 0xFFFFFFFF);
+	}
 
-    @Override
-    public boolean equals(@Nullable Object obj) {
-        if (obj == this) {
-            return true;
-        } else if (obj instanceof AgedBlockPos) {
-            return this.packedBlockPos == ((AgedBlockPos) obj).packedBlockPos;
-        } else {
-            return false;
-        }
-    }
+	@Override
+	public boolean equals(@Nullable Object obj) {
+		if (obj == this)
+			return true;
+		else if (obj instanceof AgedBlockPos)
+			return packedBlockPos == ((AgedBlockPos) obj).packedBlockPos;
+		else
+			return false;
+	}
 }

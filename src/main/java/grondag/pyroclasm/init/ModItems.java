@@ -9,22 +9,22 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.registry.Registry;
 
 public class ModItems {
-    public static final Item basalt_rubble = null;
+	public static final Item basalt_rubble = null;
 
-    // item blocks
-    public static final Item basalt_cobble = null;
-    public static final Item basalt_cut = null;
-    public static final Item crude_seismometer = null;
+	// item blocks
+	public static final Item basalt_cobble = null;
+	public static final Item basalt_cut = null;
+	public static final Item crude_seismometer = null;
 
-    public static void init() {
+	public static void init() {
 
-        //TODO: create tabs
-        Registry.register(Registry.ITEM, new Identifier("pyroclasm:basalt_rubble"), new Item(new Item.Settings().maxCount(64)));
-        Registry.register(Registry.ITEM, new Identifier("pyroclasm:crude_seismometer"), new CrudeSeismometer());
+		//TODO: create tabs
+		Registry.register(Registry.ITEM, new Identifier("pyroclasm:basalt_rubble"), new Item(new Item.Settings().maxCount(64)));
+		Registry.register(Registry.ITEM, new Identifier("pyroclasm:crude_seismometer"), new CrudeSeismometer());
 
-        if (Configurator.DEBUG.enableTestItems) {
-            Registry.register(Registry.ITEM, new Identifier("pyroclasm:lava_blob"), new LavaBlobItem(new Item.Settings().maxCount(64)));
-            Registry.register(Registry.ITEM, new Identifier("pyroclasm:terrain_wand"), new TerrainWand());
-        }
-    }
+		if (Configurator.DEBUG.enableTestItems) {
+			Registry.register(Registry.ITEM, new Identifier("pyroclasm:lava_blob"), new LavaBlobItem(new Item.Settings().maxCount(64)));
+			Registry.register(Registry.ITEM, new Identifier("pyroclasm:terrain_wand"), new TerrainWand());
+		}
+	}
 }

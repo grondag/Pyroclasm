@@ -14,26 +14,26 @@ import grondag.pyroclasm.volcano.VolcanoManager;
 import net.fabricmc.api.ModInitializer;
 
 public class Pyroclasm implements ModInitializer {
-    public static final String MODID = "pyroclasm";
+	public static final String MODID = "pyroclasm";
 
-    public static final Logger LOG = LogManager.getLogger();;
+	public static final Logger LOG = LogManager.getLogger();
 
-    @Override
-    public void onInitialize() {
-        Simulator.register(VolcanoManager.NBT_VOLCANO_MANAGER, VolcanoManager::new);
-        Simulator.register(LavaSimulator.NBT_LAVA_SIMULATOR, LavaSimulator::new);
+	@Override
+	public void onInitialize() {
+		Simulator.register(VolcanoManager.NBT_VOLCANO_MANAGER, VolcanoManager::new);
+		Simulator.register(LavaSimulator.NBT_LAVA_SIMULATOR, LavaSimulator::new);
 
-        // TODO: restore command after figure out how commands work
-        // event.registerServerCommand(new CommandVolcano());
+		// TODO: restore command after figure out how commands work
+		// event.registerServerCommand(new CommandVolcano());
 
-        Configurator.recalcDerived();
-        ModEntities.init();
-        ModItems.init();
-        ModRecipes.init();
-        ModBlocks.init();
-        ModSounds.registerSounds();
+		Configurator.recalcDerived();
+		ModEntities.init();
+		ModItems.init();
+		ModRecipes.init();
+		ModBlocks.init();
+		ModSounds.registerSounds();
 
-        // FIXME: block lists won't be proper until registry is loaded
-        Configurator.recalcBlocks();
-    }
+		// FIXME: block lists won't be proper until registry is loaded
+		Configurator.recalcBlocks();
+	}
 }

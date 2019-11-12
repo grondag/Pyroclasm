@@ -13,46 +13,46 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.math.MathHelper;
 
 public class VertexProcessorLavaCrust implements VertexProcessor {
-    public final static VertexProcessorLavaCrust INSTANCE = new VertexProcessorLavaCrust() {
-    };
+	public final static VertexProcessorLavaCrust INSTANCE = new VertexProcessorLavaCrust() {
+	};
 
-    static {
-        VertexProcessorRegistry.INSTANCE.add(new Identifier("pyroclasm:lava_crust"), INSTANCE);
-    }
+	static {
+		VertexProcessorRegistry.INSTANCE.add(new Identifier("pyroclasm:lava_crust"), INSTANCE);
+	}
 
-    private VertexProcessorLavaCrust() {}
+	private VertexProcessorLavaCrust() {}
 
-    @SuppressWarnings("rawtypes")
-    @Override
-    public void process(MutablePolygon result, BaseModelState modelState, XmSurface surface, XmPaint paint, int layerIndex) {
-        TerrainState flowState = ((TerrainModelState)modelState).getTerrainState();
-        final int baseColor = paint.textureColor(0) & 0xFFFFFF;
+	@SuppressWarnings("rawtypes")
+	@Override
+	public void process(MutablePolygon result, BaseModelState modelState, XmSurface surface, XmPaint paint, int layerIndex) {
+		final TerrainState flowState = ((TerrainModelState)modelState).getTerrainState();
+		final int baseColor = paint.textureColor(0) & 0xFFFFFF;
 
-        for (int i = 0; i < result.vertexCount(); i++) {
-            float x = result.x(i);
-            float z = result.z(i);
+		for (int i = 0; i < result.vertexCount(); i++) {
+			final float x = result.x(i);
+			final float z = result.z(i);
 
-            // Subtract 0.5 to so that lower qudrant/half uses lower neighbor as low bound
-            // for heat interpolation. Add epsilon so we don't round down ~edge points.
-            final int xMin = MathHelper.floor(x - 0.5f + PolyHelper.EPSILON);
-            final int zMin = MathHelper.floor(z - 0.5f + PolyHelper.EPSILON);
-            final int xMax = xMin + 1;
-            final int zMax = zMin + 1;
+			// Subtract 0.5 to so that lower qudrant/half uses lower neighbor as low bound
+			// for heat interpolation. Add epsilon so we don't round down ~edge points.
+			final int xMin = MathHelper.floor(x - 0.5f + PolyHelper.EPSILON);
+			final int zMin = MathHelper.floor(z - 0.5f + PolyHelper.EPSILON);
+			final int xMax = xMin + 1;
+			final int zMax = zMin + 1;
 
-            // translate into 0-1 range within respective quadrant
-            final float xDist = x * 2f - xMax;
-            final float zDist = z * 2f - zMax;
+			// translate into 0-1 range within respective quadrant
+			final float xDist = x * 2f - xMax;
+			final float zDist = z * 2f - zMax;
 
-            final float a00 = flowState.crustAlpha(xMin, zMin);
-            final float a10 = flowState.crustAlpha(xMax, zMin);
-            final float a01 = flowState.crustAlpha(xMin, zMax);
-            final float a11 = flowState.crustAlpha(xMax, zMax);
-            final float jAvg = a00 + (a10 - a00) * xDist;
-            final float kAvg = a01 + (a11 - a01) * xDist;
-            final float avgAlpha = jAvg + (kAvg - jAvg) * zDist;
-            final int alpha = MathHelper.clamp(Math.round(avgAlpha * 255), 0, 255);
+			final float a00 = flowState.crustAlpha(xMin, zMin);
+			final float a10 = flowState.crustAlpha(xMax, zMin);
+			final float a01 = flowState.crustAlpha(xMin, zMax);
+			final float a11 = flowState.crustAlpha(xMax, zMax);
+			final float jAvg = a00 + (a10 - a00) * xDist;
+			final float kAvg = a01 + (a11 - a01) * xDist;
+			final float avgAlpha = jAvg + (kAvg - jAvg) * zDist;
+			final int alpha = MathHelper.clamp(Math.round(avgAlpha * 255), 0, 255);
 
-            result.color(i, layerIndex, (alpha << 24) | baseColor);
-        }
-    }
+			result.color(i, layerIndex, (alpha << 24) | baseColor);
+		}
+	}
 }

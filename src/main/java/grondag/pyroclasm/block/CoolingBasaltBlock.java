@@ -26,121 +26,120 @@ import net.minecraft.world.ViewableWorld;
 import net.minecraft.world.World;
 
 public class CoolingBasaltBlock extends TerrainDynamicBlock {
-    
-    @Nullable
-    protected TerrainDynamicBlock nextCoolingBlock;
-    protected int heatLevel = 0;
 
-    public CoolingBasaltBlock(FabricBlockSettings settings, String blockName, BlockSubstance substance, ModelState defaultModelState, boolean isFiller) {
-        super(settings.ticksRandomly().build(), defaultModelState, isFiller);
-    }
+	@Nullable
+	protected TerrainDynamicBlock nextCoolingBlock;
+	protected int heatLevel = 0;
 
-    /**
-     * Cools this block if ready and returns true if successful.
-     */
-    public CoolingResult tryCooling(World worldIn, BlockPos pos, final BlockState state) {
-        TerrainDynamicBlock nextBlock = this.nextCoolingBlock;
-        if (nextBlock == null)
-            return CoolingResult.INVALID;
+	public CoolingBasaltBlock(FabricBlockSettings settings, String blockName, BlockSubstance substance, ModelState defaultModelState, boolean isFiller) {
+		super(settings.ticksRandomly().build(), defaultModelState, isFiller);
+	}
 
-        if (state.getBlock() == this) {
-            if (canCool(worldIn, pos, state)) {
-                if (this.nextCoolingBlock == ModBlocks.basalt_cool_dynamic_height) {
-                    if (TerrainBlockHelper.shouldBeFullCube(state, worldIn, pos)) {
-                        worldIn.setBlockState(pos, ModBlocks.basalt_cut.getDefaultState().with(TerrainBlock.TERRAIN_TYPE, state.get(TerrainBlock.TERRAIN_TYPE)));
-                    } else {
-                        worldIn.setBlockState(pos, nextBlock.getDefaultState().with(TerrainBlock.TERRAIN_TYPE, state.get(TerrainBlock.TERRAIN_TYPE)));
-                    }
-                    return CoolingResult.COMPLETE;
-                } else {
-                    worldIn.setBlockState(pos, nextBlock.getDefaultState().with(TerrainBlock.TERRAIN_TYPE, state.get(TerrainBlock.TERRAIN_TYPE)));
-                    return CoolingResult.PARTIAL;
-                }
-            } else {
-                return CoolingResult.UNREADY;
-            }
+	/**
+	 * Cools this block if ready and returns true if successful.
+	 */
+	public CoolingResult tryCooling(World worldIn, BlockPos pos, final BlockState state) {
+		final TerrainDynamicBlock nextBlock = nextCoolingBlock;
+		if (nextBlock == null)
+			return CoolingResult.INVALID;
 
-        } else {
-            return CoolingResult.INVALID;
-        }
+		if (state.getBlock() == this) {
+			if (canCool(worldIn, pos, state)) {
+				if (nextCoolingBlock == ModBlocks.basalt_cool_dynamic_height) {
+					if (TerrainBlockHelper.shouldBeFullCube(state, worldIn, pos)) {
+						worldIn.setBlockState(pos, ModBlocks.basalt_cut.getDefaultState().with(TerrainBlock.TERRAIN_TYPE, state.get(TerrainBlock.TERRAIN_TYPE)));
+					} else {
+						worldIn.setBlockState(pos, nextBlock.getDefaultState().with(TerrainBlock.TERRAIN_TYPE, state.get(TerrainBlock.TERRAIN_TYPE)));
+					}
+					return CoolingResult.COMPLETE;
+				} else {
+					worldIn.setBlockState(pos, nextBlock.getDefaultState().with(TerrainBlock.TERRAIN_TYPE, state.get(TerrainBlock.TERRAIN_TYPE)));
+					return CoolingResult.PARTIAL;
+				}
+			} else
+				return CoolingResult.UNREADY;
 
-    }
+		} else
+			return CoolingResult.INVALID;
 
-    /**
-     * Want to avoid the synchronization penalty of pooled block pos.
-     */
-    private static ThreadLocal<BlockPos.Mutable> canCoolPos = ThreadLocal.withInitial(BlockPos.Mutable::new);
+	}
 
-    private static Direction[] FACES = Direction.values();
-    
-    /**
-     * True if no adjacent blocks are hotter than me and at least four adjacent
-     * blocks are cooler. Occasionally can cool if only three are cooler.
-     */
-    public boolean canCool(BlockView worldIn, BlockPos pos, BlockState state) {
-        if (TerrainBlockHelper.shouldBeFullCube(state, worldIn, pos))
-            return true;
+	/**
+	 * Want to avoid the synchronization penalty of pooled block pos.
+	 */
+	private static ThreadLocal<BlockPos.Mutable> canCoolPos = ThreadLocal.withInitial(BlockPos.Mutable::new);
 
-        int chances = 0;
+	private static Direction[] FACES = Direction.values();
 
-        BlockPos.Mutable mutablePos = canCoolPos.get();
+	/**
+	 * True if no adjacent blocks are hotter than me and at least four adjacent
+	 * blocks are cooler. Occasionally can cool if only three are cooler.
+	 */
+	public boolean canCool(BlockView worldIn, BlockPos pos, BlockState state) {
+		if (TerrainBlockHelper.shouldBeFullCube(state, worldIn, pos))
+			return true;
 
-     
-        for (Direction face : FACES) {
-            final Vec3i dVec = face.getVector();
+		int chances = 0;
 
-            mutablePos.set(pos.getX() + dVec.getX(), pos.getY() + dVec.getY(), pos.getZ() + dVec.getZ());
+		final BlockPos.Mutable mutablePos = canCoolPos.get();
 
-            BlockState testState = worldIn.getBlockState(mutablePos);
-            Block neighbor = testState.getBlock();
 
-            if (neighbor == ModBlocks.lava_dynamic_height || neighbor == ModBlocks.lava_dynamic_filler)
-                return false;
+		for (final Direction face : FACES) {
+			final Vec3i dVec = face.getVector();
 
-            if (neighbor instanceof CoolingBasaltBlock) {
-                int heat = ((CoolingBasaltBlock) neighbor).heatLevel;
-                if (heat > this.heatLevel)
-                    return false;
-                else if (heat == this.heatLevel)
-                    continue;
-            }
+			mutablePos.set(pos.getX() + dVec.getX(), pos.getY() + dVec.getY(), pos.getZ() + dVec.getZ());
 
-            chances += 1;
-        }
+			final BlockState testState = worldIn.getBlockState(mutablePos);
+			final Block neighbor = testState.getBlock();
 
-        return chances > 3 || (chances == 3 && ThreadLocalRandom.current().nextInt(3) == 0);
+			if (neighbor == ModBlocks.lava_dynamic_height || neighbor == ModBlocks.lava_dynamic_filler)
+				return false;
 
-    }
+			if (neighbor instanceof CoolingBasaltBlock) {
+				final int heat = ((CoolingBasaltBlock) neighbor).heatLevel;
+				if (heat > heatLevel)
+					return false;
+				else if (heat == heatLevel) {
+					continue;
+				}
+			}
 
-    public CoolingBasaltBlock setCoolingBlockInfo(TerrainDynamicBlock nextCoolingBlock, int heatLevel) {
-        this.nextCoolingBlock = nextCoolingBlock;
-        this.heatLevel = heatLevel;
-        return this;
-    }
+			chances += 1;
+		}
 
-    @Override
-    public final int heatLevel() {
-        return this.heatLevel;
-    }
+		return chances > 3 || (chances == 3 && ThreadLocalRandom.current().nextInt(3) == 0);
 
-    @Override
-    @Environment(EnvType.CLIENT)
-    public void randomDisplayTick(BlockState stateIn, World worldIn, BlockPos pos, Random rand) {
-        double d0 = (double) pos.getX();
-        double d1 = (double) pos.getY();
-        double d2 = (double) pos.getZ();
+	}
 
-        if (rand.nextInt(1000) == 0)
-            worldIn.playSound(d0, d1, d2, ModSounds.basalt_cooling, SoundCategory.BLOCKS, 0.4F + rand.nextFloat() * 0.4F, 1.0F + rand.nextFloat() * 1.0F,
-                    false);
+	public CoolingBasaltBlock setCoolingBlockInfo(TerrainDynamicBlock nextCoolingBlock, int heatLevel) {
+		this.nextCoolingBlock = nextCoolingBlock;
+		this.heatLevel = heatLevel;
+		return this;
+	}
 
-        else if (rand.nextInt(4000) == 0)
-            worldIn.playSound(d0, d1, d2, ModSounds.lava_hiss, SoundCategory.BLOCKS, 0.4F + rand.nextFloat() * 0.4F, 0.9F + rand.nextFloat() * 0.30F, false);
+	@Override
+	public final int heatLevel() {
+		return heatLevel;
+	}
 
-    }
+	@Override
+	@Environment(EnvType.CLIENT)
+	public void randomDisplayTick(BlockState stateIn, World worldIn, BlockPos pos, Random rand) {
+		final double d0 = pos.getX();
+		final double d1 = pos.getY();
+		final double d2 = pos.getZ();
 
-    @Override
-    public int getTickRate(ViewableWorld viewableWorld) {
-        return 60;
-    }
+		if (rand.nextInt(1000) == 0) {
+			worldIn.playSound(d0, d1, d2, ModSounds.basalt_cooling, SoundCategory.BLOCKS, 0.4F + rand.nextFloat() * 0.4F, 1.0F + rand.nextFloat() * 1.0F,
+				false);
+		} else if (rand.nextInt(4000) == 0) {
+			worldIn.playSound(d0, d1, d2, ModSounds.lava_hiss, SoundCategory.BLOCKS, 0.4F + rand.nextFloat() * 0.4F, 0.9F + rand.nextFloat() * 0.30F, false);
+		}
+
+	}
+
+	@Override
+	public int getTickRate(ViewableWorld viewableWorld) {
+		return 60;
+	}
 }

@@ -112,8 +112,9 @@ public class VolcanoNode implements ReadWriteNBT, DirtListener, SimulationTickab
 		position = PackedChunkPos.unpackChunkPos(nbt.getLong(NBT_VOLCANO_NODE_TAG_POSITION));
 		lastActivationTick = nbt.getInt(NBT_VOLCANO_NODE_TAG_LAST_ACTIVATION_TICK);
 		lavaCooldownTicks = nbt.getInt(NBT_VOLCANO_NODE_TAG_COOLDOWN_TICKS);
-		if (stage.isActive)
+		if (stage.isActive) {
 			loadChunks(true);
+		}
 	}
 
 	@Override
@@ -149,8 +150,9 @@ public class VolcanoNode implements ReadWriteNBT, DirtListener, SimulationTickab
 		final int centerZ = chunkPos().z;
 
 		for (final Vec3i offset : Useful.DISTANCE_SORTED_CIRCULAR_OFFSETS) {
-			if (offset.getY() > 7)
+			if (offset.getY() > 7) {
 				break;
+			}
 
 			//FIXME: will overwrite other chunk loading
 			volcanoManager.world.setChunkForced(centerX + offset.getX(), centerZ + offset.getZ(), shouldLoad);
@@ -166,8 +168,9 @@ public class VolcanoNode implements ReadWriteNBT, DirtListener, SimulationTickab
 		synchronized (this) {
 			if (stage != VolcanoStage.DORMANT) {
 				stage = VolcanoStage.DORMANT;
-				if (doRemoval)
+				if (doRemoval) {
 					volcanoManager.activeNodes.remove(packedChunkPos());
+				}
 				loadChunks(false);
 				makeDirty();
 			}
@@ -220,12 +223,14 @@ public class VolcanoNode implements ReadWriteNBT, DirtListener, SimulationTickab
 			final BlockPos.Mutable pos = new BlockPos.Mutable();
 
 			for (final Vec3i offset : Useful.DISTANCE_SORTED_CIRCULAR_OFFSETS) {
-				if (offset.getY() > 7)
+				if (offset.getY() > 7) {
 					break;
+				}
 
 				pos.set(centerX + offset.getX() * 16, 64, centerZ + offset.getZ() * 16);
-				if (!world.isBlockLoaded(pos))
+				if (!world.isBlockLoaded(pos)) {
 					Pyroclasm.LOG.warn("Chunk @ BlockPos X, Z = %d, %d not loaded when expected to be loaded.", pos.getX(), pos.getZ());
+				}
 			}
 		}
 		return true;
@@ -284,8 +289,9 @@ public class VolcanoNode implements ReadWriteNBT, DirtListener, SimulationTickab
 	}
 
 	private void sustainRumble() {
-		if ((Simulator.currentTick() & 31) == 31)
+		if ((Simulator.currentTick() & 31) == 31) {
 			startRumble();
+		}
 	}
 
 	@Override
@@ -335,7 +341,8 @@ public class VolcanoNode implements ReadWriteNBT, DirtListener, SimulationTickab
 				inhabitedTicks = t;
 				makeDirty();
 			}
-		} else
+		} else {
 			assert !stage.isActive;
+		}
 	}
 }

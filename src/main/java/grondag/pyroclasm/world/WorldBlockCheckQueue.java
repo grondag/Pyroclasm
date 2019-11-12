@@ -11,42 +11,43 @@ import net.minecraft.world.World;
  * not add a position if it is already in the queue.
  */
 public abstract class WorldBlockCheckQueue implements SimulationTickable {
-    protected final World world;
+	protected final World world;
 
-    private final LongQueue queue = new LongQueue();
+	private final LongQueue queue = new LongQueue();
 
-    private final LongOpenHashSet set = new LongOpenHashSet();
+	private final LongOpenHashSet set = new LongOpenHashSet();
 
-    /**
-     * Use in all cases when mutable is appropriate. This class is not intended to
-     * be threadsafe and avoids recursion, so re-entrancy should not be a problem.
-     */
-    protected final BlockPos.Mutable searchPos = new BlockPos.Mutable();
+	/**
+	 * Use in all cases when mutable is appropriate. This class is not intended to
+	 * be threadsafe and avoids recursion, so re-entrancy should not be a problem.
+	 */
+	protected final BlockPos.Mutable searchPos = new BlockPos.Mutable();
 
-    protected WorldBlockCheckQueue(World world) {
-        this.world = world;
-    }
+	protected WorldBlockCheckQueue(World world) {
+		this.world = world;
+	}
 
-    public void queueCheck(long packedBlockPos) {
-        if (set.add(packedBlockPos))
-            queue.enqueue(packedBlockPos);
-    }
+	public void queueCheck(long packedBlockPos) {
+		if (set.add(packedBlockPos)) {
+			queue.enqueue(packedBlockPos);
+		}
+	}
 
-    protected boolean isEmpty() {
-        return this.queue.isEmpty();
-    }
+	protected boolean isEmpty() {
+		return queue.isEmpty();
+	}
 
-    protected int size() {
-        return this.queue.size();
-    }
+	protected int size() {
+		return queue.size();
+	}
 
-    protected long[] toArray() {
-        return this.queue.toArray();
-    }
+	protected long[] toArray() {
+		return queue.toArray();
+	}
 
-    protected long dequeueCheck() {
-        long result = queue.dequeueLong();
-        set.rem(result);
-        return result;
-    }
+	protected long dequeueCheck() {
+		final long result = queue.dequeueLong();
+		set.rem(result);
+		return result;
+	}
 }
