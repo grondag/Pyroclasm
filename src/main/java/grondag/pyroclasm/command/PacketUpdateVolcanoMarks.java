@@ -1,8 +1,8 @@
 package grondag.pyroclasm.command;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
-import net.minecraft.util.PacketByteBuf;
+import net.minecraft.network.PacketByteBuf;
 
 
 //TODO: redo w/ Brigadier
@@ -14,7 +14,7 @@ public class PacketUpdateVolcanoMarks { //extends AbstractServerToPlayerPacket<P
     }
 
     public PacketUpdateVolcanoMarks(long[] marks) {
-        this.data = marks;
+        data = marks;
     }
 
     public void fromBytes(PacketByteBuf pBuff) {

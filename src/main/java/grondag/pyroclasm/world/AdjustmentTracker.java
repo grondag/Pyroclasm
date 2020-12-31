@@ -1,5 +1,15 @@
 package grondag.pyroclasm.world;
 
+import it.unimi.dsi.fastutil.longs.LongIterator;
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+
+import net.minecraft.block.Block;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
+import net.minecraft.tag.BlockTags;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
+
 import grondag.fermion.position.PackedBlockPos;
 import grondag.pyroclasm.block.CoolingBasaltBlock;
 import grondag.pyroclasm.fluidsim.LavaSimulator;
@@ -12,20 +22,12 @@ import grondag.xm.terrain.TerrainStaticBlock;
 import grondag.xm.terrain.TerrainType;
 import grondag.xm.terrain.TerrainWorldAdapter;
 import grondag.xm.terrain.TerrainWorldCache;
-import it.unimi.dsi.fastutil.longs.LongIterator;
-import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.tag.BlockTags;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
 
 /**
  * Tracks positions that require adjustment (filler block addition or remove,
  * static-to-dynamic conversion) related to terrain blocks.
  * <p>
- * 
+ *
  * Not thread-safe. Should be called from server thread.
  *
  */
@@ -72,7 +74,7 @@ public class AdjustmentTracker extends TerrainWorldAdapter {
         final boolean isOldHeight = TerrainBlockHelper.isFlowHeight(oldBlockState);
         final Block oldBlock = oldBlockState.getBlock();
 
-        if (oldBlock.matches(BlockTags.LOGS))
+        if (oldBlock.isIn(BlockTags.LOGS))
             sim.lavaTreeCutter.queueCheck(PackedBlockPos.up(packedBlockPos));
 
         if (oldBlock != newBlockState.getBlock() && oldBlock != ModBlocks.lava_dynamic_height && oldBlock != ModBlocks.lava_dynamic_filler)
@@ -92,12 +94,12 @@ public class AdjustmentTracker extends TerrainWorldAdapter {
         }
 
         if (isNewHeight) {
-            this.newHeightBlocks.add(packedBlockPos);
+            newHeightBlocks.add(packedBlockPos);
 
             // make cooled/cooling basalt under lava hot again - renders better that way
             if (newBlockState.getBlock() == ModBlocks.lava_dynamic_height && PackedBlockPos.getY(packedBlockPos) > 0) {
-                BlockState downState = oldWorld.getBlockState(PackedBlockPos.down(packedBlockPos));
-                Block downBlock = downState.getBlock();
+                final BlockState downState = oldWorld.getBlockState(PackedBlockPos.down(packedBlockPos));
+                final Block downBlock = downState.getBlock();
                 if (TerrainBlockHelper.getFlowHeightFromState(downState) == TerrainState.BLOCK_LEVELS_INT && downBlock != ModBlocks.lava_dynamic_height
                         && downBlock != ModBlocks.basalt_dynamic_very_hot_height) {
                     if (downBlock == ModBlocks.basalt_cut || downBlock == ModBlocks.basalt_cool_dynamic_height
@@ -115,7 +117,7 @@ public class AdjustmentTracker extends TerrainWorldAdapter {
     private void trackOldHeightChange(long packedBlockPos) {
         final LongOpenHashSet heightBlocks = this.heightBlocks;
 
-        TerrainState oldTerrainState = this.oldWorld.terrainState(packedBlockPos);
+        final TerrainState oldTerrainState = oldWorld.terrainState(packedBlockPos);
         heightBlocks.add(packedBlockPos);
         heightBlocks.add(PackedBlockPos.down(packedBlockPos));
         heightBlocks.add(PackedBlockPos.down(packedBlockPos, 2));
@@ -135,7 +137,7 @@ public class AdjustmentTracker extends TerrainWorldAdapter {
      */
     private void checkAboveOldHeightBlock(long packedBlockPos) {
         long up = PackedBlockPos.up(packedBlockPos);
-        BlockState firstAbove = oldWorld.getBlockState(up);
+        final BlockState firstAbove = oldWorld.getBlockState(up);
 
         if (!TerrainBlockHelper.isFlowHeight(firstAbove)) {
             if (TerrainBlockHelper.isFlowFiller(firstAbove)) {
@@ -157,7 +159,7 @@ public class AdjustmentTracker extends TerrainWorldAdapter {
         pendingUpdates.add(packedBlockPos);
 
         PackedBlockPos.unpackTo(packedBlockPos, targetPos);
-        if (oldBlockState.getBlock().matches(BlockTags.LOGS)) {
+        if (oldBlockState.getBlock().isIn(BlockTags.LOGS)) {
             sim.lavaTreeCutter.queueCheck(PackedBlockPos.up(packedBlockPos));
         }
 
@@ -167,7 +169,7 @@ public class AdjustmentTracker extends TerrainWorldAdapter {
     }
 
     public final void applyUpdates() {
-        assert this.terrainStates.isEmpty();
+        assert terrainStates.isEmpty();
 
         processNewHeightBlocks();
 
@@ -188,10 +190,10 @@ public class AdjustmentTracker extends TerrainWorldAdapter {
     private void processNewHeightBlocks() {
         final LongOpenHashSet heightBlocks = this.heightBlocks;
 
-        LongIterator it = this.newHeightBlocks.iterator();
+        final LongIterator it = newHeightBlocks.iterator();
         while (it.hasNext()) {
-            long packedBlockPos = it.nextLong();
-            TerrainState newTerrainState = terrainState(packedBlockPos);
+            final long packedBlockPos = it.nextLong();
+            final TerrainState newTerrainState = terrainState(packedBlockPos);
             heightBlocks.add(packedBlockPos);
             heightBlocks.add(PackedBlockPos.down(packedBlockPos));
             heightBlocks.add(PackedBlockPos.down(packedBlockPos, 2));
@@ -208,7 +210,7 @@ public class AdjustmentTracker extends TerrainWorldAdapter {
     }
 
     private void convertHeightBlocks() {
-        LongIterator it = heightBlocks.iterator();
+        final LongIterator it = heightBlocks.iterator();
         while (it.hasNext()) {
             convertHeightBlockInner(it.nextLong());
         }
@@ -233,14 +235,14 @@ public class AdjustmentTracker extends TerrainWorldAdapter {
         // replace static flow height blocks with dynamic version
         // this won't affect our terrain state cache in any meaningful way
         else if (block instanceof TerrainStaticBlock) {
-            BlockState newState = ((TerrainStaticBlock) block).dynamicState(baseState, this, PackedBlockPos.unpack(packedBlockPos));
+            final BlockState newState = ((TerrainStaticBlock) block).dynamicState(baseState, this, PackedBlockPos.unpack(packedBlockPos));
             if (newState != baseState)
                 setBlockState(packedBlockPos, newState, false);
         }
     }
 
     private void handleSurfaceUpdates() {
-        LongIterator it = surfaceBlocks.iterator();
+        final LongIterator it = surfaceBlocks.iterator();
         while (it.hasNext()) {
             handleSurfaceInner(it.nextLong());
         }
@@ -270,7 +272,7 @@ public class AdjustmentTracker extends TerrainWorldAdapter {
         if (!LavaTerrainHelper.canLavaDisplace(state1))
             return;
 
-        Block fillBlock = TerrainBlockRegistry.TERRAIN_STATE_REGISTRY.getFillerBlock(block0);
+        final Block fillBlock = TerrainBlockRegistry.TERRAIN_STATE_REGISTRY.getFillerBlock(block0);
         if (fillBlock == null)
             return;
 
@@ -279,7 +281,7 @@ public class AdjustmentTracker extends TerrainWorldAdapter {
         BlockState update = fillBlock.getDefaultState().with(TerrainBlock.TERRAIN_TYPE, TerrainType.FILL_UP_ONE);
         if (update != state1)
             setBlockState(pos1, update, false);
-        this.oldFillerBlocks.rem(pos1);
+        oldFillerBlocks.rem(pos1);
 
         if (fillers == 2) {
             final long pos2 = PackedBlockPos.up(packedBlockPos, 2);
@@ -293,7 +295,7 @@ public class AdjustmentTracker extends TerrainWorldAdapter {
             if (update != state2)
                 setBlockState(pos2, update, false);
 
-            this.oldFillerBlocks.rem(pos2);
+            oldFillerBlocks.rem(pos2);
         }
     }
 
@@ -301,10 +303,10 @@ public class AdjustmentTracker extends TerrainWorldAdapter {
         if (oldFillerBlocks.isEmpty())
             return;
 
-        LongIterator it = oldFillerBlocks.iterator();
+        final LongIterator it = oldFillerBlocks.iterator();
         while (it.hasNext()) {
-            long fillerPos = it.nextLong();
-            if (this.pendingUpdates.contains(fillerPos))
+            final long fillerPos = it.nextLong();
+            if (pendingUpdates.contains(fillerPos))
                 continue;
 
             if (TerrainBlockHelper.isFlowFiller(getBlockState(fillerPos)))
@@ -318,8 +320,8 @@ public class AdjustmentTracker extends TerrainWorldAdapter {
         final World world = this.world;
         final BlockPos.Mutable updatePos = this.updatePos;
 
-        for (long l : pendingUpdates) {
-            BlockState newState = this.blockStates.get(l);
+        for (final long l : pendingUpdates) {
+            final BlockState newState = blockStates.get(l);
             if (newState != null) {
                 PackedBlockPos.unpackTo(l, updatePos);
                 world.setBlockState(updatePos, newState);

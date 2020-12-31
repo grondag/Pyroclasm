@@ -4,7 +4,16 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Comparator;
 
-import javax.annotation.Nullable;
+import it.unimi.dsi.fastutil.longs.LongArrayList;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+import org.jetbrains.annotations.Nullable;
+
+import net.minecraft.block.Block;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.Material;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
+import net.minecraft.world.World;
 
 import grondag.fermion.position.PackedBlockPos;
 import grondag.fermion.varia.Useful;
@@ -12,14 +21,6 @@ import grondag.pyroclasm.Configurator;
 import grondag.pyroclasm.block.CoolingBasaltBlock;
 import grondag.pyroclasm.init.ModBlocks;
 import grondag.xm.terrain.TerrainBlockHelper;
-import it.unimi.dsi.fastutil.longs.LongArrayList;
-import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Material;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.world.World;
 
 public class LavaTerrainHelper {
 
@@ -45,26 +46,26 @@ public class LavaTerrainHelper {
 
         private VisibilityNode(long packedBlockPos, BitSet visibilityMask) {
             this.packedBlockPos = packedBlockPos;
-            this.xOffset = PackedBlockPos.getX(packedBlockPos);
-            this.zOffset = PackedBlockPos.getZ(packedBlockPos);
-            this.bitIndex = getBitIndex(xOffset, zOffset);
-            this.distance = (float) Math.sqrt(xOffset * xOffset + zOffset * zOffset);
+            xOffset = PackedBlockPos.getX(packedBlockPos);
+            zOffset = PackedBlockPos.getZ(packedBlockPos);
+            bitIndex = getBitIndex(xOffset, zOffset);
+            distance = (float) Math.sqrt(xOffset * xOffset + zOffset * zOffset);
             this.visibilityMask = visibilityMask;
         }
     }
 
     static {
-        LongArrayList circlePositions = Useful.fill2dCircleInPlaneXZ(RADIUS);
+        final LongArrayList circlePositions = Useful.fill2dCircleInPlaneXZ(RADIUS);
 
-        long origin = PackedBlockPos.pack(0, 0, 0);
+        final long origin = PackedBlockPos.pack(0, 0, 0);
 
-        ArrayList<VisibilityNode> result = new ArrayList<VisibilityNode>();
+        final ArrayList<VisibilityNode> result = new ArrayList<>();
 
         // start at 1 to skip origin
         for (int i = 1; i < circlePositions.size(); i++) {
-            BitSet visibilityMask = new BitSet(MASK_SIZE);
+            final BitSet visibilityMask = new BitSet(MASK_SIZE);
 
-            LongArrayList linePositions = Useful.line2dInPlaneXZ(origin, circlePositions.get(i));
+            final LongArrayList linePositions = Useful.line2dInPlaneXZ(origin, circlePositions.get(i));
             for (int l = 0; l < linePositions.size(); l++) {
                 visibilityMask.set(getBitIndex(linePositions.get(l)));
             }
@@ -133,13 +134,13 @@ public class LavaTerrainHelper {
          */
         float maxVisibleDistance = 0;
 
-        BitSet blockedPositions = new BitSet(MASK_SIZE);
+        final BitSet blockedPositions = new BitSet(MASK_SIZE);
 
-        BlockPos.Mutable targetPos = baseFlowPos.get();
+        final BlockPos.Mutable targetPos = baseFlowPos.get();
 
-        for (VisibilityNode node : VISIBILITY_NODES) {
+        for (final VisibilityNode node : VISIBILITY_NODES) {
 
-            boolean isVisible = !node.visibilityMask.intersects(blockedPositions);
+            final boolean isVisible = !node.visibilityMask.intersects(blockedPositions);
 
             if (!isVisible) {
                 if (node.distance - maxVisibleDistance > 1)
@@ -149,7 +150,7 @@ public class LavaTerrainHelper {
             }
 
             PackedBlockPos.unpackTo(PackedBlockPos.add(originPackedPos, node.packedBlockPos), targetPos);
-            boolean isOpen = isOpenTerrainSpace(world.getBlockState(targetPos));
+            final boolean isOpen = isOpenTerrainSpace(world.getBlockState(targetPos));
 
             if (!isOpen) {
                 blockedPositions.set(node.bitIndex);
@@ -160,7 +161,7 @@ public class LavaTerrainHelper {
             } else {
                 // space is open, check for nearest drop if not already checked and position is
                 // visible from origin
-                if (nearestFallDistance == NOT_FOUND && isVisible && isOpenTerrainSpace(world.getBlockState(targetPos.setOffset(Direction.DOWN)))) {
+                if (nearestFallDistance == NOT_FOUND && isVisible && isOpenTerrainSpace(world.getBlockState(targetPos.offset(Direction.DOWN)))) {
                     nearestFallDistance = node.distance;
 
                 }
@@ -193,7 +194,7 @@ public class LavaTerrainHelper {
         // up and down in range = 1.5 - (up dist / (combined dist - 1))
     }
 
-    private static final Object2IntOpenHashMap<Material> MATERIAL_MAP = new Object2IntOpenHashMap<Material>();
+    private static final Object2IntOpenHashMap<Material> MATERIAL_MAP = new Object2IntOpenHashMap<>();
     private static final int TOAST = -1;
     private static final int SAFE = 1;
     private static final int UNKNOWN = 0;
@@ -201,11 +202,11 @@ public class LavaTerrainHelper {
     //TODO: add more materials
     static {
         MATERIAL_MAP.put(Material.AIR, TOAST);
-        MATERIAL_MAP.put(Material.EARTH, SAFE);
+        MATERIAL_MAP.put(Material.SOIL, SAFE);
         MATERIAL_MAP.put(Material.WOOD, TOAST);
         MATERIAL_MAP.put(Material.STONE, SAFE);
         MATERIAL_MAP.put(Material.METAL, SAFE);
-        MATERIAL_MAP.put(Material.ANVIL, SAFE);
+        MATERIAL_MAP.put(Material.REPAIR_STATION, SAFE);
         MATERIAL_MAP.put(Material.WATER, TOAST);
         MATERIAL_MAP.put(Material.LAVA, SAFE);
         MATERIAL_MAP.put(Material.LEAVES, TOAST);
@@ -214,19 +215,20 @@ public class LavaTerrainHelper {
         MATERIAL_MAP.put(Material.SPONGE, TOAST);
         MATERIAL_MAP.put(Material.WOOL, TOAST);
         MATERIAL_MAP.put(Material.FIRE, TOAST);
-        MATERIAL_MAP.put(Material.SAND, SAFE);
-        MATERIAL_MAP.put(Material.PART, TOAST);
+        MATERIAL_MAP.put(Material.AGGREGATE, SAFE);
+        MATERIAL_MAP.put(Material.SUPPORTED, TOAST);
         MATERIAL_MAP.put(Material.CARPET, TOAST);
         MATERIAL_MAP.put(Material.GLASS, TOAST);
         MATERIAL_MAP.put(Material.REDSTONE_LAMP, TOAST);
         MATERIAL_MAP.put(Material.TNT, TOAST);
-        MATERIAL_MAP.put(Material.ORGANIC, TOAST);
-        MATERIAL_MAP.put(Material.PACKED_ICE, TOAST);
-        MATERIAL_MAP.put(Material.SNOW, TOAST);
+        MATERIAL_MAP.put(Material.ORGANIC_PRODUCT, TOAST);
+        MATERIAL_MAP.put(Material.DENSE_ICE, TOAST);
         MATERIAL_MAP.put(Material.SNOW_BLOCK, TOAST);
+        MATERIAL_MAP.put(Material.SNOW_LAYER, TOAST);
         MATERIAL_MAP.put(Material.CACTUS, TOAST);
-        MATERIAL_MAP.put(Material.CLAY, SAFE);
-        MATERIAL_MAP.put(Material.PUMPKIN, TOAST);
+        //TODO: clean these up, probably some missing/wrong
+//        MATERIAL_MAP.put(Material.CLAY, SAFE);
+        MATERIAL_MAP.put(Material.GOURD, TOAST);
         MATERIAL_MAP.put(Material.EGG, SAFE);
         MATERIAL_MAP.put(Material.PORTAL, SAFE);
         MATERIAL_MAP.put(Material.CAKE, TOAST);

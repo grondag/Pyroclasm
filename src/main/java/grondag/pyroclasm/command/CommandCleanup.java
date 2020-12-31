@@ -1,5 +1,14 @@
 package grondag.pyroclasm.command;
 
+import net.minecraft.block.Block;
+import net.minecraft.block.BlockState;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
+import net.minecraft.text.TranslatableText;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.chunk.Chunk;
+
 import grondag.fermion.position.PackedBlockPos;
 import grondag.fermion.simulator.Simulator;
 import grondag.pyroclasm.Pyroclasm;
@@ -12,14 +21,6 @@ import grondag.pyroclasm.projectile.EntityLavaBlob;
 import grondag.pyroclasm.world.BasaltTracker;
 import grondag.xm.terrain.TerrainBlock;
 import grondag.xm.terrain.TerrainBlockHelper;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.TranslatableText;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.chunk.Chunk;
 
 //TODO: redo w/ Brigadier
 public class CommandCleanup {
@@ -43,10 +44,10 @@ public class CommandCleanup {
 //    @Override
     public void execute(MinecraftServer server, ServerPlayerEntity sender, String[] args) {
         try {
-            LavaSimulator sim = Simulator.instance().getNode(LavaSimulator.class);
-            ServerWorld world = (ServerWorld) sender.world;
+            final LavaSimulator sim = Simulator.instance().getNode(LavaSimulator.class);
+            final ServerWorld world = (ServerWorld) sender.world;
             if (sim.world.dimension == world.dimension) {
-                BlockPos pos = sender.getBlockPos();
+                final BlockPos pos = sender.getBlockPos();
                 final int x = pos.getX();
                 final int z = pos.getZ();
                 int cleancount = cleanHotBlocks(sim, world, x, z);
@@ -58,12 +59,12 @@ public class CommandCleanup {
                 cleancount += cleanHotBlocks(sim, world, x + 16, z - 16);
                 cleancount += cleanHotBlocks(sim, world, x + 16, z);
                 cleancount += cleanHotBlocks(sim, world, z + 16, z + 16);
-                int blobCount = EntityLavaBlob.clearAll();
-                sender.sendMessage(new TranslatableText("commands.volcano.cleanup.success", cleancount, blobCount));
+                final int blobCount = EntityLavaBlob.clearAll();
+                sender.sendMessage(new TranslatableText("commands.volcano.cleanup.success", cleancount, blobCount), true);
             } else {
-                sender.sendMessage(new TranslatableText("commands.volcano.dimension_disabled"));
+                sender.sendMessage(new TranslatableText("commands.volcano.dimension_disabled"), true);
             }
-        } catch (Exception e) {
+        } catch (final Exception e) {
             Pyroclasm.LOG.error("Unhandled error activating volcanos", e);
         }
     }
@@ -93,9 +94,9 @@ public class CommandCleanup {
                     final int z = zBase + j;
 
                     //PERF: avoid allocation here
-                    BlockPos pos = new BlockPos(x, y, z);
-                    BlockState state = chunk.getBlockState(pos);
-                    Block block = state.getBlock();
+                    final BlockPos pos = new BlockPos(x, y, z);
+                    final BlockState state = chunk.getBlockState(pos);
+                    final Block block = state.getBlock();
 
                     if (block instanceof CoolingBasaltBlock) {
                         if (basalt.isTracked(PackedBlockPos.pack(x, y, z)))

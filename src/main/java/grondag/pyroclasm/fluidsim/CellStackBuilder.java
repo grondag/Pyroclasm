@@ -1,6 +1,6 @@
 package grondag.pyroclasm.fluidsim;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.chunk.Chunk;
@@ -21,7 +21,7 @@ public class CellStackBuilder {
     private @Nullable LavaCell entryCell;
 
     private void startCell(int floor, boolean isFlowFloor) {
-        this.isCellStarted = true;
+        isCellStarted = true;
         this.floor = floor;
         this.isFlowFloor = isFlowFloor;
     }
@@ -29,17 +29,17 @@ public class CellStackBuilder {
     private void completeCell(LavaCells cells, int x, int z, int ceiling) {
         LavaCell entryCell = this.entryCell;
         if (entryCell == null) {
-            entryCell = new LavaCell(cells, x, z, this.floor, ceiling, this.isFlowFloor);
+            entryCell = new LavaCell(cells, x, z, floor, ceiling, isFlowFloor);
             this.entryCell = entryCell;
         } else {
-            entryCell.linkAbove(new LavaCell(entryCell, this.floor, ceiling, this.isFlowFloor));
+            entryCell.linkAbove(new LavaCell(entryCell, floor, ceiling, isFlowFloor));
             this.entryCell = entryCell.aboveCell();
         }
-        this.isCellStarted = false;
+        isCellStarted = false;
     }
 
     private static final ThreadLocal<BlockPos.Mutable> updatePos = ThreadLocal.withInitial(BlockPos.Mutable::new);
-    
+
     /**
      * Updates the cell stack with given entry cell based on contents of provided
      * CellColum. Expands, splits, adds, deletes or merges cells as needed to match
@@ -52,7 +52,7 @@ public class CellStackBuilder {
         /** used to know when a space has a flow floor */
         BlockType lastBlockType = null;
         final BlockPos.Mutable pos = updatePos.get();
-        
+
         do {
             // if at any point we remove or merge cells and there are no more cells left,
             // need to divert to buildNewCellStack to prevent NPE (plus is simpler logic
@@ -60,16 +60,16 @@ public class CellStackBuilder {
             // Highly unlikely though that this will ever happen: implies solid blocks from
             // 0 to world height...
             if (simEntryCell == null)
-                return this.buildNewCellStack(cells, chunk, x, z);
+                return buildNewCellStack(cells, chunk, x, z);
 
-            BlockType blockType = BlockType.getBlockTypeFromBlockState(chunk.getBlockState(pos.set(x, y, z)));
+            final BlockType blockType = BlockType.getBlockTypeFromBlockState(chunk.getBlockState(pos.set(x, y, z)));
 
             if (blockType.isBarrier) {
                 simEntryCell = simEntryCell.addOrConfirmBarrier(y, blockType.isFlow);
             } else {
-                int floor = blockType.isSolid ? blockType.flowHeight : 0;
+                final int floor = blockType.isSolid ? blockType.flowHeight : 0;
 
-                boolean isFlowFloor = (blockType.isSolid && blockType.isFlow)
+                final boolean isFlowFloor = (blockType.isSolid && blockType.isFlow)
                         || ((blockType == BlockType.SPACE || blockType.isLava) && lastBlockType == BlockType.SOLID_FLOW_12);
 
                 simEntryCell = simEntryCell.addOrConfirmSpace(y, floor, isFlowFloor);
@@ -113,7 +113,7 @@ public class CellStackBuilder {
     }
 
 //    /**
-//     * Returns Block Type if it can be inferred from the given cell at world level Y. 
+//     * Returns Block Type if it can be inferred from the given cell at world level Y.
 //     * Otherwise returns barrier.  This logic assumes that the given cell is the closest cell to Y
 //     * and caller should ensure this before calling either by checking that y is within the cell
 //     * or by calling LavaCell2.findCellNearestY().
@@ -121,27 +121,27 @@ public class CellStackBuilder {
 //    private static BlockType getBlockTypeWithinCell(LavaCell2 cell, int y)
 //    {
 //        if(y > cell.topY()) return BlockType.BARRIER;
-//        
+//
 //        if(y < cell.bottomY())
 //        {
-//            return y == cell.bottomY() - 1 && cell.isBottomFlow() 
+//            return y == cell.bottomY() - 1 && cell.isBottomFlow()
 //                    ? BlockType.SOLID_FLOW_12 : BlockType.BARRIER;
 //        }
-//        
+//
 //        // if get to this point, y is within the cell
-//        
+//
 //        // detect privileged case of flow floor within the cell
 //        if(y == cell.bottomY() && cell.isBottomFlow() && cell.getFluidUnits() == 0 && cell.floorFlowHeight() < LavaSimulator.LEVELS_PER_BLOCK )
 //        {
 //            return BlockType.SOLID_FLOW_STATES[cell.floorFlowHeight()];
 //        }
-//        
+//
 //        // above lava surface, must be space
 //        if(y > cell.fluidSurfaceY()) return BlockType.SPACE;
-//        
+//
 //        // below lava surface, must be lava
 //        if(y < cell.fluidSurfaceY()) return BlockType.LAVA_12;
-//        
+//
 //        // if get here, implies at lava surface
 //        return BlockType.LAVA_STATES[cell.fluidSurfaceFlowHeight()];
 //    }
@@ -153,19 +153,19 @@ public class CellStackBuilder {
      */
     public @Nullable LavaCell buildNewCellStack(LavaCells cells, Chunk chunk, int x, int z) {
         BlockType lastType = BlockType.BARRIER;
-        this.entryCell = null;
+        entryCell = null;
 
         final BlockPos.Mutable pos = updatePos.get();
-        
+
         for (int y = 0; y < 256; y++) {
-            BlockType currentType = BlockType.getBlockTypeFromBlockState(chunk.getBlockState(pos.set(x, y, z)));
+            final BlockType currentType = BlockType.getBlockTypeFromBlockState(chunk.getBlockState(pos.set(x, y, z)));
 
             switch (currentType) {
             case BARRIER: {
                 // Close cell if one is open
                 // Otherwise no action.
-                if (this.isCellStarted)
-                    this.completeCell(cells, x, z, y * LavaSimulator.LEVELS_PER_BLOCK);
+                if (isCellStarted)
+                    completeCell(cells, x, z, y * LavaSimulator.LEVELS_PER_BLOCK);
                 break;
             }
 
@@ -182,12 +182,12 @@ public class CellStackBuilder {
             case SOLID_FLOW_11:
             case SOLID_FLOW_12: {
                 // Close cell if one is open
-                if (this.isCellStarted)
-                    this.completeCell(cells, x, z, y * LavaSimulator.LEVELS_PER_BLOCK);
+                if (isCellStarted)
+                    completeCell(cells, x, z, y * LavaSimulator.LEVELS_PER_BLOCK);
 
                 // start new cell if not full height
                 if (currentType.flowHeight < LavaSimulator.LEVELS_PER_BLOCK) {
-                    this.startCell(y * LavaSimulator.LEVELS_PER_BLOCK + currentType.flowHeight, true);
+                    startCell(y * LavaSimulator.LEVELS_PER_BLOCK + currentType.flowHeight, true);
                 }
                 break;
             }
@@ -206,8 +206,8 @@ public class CellStackBuilder {
             case LAVA_11:
             case LAVA_12: {
                 // start new cell if this is the start open space
-                if (!this.isCellStarted)
-                    this.startCell(y * LavaSimulator.LEVELS_PER_BLOCK, lastType.isFlow);
+                if (!isCellStarted)
+                    startCell(y * LavaSimulator.LEVELS_PER_BLOCK, lastType.isFlow);
                 break;
             }
 
@@ -220,10 +220,10 @@ public class CellStackBuilder {
         }
 
         // if got all the way to the top of the world with an open cell, close it
-        if (this.isCellStarted)
-            this.completeCell(cells, x, z, 256 * LavaSimulator.LEVELS_PER_BLOCK);
+        if (isCellStarted)
+            completeCell(cells, x, z, 256 * LavaSimulator.LEVELS_PER_BLOCK);
 
-        LavaCell entryCell = this.entryCell;
+        final LavaCell entryCell = this.entryCell;
         return entryCell == null ? null : entryCell.selectStartingCell();
     }
 }

@@ -5,9 +5,12 @@ import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
-import javax.annotation.Nullable;
-
 import com.google.common.collect.ComparisonChain;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import org.jetbrains.annotations.Nullable;
+
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.util.math.BlockPos;
 
 import grondag.fermion.position.PackedChunkPos;
 import grondag.fermion.sc.concurrency.PerformanceCounter;
@@ -15,12 +18,9 @@ import grondag.fermion.varia.NBTDictionary;
 import grondag.pyroclasm.Configurator;
 import grondag.pyroclasm.Pyroclasm;
 import grondag.pyroclasm.world.ChunkTracker;
-import it.unimi.dsi.fastutil.ints.IntArrayList;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.util.math.BlockPos;
 
 public class LavaCells {
-    private final static String NBT_LAVA_CELLS = NBTDictionary.claim("lavaCells");
+    private final static String NBT_LAVA_CELLS = NBTDictionary.GLOBAL.claim("lavaCells");
     private final static int CAPACITY_INCREMENT = 0x10000;
 
 //    @SuppressWarnings("serial")
@@ -50,21 +50,21 @@ public class LavaCells {
 
     public LavaCells(LavaSimulator sim) {
         this.sim = sim;
-        this.chunkTracker = sim.chunkTracker;
+        chunkTracker = sim.chunkTracker;
 
         // on tick
         perfCounterValidation = PerformanceCounter.create(Configurator.DEBUG.enablePerformanceLogging, "Chunk validation", sim.perfCollectorOnTick);
     }
 
     public void validateChunks() {
-        this.perfCounterValidation.startRun();
+        perfCounterValidation.startRun();
 
-        int size = this.cellChunks.size();
+        final int size = cellChunks.size();
 
         if (size == 0)
             return;
 
-        final Object[] candidates = this.cellChunks.values().stream().filter(c -> c.isNew() || c.validationPriority() > 0).sorted(new Comparator<Object>() {
+        final Object[] candidates = cellChunks.values().stream().filter(c -> c.isNew() || c.validationPriority() > 0).sorted(new Comparator<Object>() {
             @Override
             public int compare(@Nullable Object o1, @Nullable Object o2) {
                 if (o1 == null)
@@ -81,8 +81,8 @@ public class LavaCells {
         }).toArray();
 
         int chunkCount = 0;
-        for (Object chunk : candidates) {
-            CellChunk c = (CellChunk) chunk;
+        for (final Object chunk : candidates) {
+            final CellChunk c = (CellChunk) chunk;
             if (c.isNew() || chunkCount < MAX_CHUNKS_PER_TICK) {
                 chunkCount++;
 
@@ -96,7 +96,7 @@ public class LavaCells {
             }
         }
 
-        this.perfCounterValidation.endRun();
+        perfCounterValidation.endRun();
     }
 
     public @Nullable LavaCell getCellIfExists(BlockPos pos) {
@@ -109,10 +109,10 @@ public class LavaCells {
      * been loaded. Thread safe.
      */
     public @Nullable LavaCell getCellIfExists(int x, int y, int z) {
-        CellChunk chunk = cellChunks.get(PackedChunkPos.getPackedChunkPosFromBlockXZ(x, z));
+        final CellChunk chunk = cellChunks.get(PackedChunkPos.getPackedChunkPosFromBlockXZ(x, z));
         if (chunk == null)
             return null;
-        LavaCell entryCell = chunk.getEntryCell(x, z);
+        final LavaCell entryCell = chunk.getEntryCell(x, z);
         return entryCell == null ? null : entryCell.getCellIfExists(y);
     }
 
@@ -122,7 +122,7 @@ public class LavaCells {
      * been loaded. Thread safe.
      */
     public @Nullable LavaCell getEntryCell(int x, int z) {
-        CellChunk chunk = cellChunks.get(PackedChunkPos.getPackedChunkPosFromBlockXZ(x, z));
+        final CellChunk chunk = cellChunks.get(PackedChunkPos.getPackedChunkPosFromBlockXZ(x, z));
         return chunk == null ? null : chunk.getEntryCell(x, z);
     }
 
@@ -131,7 +131,7 @@ public class LavaCells {
      * safe for most use cases.
      */
     private void setEntryCell(int x, int z, LavaCell entryCell) {
-        this.getOrCreateCellChunk(x, z).setEntryCell(x, z, entryCell);
+        getOrCreateCellChunk(x, z).setEntryCell(x, z, entryCell);
     }
 
     /**
@@ -141,8 +141,8 @@ public class LavaCells {
     public CellChunk getOrCreateCellChunk(int xBlock, int zBlock) {
         final long key = PackedChunkPos.getPackedChunkPosFromBlockXZ(xBlock, zBlock);
         return cellChunks.computeIfAbsent(key, k -> {
-            CellChunk result = new CellChunk(key, this);
-            this.chunkTracker.trackChunk(this.sim.world, key);
+            final CellChunk result = new CellChunk(key, this);
+            chunkTracker.trackChunk(sim.world, key);
             return result;
         });
     }
@@ -163,30 +163,30 @@ public class LavaCells {
     }
 
     public int chunkCount() {
-        return this.cellChunks.size();
+        return cellChunks.size();
     }
 
     /**
      * Releases chunks that no longer need to remain loaded.
      */
     public void unloadInactiveCellChunks() {
-        Iterator<CellChunk> it = this.cellChunks.values().iterator();
+        final Iterator<CellChunk> it = cellChunks.values().iterator();
 
         while (it.hasNext()) {
-            CellChunk chunk = it.next();
+            final CellChunk chunk = it.next();
             if (chunk.canUnload()) {
                 it.remove();
                 chunk.unload();
-                this.chunkTracker.untrackChunk(this.sim.world, chunk.packedChunkPos);
+                chunkTracker.untrackChunk(sim.world, chunk.packedChunkPos);
             }
         }
     }
 
     public void writeNBT(CompoundTag nbt) {
 
-        IntArrayList saveData = new IntArrayList(this.chunkCount() * 64 * LavaCell.LAVA_CELL_NBT_WIDTH);
+        final IntArrayList saveData = new IntArrayList(chunkCount() * 64 * LavaCell.LAVA_CELL_NBT_WIDTH);
 
-        this.forEach(cell -> cell.writeNBT(saveData));
+        forEach(cell -> cell.writeNBT(saveData));
 
         if (Configurator.DEBUG.enablePerformanceLogging)
             Pyroclasm.LOG.info("Saving " + saveData.size() / LavaCell.LAVA_CELL_NBT_WIDTH + " lava cells.");
@@ -195,16 +195,16 @@ public class LavaCells {
     }
 
     public void readNBT(LavaSimulator sim, CompoundTag nbt) {
-        this.cellChunks.clear();
+        cellChunks.clear();
 
         // LOAD LAVA CELLS
-        int[] saveData = nbt.getIntArray(NBT_LAVA_CELLS);
+        final int[] saveData = nbt.getIntArray(NBT_LAVA_CELLS);
 
         // confirm correct size
         if (saveData.length % LavaCell.LAVA_CELL_NBT_WIDTH != 0) {
             Pyroclasm.LOG.warn("Invalid save data loading lava simulator. Lava blocks may not be updated properly.");
         } else {
-            int count = saveData.length / LavaCell.LAVA_CELL_NBT_WIDTH;
+            final int count = saveData.length / LavaCell.LAVA_CELL_NBT_WIDTH;
             int newCapacity = (count / CAPACITY_INCREMENT + 1) * CAPACITY_INCREMENT;
             if (newCapacity < CAPACITY_INCREMENT / 2)
                 newCapacity += CAPACITY_INCREMENT;
@@ -212,17 +212,17 @@ public class LavaCells {
             int i = 0;
 
             while (i < saveData.length) {
-                int x = saveData[i++];
-                int z = saveData[i++];
+                final int x = saveData[i++];
+                final int z = saveData[i++];
 
                 LavaCell newCell;
 
-                LavaCell startingCell = this.getEntryCell(x, z);
+                final LavaCell startingCell = getEntryCell(x, z);
 
                 if (startingCell == null) {
                     newCell = new LavaCell(this, x, z, 0, 0, false);
                     newCell.readNBTArray(saveData, i);
-                    this.setEntryCell(x, z, newCell);
+                    setEntryCell(x, z, newCell);
                 } else {
                     newCell = new LavaCell(startingCell, 0, 0, false);
                     newCell.readNBTArray(saveData, i);
@@ -238,7 +238,7 @@ public class LavaCells {
                 i += LavaCell.LAVA_CELL_NBT_WIDTH - 2;
             }
 
-            this.forEach(cell -> {
+            forEach(cell -> {
                 cell.updateActiveStatus();
                 cell.updateConnectionsIfNeeded(sim);
             });
@@ -246,8 +246,8 @@ public class LavaCells {
     }
 
     public void logDebugInfo() {
-        Pyroclasm.LOG.info(this.cellChunks.size() + " loaded cell chunks");
-        for (CellChunk chunk : this.cellChunks.values()) {
+        Pyroclasm.LOG.info(cellChunks.size() + " loaded cell chunks");
+        for (final CellChunk chunk : cellChunks.values()) {
             Pyroclasm.LOG.info("xStart=" + PackedChunkPos.getChunkXStart(chunk.packedChunkPos) + " zStart="
                     + PackedChunkPos.getChunkZStart(chunk.packedChunkPos) + " activeCount=" + chunk.getActiveCount() + " entryCount=" + chunk.getEntryCount());
 
@@ -255,7 +255,7 @@ public class LavaCells {
     }
 
     public void provideBlockUpdatesAndDoCooling(long packedChunkPos) {
-        CellChunk chunk = this.cellChunks.get(packedChunkPos);
+        final CellChunk chunk = cellChunks.get(packedChunkPos);
 
         if (chunk == null || chunk.canUnload() || chunk.isNew())
             return;
@@ -266,11 +266,11 @@ public class LavaCells {
     /**
      * Applies the given operation to all cells.
      * <p>
-     * 
+     *
      * Do not use for operations that may add or remove cells.
      */
     public void forEach(Consumer<LavaCell> consumer) {
-        for (CellChunk c : this.cellChunks.values()) {
+        for (final CellChunk c : cellChunks.values()) {
             if (c.isNew())
                 continue;
 
@@ -279,6 +279,6 @@ public class LavaCells {
     }
 
     public void forEachChunk(Consumer<CellChunk> consumer) {
-        this.cellChunks.values().forEach(consumer);
+        cellChunks.values().forEach(consumer);
     }
 }

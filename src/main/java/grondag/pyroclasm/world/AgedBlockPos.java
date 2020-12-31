@@ -1,10 +1,11 @@
 package grondag.pyroclasm.world;
 
-import javax.annotation.Nullable;
+import it.unimi.dsi.fastutil.HashCommon;
+import org.jetbrains.annotations.Nullable;
+
+import net.minecraft.util.math.BlockPos;
 
 import grondag.fermion.position.PackedBlockPos;
-import it.unimi.dsi.fastutil.HashCommon;
-import net.minecraft.util.math.BlockPos;
 
 /**
  * Just like a BlockPos but with an extra integer tick value. Tick value does
@@ -25,16 +26,16 @@ public class AgedBlockPos {
     }
 
     public void setTick(int tickIn) {
-        this.tick = tickIn;
+        tick = tickIn;
     }
 
     public int getTick() {
-        return this.tick;
+        return tick;
     }
 
     @Override
     public int hashCode() {
-        return (int) (HashCommon.mix(this.packedBlockPos) & 0xFFFFFFFF);
+        return (int) (HashCommon.mix(packedBlockPos) & 0xFFFFFFFF);
     }
 
     @Override
@@ -42,7 +43,7 @@ public class AgedBlockPos {
         if (obj == this) {
             return true;
         } else if (obj instanceof AgedBlockPos) {
-            return this.packedBlockPos == ((AgedBlockPos) obj).packedBlockPos;
+            return packedBlockPos == ((AgedBlockPos) obj).packedBlockPos;
         } else {
             return false;
         }

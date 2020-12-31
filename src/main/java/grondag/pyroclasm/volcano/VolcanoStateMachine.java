@@ -3,22 +3,9 @@ package grondag.pyroclasm.volcano;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
-import javax.annotation.Nullable;
-
-import grondag.fermion.position.PackedBlockPos;
-import grondag.fermion.simulator.SimulationTickable;
-import grondag.fermion.simulator.Simulator;
-import grondag.fermion.varia.Useful;
-import grondag.pyroclasm.Pyroclasm;
-import grondag.pyroclasm.fluidsim.LavaCell;
-import grondag.pyroclasm.fluidsim.LavaSimulator;
-import grondag.pyroclasm.Configurator;
-import grondag.pyroclasm.init.ModBlocks;
-import grondag.pyroclasm.projectile.EntityLavaBlob;
-import grondag.pyroclasm.world.LavaTerrainHelper;
-import grondag.xm.terrain.TerrainBlockHelper;
-import grondag.xm.terrain.TerrainState;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
+import org.jetbrains.annotations.Nullable;
+
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
@@ -29,54 +16,68 @@ import net.minecraft.util.math.Vec3i;
 import net.minecraft.world.Heightmap;
 import net.minecraft.world.World;
 
+import grondag.fermion.position.PackedBlockPos;
+import grondag.fermion.simulator.SimulationTickable;
+import grondag.fermion.simulator.Simulator;
+import grondag.fermion.varia.Useful;
+import grondag.pyroclasm.Configurator;
+import grondag.pyroclasm.Pyroclasm;
+import grondag.pyroclasm.fluidsim.LavaCell;
+import grondag.pyroclasm.fluidsim.LavaSimulator;
+import grondag.pyroclasm.init.ModBlocks;
+import grondag.pyroclasm.projectile.EntityLavaBlob;
+import grondag.pyroclasm.world.LavaTerrainHelper;
+import grondag.xm.terrain.TerrainBlockHelper;
+import grondag.xm.terrain.TerrainState;
+
 /**
  * Encapsulates all the logic and state related to clearing the bore of a
  * volcano. Meant to be called each tick when volcano is in clearing mode.
  * <p>
- * 
+ *
  * Internal state is not persisted. Simply restarts from bottom when world is
  * reloaded.
  * <p>
- * 
+ *
  * Find spaces right above bedrock. If spaces contain stone, push the stone up
  * to create at least a one-block space.
  * <p>
- * 
+ *
  * Add 1 block of lava to each cell and wait for cells to form. Make sure each
  * cell is marked as a bore cell.
  * <p>
- * 
+ *
  * Find the max height of any bore cell.
  * <p>
- * 
+ *
  * If lava level is below the current max, add lava until we reach the max AND
  * cells hold pressure. Periodically reconfirm the max. The rate of lava
  * addition is subject to configured flow constraints and cooling periods when
  * load peaks.
  * <p>
- * 
+ *
  * As lava rises in the bore, remove (melt) any blocks inside the bore. Note
  * this may cause the ceiling to rise or allow lava to flow out, so need to
  * periodically refresh the max ceiling and wait until pressure can build before
  * pushing up more blocks or exploding.
  * <p>
- * 
+ *
  * If the max ceiling is less than sky height (no blockage) then it is possible
  * lava flow can become blocked. If all cells are filled to max (which is less
  * than sky height) and all cells are holding pressure then will either build
  * mound by pushing up blocks or have an explosion.
  * <p>
- * 
+ *
  * Explosion or pushing blocks depends on the volcano structure. If there is a
  * weak point anywhere along the bore, the bore will explode outward, with
  * preference given to the top of the bore. If no weak points are found, will
  * push blocks up around the bore
  * <p>
- * 
+ *
  * If max ceiling is sky height, will simply continue to add lava until goes
  * dormant, lava level reaches sky height (which will force dormancy), or
  * blockage does happen somehow.
- * 
+ *
  */
 public class VolcanoStateMachine implements SimulationTickable {
     private static final int BORE_RADIUS = 7;
@@ -113,7 +114,7 @@ public class VolcanoStateMachine implements SimulationTickable {
      * List of bore cells at volcano floor, from center out. Will be empty until
      * {@link #setupFind()} has fully finished.
      */
-    private LavaCell[] boreCells = new LavaCell[MAX_BORE_OFFSET];
+    private final LavaCell[] boreCells = new LavaCell[MAX_BORE_OFFSET];
 
     /**
      * Position within {@link Useful#DISTANCE_SORTED_CIRCULAR_OFFSETS} list for
@@ -147,18 +148,18 @@ public class VolcanoStateMachine implements SimulationTickable {
 
     public VolcanoStateMachine(VolcanoNode volcano) {
         this.volcano = volcano;
-        this.world = volcano.volcanoManager.world;
-        this.lavaSim = Simulator.instance().getNode(LavaSimulator.class);
-        this.center = volcano.blockPos();
+        world = volcano.volcanoManager.world;
+        lavaSim = Simulator.instance().getNode(LavaSimulator.class);
+        center = volcano.blockPos();
     }
 
     /** used for tracing only */
     VolcanoOperation lastOp;
 
     private boolean traceOpChange() {
-        if (Configurator.DEBUG.traceVolcaneStateMachine && lastOp != this.operation) {
-            Pyroclasm.LOG.info("Volcano state change from %s to %s", lastOp.toString(), this.operation.toString());
-            lastOp = this.operation;
+        if (Configurator.DEBUG.traceVolcaneStateMachine && lastOp != operation) {
+            Pyroclasm.LOG.info("Volcano state change from %s to %s", lastOp.toString(), operation.toString());
+            lastOp = operation;
         }
         return true;
     }
@@ -170,56 +171,56 @@ public class VolcanoStateMachine implements SimulationTickable {
         pushCount = 0;
         tryBlobs = true;
 
-        lastOp = this.operation;
+        lastOp = operation;
 
         for (int i = 0; i < opsPerTick; i++) {
-            switch (this.operation) {
+            switch (operation) {
             case SETUP_CONVERT_LAVA_AND_SCAN:
-                this.operation = convertLavaAndScan();
+                operation = convertLavaAndScan();
                 break;
 
             case SETUP_CLEAR_AND_FILL:
-                this.operation = setupClear();
-                if (this.operation == VolcanoOperation.SETUP_WAIT_FOR_CELLS_0)
+                operation = setupClear();
+                if (operation == VolcanoOperation.SETUP_WAIT_FOR_CELLS_0)
                     return;
                 break;
 
             case SETUP_WAIT_FOR_CELLS_0:
-                this.operation = VolcanoOperation.SETUP_WAIT_FOR_CELLS_1;
+                operation = VolcanoOperation.SETUP_WAIT_FOR_CELLS_1;
                 return;
 
             case SETUP_WAIT_FOR_CELLS_1:
-                this.operation = VolcanoOperation.SETUP_FIND_CELLS;
+                operation = VolcanoOperation.SETUP_FIND_CELLS;
                 return;
 
             case SETUP_FIND_CELLS:
-                this.operation = setupFind();
+                operation = setupFind();
                 break;
 
             case UPDATE_BORE_LIMITS:
-                this.operation = updateBoreLimits();
+                operation = updateBoreLimits();
                 break;
 
             case FLOW:
-                this.operation = flow();
+                operation = flow();
                 break;
 
             case MELT_CHECK:
-                this.operation = meltCheck();
+                operation = meltCheck();
                 break;
 
             case FIND_WEAKNESS:
-                this.operation = findWeakness();
+                operation = findWeakness();
                 break;
 
             case EXPLODE:
-                this.operation = explode();
+                operation = explode();
                 break;
 
             case PUSH_BLOCKS:
                 if (pushCount >= maxPush)
                     return;
-                this.operation = pushBlocks();
+                operation = pushBlocks();
                 break;
 
             default:
@@ -231,8 +232,8 @@ public class VolcanoStateMachine implements SimulationTickable {
     }
 
     private BlockPos.Mutable setBorePosForLevel(BlockPos.Mutable pos, int index, int yLevel) {
-        Vec3i offset = Useful.DISTANCE_SORTED_CIRCULAR_OFFSETS[index];
-        pos.set(offset.getX() + this.center.getX(), yLevel, offset.getZ() + this.center.getZ());
+        final Vec3i offset = Useful.DISTANCE_SORTED_CIRCULAR_OFFSETS[index];
+        pos.set(offset.getX() + center.getX(), yLevel, offset.getZ() + center.getZ());
         return pos;
     }
 
@@ -244,15 +245,16 @@ public class VolcanoStateMachine implements SimulationTickable {
     private VolcanoOperation setupClear() {
 
         // handle any kind of improper clean up or initialization
-        if (this.offsetIndex >= MAX_BORE_OFFSET) {
+        if (offsetIndex >= MAX_BORE_OFFSET) {
             assert false : "Improper initialization or cleanup in volcano state machine. Restarting.";
             offsetIndex = 0;
         }
 
-        final BlockPos.Mutable pos = this.setBorePosForLevel(operationPos, offsetIndex++, 0);
+        final BlockPos.Mutable pos = setBorePosForLevel(operationPos, offsetIndex++, 0);
 
         if (world.getBlockState(pos).getBlock() == ModBlocks.lava_dynamic_height) {
             @Nullable
+			final
             LavaCell cell = lavaSim.cells.getCellIfExists(pos);
             if (cell == null) {
                 lavaSim.registerPlacedLava(world, pos, world.getBlockState(pos));
@@ -262,7 +264,7 @@ public class VolcanoStateMachine implements SimulationTickable {
                     TerrainBlockHelper.stateWithDiscreteFlowHeight(ModBlocks.lava_dynamic_height.getDefaultState(), TerrainState.BLOCK_LEVELS_INT));
         }
 
-        if (this.offsetIndex >= MAX_BORE_OFFSET) {
+        if (offsetIndex >= MAX_BORE_OFFSET) {
             // if we've gone past the last offset, can go to next stage
             offsetIndex = 0;
             return VolcanoOperation.SETUP_WAIT_FOR_CELLS_0;
@@ -279,14 +281,14 @@ public class VolcanoStateMachine implements SimulationTickable {
     private final BlockPos.Mutable getBoreCellPos = new BlockPos.Mutable();
 
     private @Nullable LavaCell getBoreCell(int index) {
-        LavaCell result = this.boreCells[index];
+        LavaCell result = boreCells[index];
 
         if (result == null || result.isDeleted()) {
-            final BlockPos.Mutable pos = this.setBorePosForLevel(this.getBoreCellPos, index, 0);
+            final BlockPos.Mutable pos = setBorePosForLevel(getBoreCellPos, index, 0);
             result = lavaSim.cells.getCellIfExists(pos);
             if (result != null)
                 result.setCoolingDisabled(true);
-            this.boreCells[index] = result;
+            boreCells[index] = result;
         }
 
         return result;
@@ -294,21 +296,22 @@ public class VolcanoStateMachine implements SimulationTickable {
 
     private VolcanoOperation setupFind() {
 
-        if (this.offsetIndex >= MAX_BORE_OFFSET) {
+        if (offsetIndex >= MAX_BORE_OFFSET) {
             assert false : "Improper initialization or cleanup in volcano state machine. Restarting.";
             offsetIndex = 0;
         }
 
         @Nullable
+		final
         LavaCell cell = getBoreCell(offsetIndex++);
 
         if (cell == null) {
             Pyroclasm.LOG.warn("Unable to find lava cell for volcano bore when expected.  Reverting to initial setup.");
-            this.offsetIndex = 0;
+            offsetIndex = 0;
             return VolcanoOperation.SETUP_CLEAR_AND_FILL;
         }
 
-        if (this.offsetIndex >= MAX_BORE_OFFSET) {
+        if (offsetIndex >= MAX_BORE_OFFSET) {
             // if we've gone past the last offset, can go to next stage
             offsetIndex = 0;
 
@@ -320,28 +323,28 @@ public class VolcanoStateMachine implements SimulationTickable {
     }
 
     private VolcanoOperation updateBoreLimits() {
-        if (this.offsetIndex >= MAX_BORE_OFFSET) {
+        if (offsetIndex >= MAX_BORE_OFFSET) {
             assert false : "Improper initialization or cleanup in volcano state machine. Restarting.";
             offsetIndex = 0;
         }
 
-        LavaCell cell = this.getBoreCell(offsetIndex);
+        final LavaCell cell = getBoreCell(offsetIndex);
 
         if (cell == null) {
             Pyroclasm.LOG.warn("Volcano bore cell missing, Returning to setup");
-            this.offsetIndex = 0;
+            offsetIndex = 0;
             return VolcanoOperation.SETUP_CLEAR_AND_FILL;
         }
 
-        if (this.offsetIndex == 0) {
+        if (offsetIndex == 0) {
             // things we do on first pass
-            this.blobChance = cell.isOpenToSky() ? 1.0f : 0.0f;
+            blobChance = cell.isOpenToSky() ? 1.0f : 0.0f;
             maxCeilingLevel = 0;
         }
 
-        int l = cell.ceilingLevel();
-        if (l > this.maxCeilingLevel)
-            this.maxCeilingLevel = l;
+        final int l = cell.ceilingLevel();
+        if (l > maxCeilingLevel)
+            maxCeilingLevel = l;
 
         if (++offsetIndex >= MAX_BORE_OFFSET) {
             // if we've gone past the last offset, can go to next stage
@@ -354,12 +357,12 @@ public class VolcanoStateMachine implements SimulationTickable {
     }
 
     private VolcanoOperation flow() {
-        if (this.offsetIndex >= MAX_BORE_OFFSET) {
+        if (offsetIndex >= MAX_BORE_OFFSET) {
             assert false : "Improper initialization or cleanup in volcano state machine. Restarting.";
             offsetIndex = 0;
-        } else if (this.offsetIndex == 0) {
-            this.lavaRemainingThisPass = Configurator.VOLCANO.lavaBlocksPerSecond * LavaSimulator.FLUID_UNITS_PER_BLOCK / 20;
-            this.lavaPerCellThisPass = lavaRemainingThisPass / MAX_BORE_OFFSET + 1;
+        } else if (offsetIndex == 0) {
+            lavaRemainingThisPass = Configurator.VOLCANO.lavaBlocksPerSecond * LavaSimulator.FLUID_UNITS_PER_BLOCK / 20;
+            lavaPerCellThisPass = lavaRemainingThisPass / MAX_BORE_OFFSET + 1;
         }
 
         if (tryBlobs && lavaRemainingThisPass > 0) {
@@ -367,11 +370,11 @@ public class VolcanoStateMachine implements SimulationTickable {
             tryBlobs = false;
         }
 
-        LavaCell cell = this.getBoreCell(offsetIndex++);
+        final LavaCell cell = getBoreCell(offsetIndex++);
 
         if (cell == null) {
             Pyroclasm.LOG.warn("Volcano bore cell missing, Returning to setup");
-            this.offsetIndex = 0;
+            offsetIndex = 0;
             return VolcanoOperation.SETUP_CLEAR_AND_FILL;
         }
 
@@ -379,21 +382,21 @@ public class VolcanoStateMachine implements SimulationTickable {
             // cell has room, add lava if available
             if (lavaRemainingThisPass > 0) {
                 final int amount = Math.min(lavaPerCellThisPass, lavaRemainingThisPass);
-                this.lavaRemainingThisPass -= amount;
+                lavaRemainingThisPass -= amount;
                 cell.addLava(amount);
             }
-        } else if (cell.ceilingLevel() < this.maxCeilingLevel) {
+        } else if (cell.ceilingLevel() < maxCeilingLevel) {
             // check for melting
             // if cell is full and ceiling is less than the max of the
             // current chamber then should check for block melting to
             // open up the chamber
 
             // confirm barrier actually exists and mark cell for revalidation if not
-            BlockState blockState = lavaSim.world.getBlockState(this.operationPos.set(cell.x(), cell.ceilingY() + 1, cell.z()));
+            final BlockState blockState = lavaSim.world.getBlockState(operationPos.set(cell.x(), cell.ceilingY() + 1, cell.z()));
             if (LavaTerrainHelper.canLavaDisplace(blockState)) {
                 cell.setValidationNeeded(true);
 
-//                Pyroclasm.INSTANCE.info("found block %s in bore @ %d, %d, %d that wasn't part of cell.  Cells not getting updated when bore is cleared.", 
+//                Pyroclasm.INSTANCE.info("found block %s in bore @ %d, %d, %d that wasn't part of cell.  Cells not getting updated when bore is cleared.",
 //                        blockState.toString(), cell.x(), cell.ceilingY() + 1, cell.z() );
             } else {
                 offsetIndex = 0;
@@ -401,13 +404,13 @@ public class VolcanoStateMachine implements SimulationTickable {
             }
         }
 
-        if (this.offsetIndex >= MAX_BORE_OFFSET) {
+        if (offsetIndex >= MAX_BORE_OFFSET) {
             // if we've gone past the last offset, can go to next stage
             offsetIndex = 0;
 
             // if used up most of the lava, continue flowing, otherwise too constrained -
             // mound or explode
-            return this.lavaRemainingThisPass <= LavaSimulator.FLUID_UNITS_PER_LEVEL ? VolcanoOperation.FLOW : VolcanoOperation.FIND_WEAKNESS;
+            return lavaRemainingThisPass <= LavaSimulator.FLUID_UNITS_PER_LEVEL ? VolcanoOperation.FLOW : VolcanoOperation.FIND_WEAKNESS;
         } else {
             return VolcanoOperation.FLOW;
         }
@@ -428,9 +431,9 @@ public class VolcanoStateMachine implements SimulationTickable {
         final Random r = myRandom;
 
         if (Math.abs(r.nextFloat()) < blobChance) {
-            double dx = (r.nextDouble() - 0.5) * 2;
-            double dz = (r.nextDouble() - 0.5) * 2;
-            double dy = 1.0;
+            final double dx = (r.nextDouble() - 0.5) * 2;
+            final double dz = (r.nextDouble() - 0.5) * 2;
+            final double dy = 1.0;
             // normalize
             double scale = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
@@ -439,45 +442,45 @@ public class VolcanoStateMachine implements SimulationTickable {
 
             final int units = Math.max(LavaSimulator.FLUID_UNITS_PER_HALF_BLOCK, r.nextInt(LavaSimulator.FLUID_UNITS_PER_BLOCK)
                     + r.nextInt(LavaSimulator.FLUID_UNITS_PER_BLOCK) + r.nextInt(LavaSimulator.FLUID_UNITS_PER_BLOCK));
-            EntityLavaBlob blob = new EntityLavaBlob(this.world, units, center.x(), center.worldSurfaceY() + 1, center.z(), dx * scale, dy * scale, dz * scale);
-            this.world.spawnEntity(blob);
-            this.lavaRemainingThisPass -= units;
+            final EntityLavaBlob blob = new EntityLavaBlob(world, units, center.x(), center.worldSurfaceY() + 1, center.z(), dx * scale, dy * scale, dz * scale);
+            world.spawnEntity(blob);
+            lavaRemainingThisPass -= units;
             blobChance = 0;
         } else
             blobChance += 0.003f;
     }
 
     private VolcanoOperation meltCheck() {
-        if (this.offsetIndex >= MAX_BORE_OFFSET) {
+        if (offsetIndex >= MAX_BORE_OFFSET) {
             assert false : "Improper initialization or cleanup in volcano state machine. Restarting.";
             offsetIndex = 0;
         }
 
-        LavaCell cell = this.getBoreCell(offsetIndex++);
+        final LavaCell cell = getBoreCell(offsetIndex++);
 
         if (cell == null) {
             Pyroclasm.LOG.warn("Volcano bore cell missing, Returning to setup");
-            this.offsetIndex = 0;
+            offsetIndex = 0;
             return VolcanoOperation.SETUP_CLEAR_AND_FILL;
         }
 
-        if (cell.ceilingLevel() < this.maxCeilingLevel && cell.worldSurfaceLevel() == cell.ceilingLevel()) {
-            BlockPos.Mutable pos = this.operationPos.set(cell.x(), cell.ceilingY() + 1, cell.z());
-            BlockState priorState = this.lavaSim.world.getBlockState(pos);
+        if (cell.ceilingLevel() < maxCeilingLevel && cell.worldSurfaceLevel() == cell.ceilingLevel()) {
+            final BlockPos.Mutable pos = operationPos.set(cell.x(), cell.ceilingY() + 1, cell.z());
+            final BlockState priorState = lavaSim.world.getBlockState(pos);
 
             // Block above cell should not be displace-able but
             // check in case cell validation hasn't caught up with world...
             if (!LavaTerrainHelper.canLavaDisplace(priorState)) {
-                if (this.maxCeilingLevel < LavaSimulator.LEVELS_PER_BLOCK * 255) {
-                    this.pushBlock(pos);
+                if (maxCeilingLevel < LavaSimulator.LEVELS_PER_BLOCK * 255) {
+                    pushBlock(pos);
                 } else {
-                    this.lavaSim.world.setBlockState(pos.toImmutable(), Blocks.AIR.getDefaultState());
+                    lavaSim.world.setBlockState(pos.toImmutable(), Blocks.AIR.getDefaultState());
                 }
             }
             cell.setValidationNeeded(true);
         }
 
-        if (this.offsetIndex >= MAX_BORE_OFFSET) {
+        if (offsetIndex >= MAX_BORE_OFFSET) {
             // Update bore limits because block that was melted might
             // have opened up cell to a height above the current max.
             offsetIndex = 0;
@@ -500,25 +503,25 @@ public class VolcanoStateMachine implements SimulationTickable {
     }
 
     private VolcanoOperation pushBlocks() {
-        if (this.offsetIndex >= MAX_BORE_OFFSET) {
+        if (offsetIndex >= MAX_BORE_OFFSET) {
             assert false : "Improper initialization or cleanup in volcano state machine. Restarting.";
             offsetIndex = 0;
         }
 
-        LavaCell cell = this.getBoreCell(offsetIndex++);
+        final LavaCell cell = getBoreCell(offsetIndex++);
 
         if (cell == null) {
             Pyroclasm.LOG.warn("Volcano bore cell missing, Returning to setup");
-            this.offsetIndex = 0;
+            offsetIndex = 0;
             return VolcanoOperation.SETUP_CLEAR_AND_FILL;
         }
 
-        if (this.pushBlock(this.operationPos.set(cell.x(), cell.ceilingY() + 1, cell.z()))) {
+        if (pushBlock(operationPos.set(cell.x(), cell.ceilingY() + 1, cell.z()))) {
             cell.setValidationNeeded(true);
             pushCount++;
         }
 
-        if (this.offsetIndex >= MAX_BORE_OFFSET) {
+        if (offsetIndex >= MAX_BORE_OFFSET) {
             offsetIndex = 0;
 
             return VolcanoOperation.UPDATE_BORE_LIMITS;
@@ -533,7 +536,7 @@ public class VolcanoStateMachine implements SimulationTickable {
      * revalidated.
      */
     private boolean pushBlock(BlockPos.Mutable fromPos) {
-        final BlockState fromState = this.world.getBlockState(fromPos);
+        final BlockState fromState = world.getBlockState(fromPos);
         final Block fromBlock = fromState.getBlock();
 
         // nothing to do
@@ -543,30 +546,30 @@ public class VolcanoStateMachine implements SimulationTickable {
         BlockState toState = null;
 
         if (LavaTerrainHelper.canLavaDisplace(fromState)) {
-            ;
+
         } else if (fromBlock.hasBlockEntity()) {
-            ;
+
         } else if (fromBlock == Blocks.BEDROCK) {
             toState = Blocks.STONE.getDefaultState();
         } else if (fromState.getHardness(world, fromPos) == -1.0F) {
-            ;
+
         } else if (fromState.getPistonBehavior() == PistonBehavior.NORMAL || fromState.getPistonBehavior() == PistonBehavior.PUSH_ONLY) {
             toState = fromState;
         }
 
-        this.world.setBlockState(fromPos.toImmutable(), Blocks.AIR.getDefaultState());
+        world.setBlockState(fromPos.toImmutable(), Blocks.AIR.getDefaultState());
 
         if (toState != null) {
             BlockPos pushPos = findOpenSpot(fromPos.getY());
             if (pushPos == null)
                 pushPos = findMoundSpot();
-            this.lavaSim.world.setBlockState(pushPos, toState);
+            lavaSim.world.setBlockState(pushPos, toState);
 
             // because no ash yet, duplicate each pushed block to get a higher mound
             pushPos = findOpenSpot(fromPos.getY());
             if (pushPos == null)
                 pushPos = findMoundSpot();
-            this.lavaSim.world.setBlockState(pushPos, toState);
+            lavaSim.world.setBlockState(pushPos, toState);
         }
 
         return true;
@@ -580,26 +583,26 @@ public class VolcanoStateMachine implements SimulationTickable {
     private BlockPos findMoundSpot() {
         int lowest = 255;
 
-        ThreadLocalRandom r = ThreadLocalRandom.current();
+        final ThreadLocalRandom r = ThreadLocalRandom.current();
         // should give us the distance from origin for a sample from a bivariate normal
         // distribution
         // probably a more elegant way to do it, but whatever
-        double dx = r.nextGaussian() * Configurator.VOLCANO.moundRadius;
-        double dz = r.nextGaussian() * Configurator.VOLCANO.moundRadius;
-        int distance = (int) Math.sqrt(dx * dx + dz * dz);
+        final double dx = r.nextGaussian() * Configurator.VOLCANO.moundRadius;
+        final double dz = r.nextGaussian() * Configurator.VOLCANO.moundRadius;
+        final int distance = (int) Math.sqrt(dx * dx + dz * dz);
 
         int bestX = 0;
         int bestZ = 0;
 
-        final World world = this.lavaSim.world;
+        final World world = lavaSim.world;
 
         // find lowest point at the given distance
         // intended to fill in low areas before high areas but still keep normal mound
         // shape
         for (int i = 0; i <= 20; i++) {
-            double angle = 2 * Math.PI * r.nextDouble();
-            int x = (int) Math.round(this.center.getX() + distance * Math.cos(angle));
-            int z = (int) Math.round(this.center.getZ() + distance * Math.sin(angle));
+            final double angle = 2 * Math.PI * r.nextDouble();
+            final int x = (int) Math.round(center.getX() + distance * Math.cos(angle));
+            final int z = (int) Math.round(center.getZ() + distance * Math.sin(angle));
             //TODO: does this still work?  Performant?
             int y = this.world.getTop(Heightmap.Type.WORLD_SURFACE, x, z);
 
@@ -614,13 +617,13 @@ public class VolcanoStateMachine implements SimulationTickable {
             }
         }
 
-        BlockPos.Mutable best = new BlockPos.Mutable(bestX, lowest, bestZ);
+        final BlockPos.Mutable best = new BlockPos.Mutable(bestX, lowest, bestZ);
 
         // found the general location, now nudge to directly nearby blocks if any are
         // lower
         for (int i = 1; i < 9; i++) {
-            int x = best.getX() + Useful.getDistanceSortedCircularOffset(i).getX();
-            int z = best.getZ() + Useful.getDistanceSortedCircularOffset(i).getZ();
+            final int x = best.getX() + Useful.getDistanceSortedCircularOffset(i).getX();
+            final int z = best.getZ() + Useful.getDistanceSortedCircularOffset(i).getZ();
             int y = this.world.getTop(Heightmap.Type.WORLD_SURFACE, x, z);
 
             while (y > 0 && LavaTerrainHelper.canLavaDisplace(world.getBlockState(findPos.set(x, y - 1, z)))) {
@@ -636,21 +639,21 @@ public class VolcanoStateMachine implements SimulationTickable {
     }
 
     private @Nullable BlockPos findOpenSpot(int yLevel) {
-        final World world = this.lavaSim.world;
+        final World world = lavaSim.world;
         final LongArrayList best = new LongArrayList();
-        final int centerX = this.center.getX();
-        final int centerZ = this.center.getZ();
+        final int centerX = center.getX();
+        final int centerZ = center.getZ();
         final int maxY = Math.min(yLevel + 32, openSpots.length);
         int bestDistanceSquared = Integer.MAX_VALUE;
 
         for (int y = yLevel; y < maxY; y++) {
-            LongArrayList list = openSpots[y];
+            final LongArrayList list = openSpots[y];
             if (list == null || list.isEmpty())
                 continue;
 
             final int limit = list.size();
             for (int i = 0; i < limit; i++) {
-                long packed = list.getLong(i);
+                final long packed = list.getLong(i);
                 final int dx = PackedBlockPos.getX(packed) - centerX;
                 final int dy = PackedBlockPos.getY(packed) - yLevel;
                 final int dz = PackedBlockPos.getZ(packed) - centerZ;
@@ -675,7 +678,7 @@ public class VolcanoStateMachine implements SimulationTickable {
         if (best.isEmpty())
             return null;
 
-        long bestPacked = best.getLong(ThreadLocalRandom.current().nextInt(best.size()));
+        final long bestPacked = best.getLong(ThreadLocalRandom.current().nextInt(best.size()));
 
         // remove from tracking
         final int bestY = PackedBlockPos.getY(bestPacked);
@@ -695,19 +698,19 @@ public class VolcanoStateMachine implements SimulationTickable {
      */
     private VolcanoOperation convertLavaAndScan() {
         // handle any kind of improper clean up or initialization
-        if (this.offsetIndex >= Useful.DISTANCE_SORTED_CIRCULAR_OFFSETS_COUNT) {
+        if (offsetIndex >= Useful.DISTANCE_SORTED_CIRCULAR_OFFSETS_COUNT) {
             assert false : "Improper initialization or cleanup in volcano state machine. Restarting.";
             offsetIndex = 0;
         }
 
-        if (this.y >= Configurator.VOLCANO.maxYLevel) {
+        if (y >= Configurator.VOLCANO.maxYLevel) {
             assert false : "Improper initialization or cleanup in volcano state machine. Restarting.";
             y = 0;
         }
 
-        final BlockPos.Mutable pos = this.setBorePosForLevel(this.operationPos, offsetIndex, y);
+        final BlockPos.Mutable pos = setBorePosForLevel(operationPos, offsetIndex, y);
 
-        BlockState state = world.getBlockState(pos);
+        final BlockState state = world.getBlockState(pos);
         if (y < MAX_CONVERSION_Y && state.getMaterial() == Material.LAVA)
             world.setBlockState(pos.toImmutable(), Blocks.OBSIDIAN.getDefaultState());
         else if (offsetIndex > MAX_BORE_OFFSET && LavaTerrainHelper.canLavaDisplace(state) && !world.isSkyVisible(pos))
@@ -718,7 +721,7 @@ public class VolcanoStateMachine implements SimulationTickable {
             if (++y < Configurator.VOLCANO.maxYLevel) {
                 return VolcanoOperation.SETUP_CONVERT_LAVA_AND_SCAN;
             } else {
-                this.y = 0;
+                y = 0;
                 return VolcanoOperation.SETUP_CLEAR_AND_FILL;
             }
         } else {

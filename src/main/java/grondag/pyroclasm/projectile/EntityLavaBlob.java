@@ -3,19 +3,8 @@ package grondag.pyroclasm.projectile;
 import java.util.HashSet;
 import java.util.Random;
 
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
-import grondag.fermion.position.PackedBlockPos;
-import grondag.fermion.simulator.Simulator;
-import grondag.fermion.varia.NBTDictionary;
-import grondag.pyroclasm.Configurator;
-import grondag.pyroclasm.Pyroclasm;
-import grondag.pyroclasm.PyroclasmClient;
-import grondag.pyroclasm.fluidsim.LavaSimulator;
-import grondag.pyroclasm.init.ModEntities;
-import grondag.pyroclasm.init.ModSounds;
-import grondag.pyroclasm.world.LavaTerrainHelper;
-import grondag.xm.terrain.TerrainBlockHelper;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.Material;
@@ -33,15 +22,27 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 
+import grondag.fermion.position.PackedBlockPos;
+import grondag.fermion.simulator.Simulator;
+import grondag.fermion.varia.NBTDictionary;
+import grondag.pyroclasm.Configurator;
+import grondag.pyroclasm.Pyroclasm;
+import grondag.pyroclasm.PyroclasmClient;
+import grondag.pyroclasm.fluidsim.LavaSimulator;
+import grondag.pyroclasm.init.ModEntities;
+import grondag.pyroclasm.init.ModSounds;
+import grondag.pyroclasm.world.LavaTerrainHelper;
+import grondag.xm.terrain.TerrainBlockHelper;
+
 /**
  * Hat tip to Vaskii and Azanor for a working example (via Botania) of how to
  * handle the rendering for this. Saved much time.
  */
 public class EntityLavaBlob extends Entity {
-    private static final String NBT_LAVA_PARTICLE_AMOUNT = NBTDictionary.claim("lavaPartAmt");
-    
+    private static final String NBT_LAVA_PARTICLE_AMOUNT = NBTDictionary.GLOBAL.claim("lavaPartAmt");
+
     private static int nextParticleID;
-    private static final HashSet<EntityLavaBlob> blobTracker = new HashSet<EntityLavaBlob>();
+    private static final HashSet<EntityLavaBlob> blobTracker = new HashSet<>();
 
     public final int id;
 
@@ -53,7 +54,7 @@ public class EntityLavaBlob extends Entity {
 
     @Override
     public int hashCode() {
-        return this.id;
+        return id;
     }
 
     /**
@@ -64,9 +65,9 @@ public class EntityLavaBlob extends Entity {
     }
 
     public static int clearAll() {
-        int result = blobTracker.size();
+        final int result = blobTracker.size();
         if (result > 0) {
-            for (Object blob : blobTracker.toArray())
+            for (final Object blob : blobTracker.toArray())
                 ((EntityLavaBlob) blob).remove();
         }
         return result;
@@ -75,7 +76,7 @@ public class EntityLavaBlob extends Entity {
     public static EntityLavaBlob create(World world) {
         return new EntityLavaBlob(world);
     }
-    
+
     public EntityLavaBlob(World world, int amount, Vec3d position, Vec3d velocity) {
         this(world, amount, position.x, position.y, position.z, velocity.x, velocity.y, velocity.z);
     }
@@ -98,25 +99,26 @@ public class EntityLavaBlob extends Entity {
 
     public EntityLavaBlob(World world, int amount) {
         super(ModEntities.LAVA_BLOB, world);
-        this.id = nextParticleID++;
+        id = nextParticleID++;
         if (!world.isClient) {
             if (Configurator.DEBUG.enableLavaBombTrace)
-                Pyroclasm.LOG.info("Lava bomb %d created", this.id);
+                Pyroclasm.LOG.info("Lava bomb %d created", id);
             blobTracker.add(this);
-            this.cachedAmount = amount;
-            this.dataTracker.set(FLUID_AMOUNT, Integer.valueOf(amount));
+            cachedAmount = amount;
+            dataTracker.set(FLUID_AMOUNT, Integer.valueOf(amount));
         }
         //TODO: reimplement
 //        this.forceSpawn = true;
-        this.updateAmountDependentData();
+        updateAmountDependentData();
     }
 
     private void updateAmountDependentData() {
-        float unitAmout = (float) this.getFluidAmount() / LavaSimulator.FLUID_UNITS_PER_BLOCK;
+        final float unitAmout = (float) getFluidAmount() / LavaSimulator.FLUID_UNITS_PER_BLOCK;
 
         // Give bounding box same volume as model, but small enough to fit through a one
         // block space and not too small to interact
         @SuppressWarnings("unused")
+		final
         float edgeLength = (float) Math.min(0.8, Math.max(0.1, Math.pow(unitAmout, 0.3333333333333)));
       //TODO: reimplement
 //        this.setSize(edgeLength, edgeLength);
@@ -125,28 +127,28 @@ public class EntityLavaBlob extends Entity {
          * Is essentially the diameter of a sphere with volume = amount, plus 1 extra to
          * allow for surrounding glow.
          */
-        this.renderScale = 1f + (float) (2 * Math.pow(unitAmout * 3 / (Math.PI * 4), 1F / 3F));
+        renderScale = 1f + (float) (2 * Math.pow(unitAmout * 3 / (Math.PI * 4), 1F / 3F));
     }
 
     @Override
-    public void onTrackedDataSet(@Nonnull TrackedData<?> key) {
+    public void onTrackedDataSet(@NotNull TrackedData<?> key) {
         super.onTrackedDataSet(key);
 
         // resize once we have our amount
-        if (FLUID_AMOUNT.equals(key) && this.world.isClient) {
-            this.cachedAmount = this.dataTracker.get(FLUID_AMOUNT).intValue();
-            this.updateAmountDependentData();
+        if (FLUID_AMOUNT.equals(key) && world.isClient) {
+            cachedAmount = dataTracker.get(FLUID_AMOUNT).intValue();
+            updateAmountDependentData();
         }
     }
-    
+
     /**
      * Sets throwable heading based on an entity that's throwing it
      */
     public void setHeadingFromThrower(Entity entityThrower, float rotationPitchIn, float rotationYawIn, float pitchOffset, float velocity, float inaccuracy) {
-        float f = -MathHelper.sin(rotationYawIn * 0.017453292F) * MathHelper.cos(rotationPitchIn * 0.017453292F);
-        float f1 = -MathHelper.sin((rotationPitchIn + pitchOffset) * 0.017453292F);
-        float f2 = MathHelper.cos(rotationYawIn * 0.017453292F) * MathHelper.cos(rotationPitchIn * 0.017453292F);
-        this.setThrowableHeading((double) f, (double) f1, (double) f2, velocity, inaccuracy);
+        final float f = -MathHelper.sin(rotationYawIn * 0.017453292F) * MathHelper.cos(rotationPitchIn * 0.017453292F);
+        final float f1 = -MathHelper.sin((rotationPitchIn + pitchOffset) * 0.017453292F);
+        final float f2 = MathHelper.cos(rotationYawIn * 0.017453292F) * MathHelper.cos(rotationPitchIn * 0.017453292F);
+        setThrowableHeading(f, f1, f2, velocity, inaccuracy);
         //TODO: reimplement
 //        this.motionX += entityThrower.motionX;
 //        this.motionZ += entityThrower.motionZ;
@@ -183,17 +185,17 @@ public class EntityLavaBlob extends Entity {
     }
 
     public float getScale() {
-        return this.renderScale;
+        return renderScale;
     }
 
     public int getFluidAmount() {
-        return this.cachedAmount;
+        return cachedAmount;
     }
 
     public void setFluidAmount(int amount) {
-        this.cachedAmount = amount;
-        this.dataTracker.set(FLUID_AMOUNT, amount);
-        this.updateAmountDependentData();
+        cachedAmount = amount;
+        dataTracker.set(FLUID_AMOUNT, amount);
+        updateAmountDependentData();
     }
 
 
@@ -353,7 +355,7 @@ public class EntityLavaBlob extends Entity {
 //        return bounds;
 //    }
 
-    
+
     @SuppressWarnings("unused")
     private void spawnBlobAround(double x, double y, double z, Random r) {
         final double rx = r.nextGaussian() * 0.05;
@@ -361,14 +363,14 @@ public class EntityLavaBlob extends Entity {
         final double rz = r.nextGaussian() * 0.05;
 
         //TODO: still good?
-        Vec3d v = this.getVelocity();
-        
+        final Vec3d v = getVelocity();
+
         //FIXME: will crash on dedicated server
         PyroclasmClient.spawnLavaBlobParticle(world, x + rx, y + ry, z + rz,
                 // subtract portion offset to move particles back towards center as they decay
                 v.x * 0.25 - rx * 0.05, v.y * 0.25 - ry * 0.05, v.z * 0.25 - rz * 0.05,
-                (float) (this.renderScale * (1 + r.nextGaussian() * 0.05)));
-        
+                (float) (renderScale * (1 + r.nextGaussian() * 0.05)));
+
 //        Pyroclasm.spawnLavaBlobParticle(world, x + rx, y + ry, z + rz,
 //                // subtract portion offset to move particles back towards center as they decay
 //                this.velocityX * 0.25 - rx * 0.05, this.motionY * 0.25 - ry * 0.05, this.motionZ * 0.25 - rz * 0.05,
@@ -377,18 +379,18 @@ public class EntityLavaBlob extends Entity {
 
     @SuppressWarnings("unused")
     private void land() {
-        if (this.world.isClient) {
-            world.playSound(this.x, this.y, this.z, ModSounds.bomb_impact, SoundCategory.AMBIENT, 8.0F + random.nextFloat() * 2.0F,
+        if (world.isClient) {
+            world.playSound(getX(), getY(), getZ(), ModSounds.bomb_impact, SoundCategory.AMBIENT, 8.0F + random.nextFloat() * 2.0F,
                     0.8F + random.nextFloat() * 0.2F, false);
             for (int i = 0; i < 20; i++)
-                world.addParticle(ParticleTypes.LAVA, this.x - 1 + random.nextFloat() * 2, this.y + 1.0, this.z - 1 + random.nextFloat() * 2, 0.0D,
+                world.addParticle(ParticleTypes.LAVA, getX() - 1 + random.nextFloat() * 2, getY() + 1.0, getZ() - 1 + random.nextFloat() * 2, 0.0D,
                         0.0D, 0.0D);
         } else {
-            LavaSimulator sim = Simulator.instance().getNode(LavaSimulator.class);
+            final LavaSimulator sim = Simulator.instance().getNode(LavaSimulator.class);
             if (sim == null)
                 return;
 
-            BlockPos where = this.getBlockPos();
+            BlockPos where = getBlockPos();
             final World world = sim.world;
 
             if (!LavaTerrainHelper.canLavaDisplace(world.getBlockState(where))) {
@@ -411,16 +413,16 @@ public class EntityLavaBlob extends Entity {
                     return;
                 }
             }
-            sim.addLava(where, this.getFluidAmount());
+            sim.addLava(where, getFluidAmount());
         }
-        this.remove();
+        remove();
     }
 
     @Override
     public void remove() {
-        if (!this.world.isClient) {
+        if (!world.isClient) {
             if (Configurator.DEBUG.enableLavaBombTrace)
-                Pyroclasm.LOG.info("Lava bomb %d dead @ %f, %f, %f", this.id, this.x, this.y, this.z);
+                Pyroclasm.LOG.info("Lava bomb %d dead @ %f, %f, %f", id, getX(), getY(), getZ());
             blobTracker.remove(this);
         }
         super.remove();
@@ -491,10 +493,10 @@ public class EntityLavaBlob extends Entity {
 //        BlockPos blockpos = new BlockPos(j4, l4, i5);
 //        IBlockState iblockstate = this.world.getBlockState(blockpos);
 //        this.onGround = this.collidedVertically && !LavaTerrainHelper.canLavaDisplace(iblockstate) || TerrainBlockHelper.isFlowFiller(iblockstate.getBlock());
-        
+
         // remove - here only to track usage
-        boolean dummy = LavaTerrainHelper.canLavaDisplace(Blocks.AIR.getDefaultState()) || TerrainBlockHelper.isFlowFiller(Blocks.AIR.getDefaultState());
-        
+        final boolean dummy = LavaTerrainHelper.canLavaDisplace(Blocks.AIR.getDefaultState()) || TerrainBlockHelper.isFlowFiller(Blocks.AIR.getDefaultState());
+
 //        // this is very crude, but if we are vertically collided but not resting on top
 //        // of the ground
 //        // re-center on our block pos so that we have a better chance to fall down
@@ -543,32 +545,32 @@ public class EntityLavaBlob extends Entity {
 
     @SuppressWarnings("unused")
     private void destroyCollidingDisplaceableBlocks(Box bb) {
-        int i = MathHelper.floor(bb.minX);
-        int j = MathHelper.ceil(bb.maxX);
-        int k = MathHelper.floor(bb.minY);
-        int l = MathHelper.ceil(bb.maxY);
-        int i1 = MathHelper.floor(bb.minZ);
-        int j1 = MathHelper.ceil(bb.maxZ);
+        final int i = MathHelper.floor(bb.minX);
+        final int j = MathHelper.ceil(bb.maxX);
+        final int k = MathHelper.floor(bb.minY);
+        final int l = MathHelper.ceil(bb.maxY);
+        final int i1 = MathHelper.floor(bb.minZ);
+        final int j1 = MathHelper.ceil(bb.maxZ);
         BlockPos.PooledMutable blockpos$pooledmutableblockpos = BlockPos.PooledMutable.get();
 
         LavaSimulator sim = Simulator.instance().getNode(LavaSimulator.class);
-        if (sim != null && sim.world != this.world)
+        if (sim != null && sim.world != world)
             sim = null;
 
         for (int k1 = i; k1 < j; ++k1) {
             for (int l1 = k; l1 < l; ++l1) {
                 for (int i2 = i1; i2 < j1; ++i2) {
                     blockpos$pooledmutableblockpos.set(k1, l1, i2);
-                    BlockState state = this.world.getBlockState(blockpos$pooledmutableblockpos);
+                    final BlockState state = world.getBlockState(blockpos$pooledmutableblockpos);
                     if (!(state.getMaterial() == Material.AIR || state.getMaterial().isLiquid()) && LavaTerrainHelper.canLavaDisplace(state)
                             && !TerrainBlockHelper.isFlowFiller(state)) {
                         if (sim != null) {
-                            if (state.getBlock().matches(BlockTags.LOGS))
+                            if (state.getBlock().isIn(BlockTags.LOGS))
                                 sim.lavaTreeCutter.queueCheck(PackedBlockPos.pack(k1, l1 + 1, i2));
 
                             sim.fireStarter.checkAround(PackedBlockPos.pack(k1, l1, i2), true);
                         }
-                        this.world.breakBlock(blockpos$pooledmutableblockpos.toImmutable(), true);
+                        world.breakBlock(blockpos$pooledmutableblockpos.toImmutable(), true);
                     }
                 }
             }
@@ -626,19 +628,19 @@ public class EntityLavaBlob extends Entity {
 
     @Override
     protected void initDataTracker() {
-        this.dataTracker.startTracking(FLUID_AMOUNT, LavaSimulator.FLUID_UNITS_PER_BLOCK);        
+        dataTracker.startTracking(FLUID_AMOUNT, LavaSimulator.FLUID_UNITS_PER_BLOCK);
     }
 
     @Override
     protected void readCustomDataFromTag(CompoundTag tag) {
-        this.cachedAmount = tag.getInt(NBT_LAVA_PARTICLE_AMOUNT);
-        this.dataTracker.set(FLUID_AMOUNT, cachedAmount);
-        this.updateAmountDependentData();        
+        cachedAmount = tag.getInt(NBT_LAVA_PARTICLE_AMOUNT);
+        dataTracker.set(FLUID_AMOUNT, cachedAmount);
+        updateAmountDependentData();
     }
 
     @Override
     protected void writeCustomDataToTag(CompoundTag tag) {
-        tag.putInt(NBT_LAVA_PARTICLE_AMOUNT, this.dataTracker.get(FLUID_AMOUNT).intValue());        
+        tag.putInt(NBT_LAVA_PARTICLE_AMOUNT, dataTracker.get(FLUID_AMOUNT).intValue());
     }
 
     @Override

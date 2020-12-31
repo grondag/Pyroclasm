@@ -2,6 +2,16 @@ package grondag.pyroclasm.fluidsim;
 
 import java.util.Collection;
 
+import net.minecraft.block.Block;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.World;
+
 import grondag.fermion.position.PackedBlockPos;
 import grondag.fermion.sc.concurrency.PerformanceCollector;
 import grondag.fermion.sc.concurrency.PerformanceCounter;
@@ -21,26 +31,17 @@ import grondag.pyroclasm.world.BasaltTracker;
 import grondag.pyroclasm.world.BlockEventList;
 import grondag.pyroclasm.world.BlockEventList.BlockEvent;
 import grondag.pyroclasm.world.BlockEventList.BlockEventHandler;
-import grondag.xm.terrain.TerrainBlock;
-import grondag.xm.terrain.TerrainBlockHelper;
-import grondag.xm.terrain.TerrainState;
 import grondag.pyroclasm.world.ChunkTracker;
 import grondag.pyroclasm.world.FireStarter;
 import grondag.pyroclasm.world.LavaTreeCutter;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.World;
+import grondag.xm.terrain.TerrainBlock;
+import grondag.xm.terrain.TerrainBlockHelper;
+import grondag.xm.terrain.TerrainState;
 
 public class LavaSimulator extends SimulationTopNode implements SimulationTickable {
-    private static final String NBT_LAVA_ADD_EVENTS = NBTDictionary.claim("lavaAddEvents");
-    private static final String NBT_LAVA_PLACEMENT_EVENTS = NBTDictionary.claim("lavaPlaceEvents");
-    public static final String NBT_LAVA_SIMULATOR = NBTDictionary.claim("lavaSim");
+    private static final String NBT_LAVA_ADD_EVENTS = NBTDictionary.GLOBAL.claim("lavaAddEvents");
+    private static final String NBT_LAVA_PLACEMENT_EVENTS = NBTDictionary.GLOBAL.claim("lavaPlaceEvents");
+    public static final String NBT_LAVA_SIMULATOR = NBTDictionary.GLOBAL.claim("lavaSim");
 
     public static final byte LEVELS_PER_BLOCK = TerrainState.BLOCK_LEVELS_INT;
     public static final byte LEVELS_PER_QUARTER_BLOCK = TerrainState.BLOCK_LEVELS_INT / 4;
@@ -145,7 +146,7 @@ public class LavaSimulator extends SimulationTopNode implements SimulationTickab
         }
     };
 
-    private final BlockEventList lavaBlockPlacementEvents = new BlockEventList(10, NBT_LAVA_PLACEMENT_EVENTS, placementHandler, this.perfCollectorOffTick);
+    private final BlockEventList lavaBlockPlacementEvents = new BlockEventList(10, NBT_LAVA_PLACEMENT_EVENTS, placementHandler, perfCollectorOffTick);
 
     private final BlockEventHandler lavaAddEventHandler = new BlockEventHandler() {
         @Override
@@ -162,18 +163,18 @@ public class LavaSimulator extends SimulationTopNode implements SimulationTickab
         }
     };
 
-    private final BlockEventList lavaAddEvents = new BlockEventList(10, NBT_LAVA_ADD_EVENTS, lavaAddEventHandler, this.perfCollectorOffTick);
+    private final BlockEventList lavaAddEvents = new BlockEventList(10, NBT_LAVA_ADD_EVENTS, lavaAddEventHandler, perfCollectorOffTick);
 
     public LavaSimulator() {
         super(NBT_LAVA_SIMULATOR);
-        this.world = Simulator.instance().getWorld();
+        world = Simulator.instance().getWorld();
         // TODO: need a way to capture block events - will be a mixin
         //this.world.addEventListener(this);
-        this.lavaTreeCutter = new LavaTreeCutter(this.world);
-        this.fireStarter = new FireStarter(this.world);
-        this.particleManager = new LavaBlobManager();
-        this.basaltTracker = new BasaltTracker(perfCollectorOnTick, this.world, this.chunkTracker);
-        this.adjustmentTracker = new AdjustmentTracker(this);
+        lavaTreeCutter = new LavaTreeCutter(world);
+        fireStarter = new FireStarter(world);
+        particleManager = new LavaBlobManager();
+        basaltTracker = new BasaltTracker(perfCollectorOnTick, world, chunkTracker);
+        adjustmentTracker = new AdjustmentTracker(this);
     }
 
     /**
@@ -181,7 +182,7 @@ public class LavaSimulator extends SimulationTopNode implements SimulationTickab
      * overloaded.
      */
     public float loadFactor() {
-        return this.loadFactor;
+        return loadFactor;
     }
 
     /** adds lava to the surface of the cell containing the given block position */
@@ -190,7 +191,7 @@ public class LavaSimulator extends SimulationTopNode implements SimulationTickab
         cells.getOrCreateCellChunk(PackedBlockPos.getX(packedBlockPos), PackedBlockPos.getZ(packedBlockPos));
 
         // queue event for processing during tick
-        this.lavaAddEvents.addEvent(packedBlockPos, amount);
+        lavaAddEvents.addEvent(packedBlockPos, amount);
     }
 
     /**
@@ -211,7 +212,7 @@ public class LavaSimulator extends SimulationTopNode implements SimulationTickab
 
         // ignore fillers
         if (state.getBlock() == ModBlocks.lava_dynamic_height) {
-            this.lavaBlockPlacementEvents.addEvent(pos, -TerrainBlockHelper.getFlowHeightFromState(state));
+            lavaBlockPlacementEvents.addEvent(pos, -TerrainBlockHelper.getFlowHeightFromState(state));
             this.makeDirty();
         }
     }
@@ -228,13 +229,13 @@ public class LavaSimulator extends SimulationTopNode implements SimulationTickab
         // ignore fillers - they have no effect on simulation
         if (state.getBlock() == ModBlocks.lava_dynamic_height) {
 
-            this.lavaBlockPlacementEvents.addEvent(pos, TerrainBlockHelper.getFlowHeightFromState(state));
+            lavaBlockPlacementEvents.addEvent(pos, TerrainBlockHelper.getFlowHeightFromState(state));
 
             // remove blocks placed by player so that simulation can place lava in the
             // appropriate place
-            this.itMe = true;
-            this.world.setBlockState(pos, Blocks.AIR.getDefaultState());
-            this.itMe = false;
+            itMe = true;
+            world.setBlockState(pos, Blocks.AIR.getDefaultState());
+            itMe = false;
 
             // force cell chunk loading / validation if not already there
 
@@ -257,7 +258,7 @@ public class LavaSimulator extends SimulationTopNode implements SimulationTickab
 
     /** used by world update to notify when fillers are placed */
     public void trackCoolingBlock(long packedBlockPos) {
-        this.basaltTracker.trackCoolingBlock(packedBlockPos);
+        basaltTracker.trackCoolingBlock(packedBlockPos);
         this.makeDirty();
     }
 
@@ -267,12 +268,12 @@ public class LavaSimulator extends SimulationTopNode implements SimulationTickab
      * can't get permanently orphaned
      */
     public void registerCoolingBlock(World worldIn, BlockPos pos) {
-        if (!itMe && worldIn.dimension == this.world.dimension)
+        if (!itMe && worldIn.dimension == world.dimension)
             trackCoolingBlock(PackedBlockPos.pack(pos));
     }
 
     protected void coolLava(BlockPos pos) {
-        final BlockState priorState = this.world.getBlockState(pos);
+        final BlockState priorState = world.getBlockState(pos);
         Block currentBlock = priorState.getBlock();
         Block newBlock = null;
         if (currentBlock == ModBlocks.lava_dynamic_filler) {
@@ -282,8 +283,8 @@ public class LavaSimulator extends SimulationTopNode implements SimulationTickab
         }
 
         if (newBlock != null) {
-            this.world.setBlockState(pos, newBlock.getDefaultState().with(TerrainBlock.TERRAIN_TYPE, priorState.get(TerrainBlock.TERRAIN_TYPE)));
-            this.basaltTracker.trackCoolingBlock(PackedBlockPos.pack(pos));
+            world.setBlockState(pos, newBlock.getDefaultState().with(TerrainBlock.TERRAIN_TYPE, priorState.get(TerrainBlock.TERRAIN_TYPE)));
+            basaltTracker.trackCoolingBlock(PackedBlockPos.pack(pos));
         }
     }
 
@@ -293,32 +294,32 @@ public class LavaSimulator extends SimulationTopNode implements SimulationTickab
             nbt = new CompoundTag();
         }
         this.saveLavaNBT(nbt);
-        this.particleManager.writeToNBT(nbt);
-        this.basaltTracker.serializeNBT(nbt);
-        this.lavaTreeCutter.readTag(nbt);
+        particleManager.writeToNBT(nbt);
+        basaltTracker.serializeNBT(nbt);
+        lavaTreeCutter.readTag(nbt);
         return nbt;
     }
 
     @Override
     public void fromTag( CompoundTag nbt) {
         if (nbt != null) {
-            this.particleManager.readFromNBT(nbt);
+            particleManager.readFromNBT(nbt);
             this.readLavaNBT(nbt);
         }
-        this.basaltTracker.deserializeNBT(nbt);
-        this.lavaTreeCutter.writeTag(nbt);
+        basaltTracker.deserializeNBT(nbt);
+        lavaTreeCutter.writeTag(nbt);
     }
 
     public void saveLavaNBT(CompoundTag nbt) {
-        this.cells.writeNBT(nbt);
-        this.lavaBlockPlacementEvents.writeNBT(nbt);
-        this.lavaAddEvents.writeNBT(nbt);
+        cells.writeNBT(nbt);
+        lavaBlockPlacementEvents.writeNBT(nbt);
+        lavaAddEvents.writeNBT(nbt);
     }
 
     public void readLavaNBT(CompoundTag nbt) {
         cells.readNBT(this, nbt);
-        this.lavaBlockPlacementEvents.readNBT(nbt);
-        this.lavaAddEvents.readNBT(nbt);
+        lavaBlockPlacementEvents.readNBT(nbt);
+        lavaAddEvents.readNBT(nbt);
     }
 
     /**
@@ -343,16 +344,16 @@ public class LavaSimulator extends SimulationTopNode implements SimulationTickab
         // Particle processing
         this.doParticles();
 
-        this.adjustmentTracker.prepare(this.world);
+        adjustmentTracker.prepare(world);
 
         this.doChunkUpdates();
 
-        this.lavaTreeCutter.doOnTick();
-        this.fireStarter.doOnTick();
+        lavaTreeCutter.doOnTick();
+        fireStarter.doOnTick();
 
         // this part doesn't use tracker - uses world directly
 
-        this.cells.validateChunks();
+        cells.validateChunks();
 
         this.makeDirty();
 
@@ -361,7 +362,7 @@ public class LavaSimulator extends SimulationTopNode implements SimulationTickab
     }
 
     private void doChunkUpdates() {
-        final ChunkTracker tracker = this.chunkTracker;
+        final ChunkTracker tracker = chunkTracker;
 
         final int updateCount = Math.min(tracker.size(), Configurator.PERFORMANCE.maxChunkUpdatesPerTick);
 
@@ -380,12 +381,12 @@ public class LavaSimulator extends SimulationTopNode implements SimulationTickab
     }
 
     private void doChunkUpdateInner(long packedChunkPos) {
-        this.itMe = true;
+        itMe = true;
         perfBlockUpdate.startRun();
-        this.cells.provideBlockUpdatesAndDoCooling(packedChunkPos);
+        cells.provideBlockUpdatesAndDoCooling(packedChunkPos);
         perfBlockUpdate.endRun();
-        this.basaltTracker.doBasaltCooling(packedChunkPos);
-        this.itMe = false;
+        basaltTracker.doBasaltCooling(packedChunkPos);
+        itMe = false;
     }
 
     @Override
@@ -398,13 +399,13 @@ public class LavaSimulator extends SimulationTopNode implements SimulationTickab
 
         // update connections as needed, handle other housekeeping, identify flowable
         // connections
-        this.connections.doCellSetup();
+        connections.doCellSetup();
 
         // lava flow
-        this.connections.processConnections();
+        connections.processConnections();
 
         // Apply world events that may depend on new chunks that were just loaded
-        this.lavaAddEvents.processAllEvents();
+        lavaAddEvents.processAllEvents();
 
         // Apply pending lava block placements
         // These will either cause chunks to be loaded (and the lava thus discovered)
@@ -415,13 +416,13 @@ public class LavaSimulator extends SimulationTopNode implements SimulationTickab
         // However, lava blocks are not normally expected to be placed or broken except
         // by the simulation
         // which does not rely on world events for that purpose.
-        this.lavaBlockPlacementEvents.processAllEvents();
+        lavaBlockPlacementEvents.processAllEvents();
 
         // unload cell chunks that are no longer necessary
         // important that this run right after cell update so that
         // chunk active/inactive accounting is accurate and we don't have improper
         // unloading
-        this.cells.unloadInactiveCellChunks();
+        cells.unloadInactiveCellChunks();
 
         this.makeDirty();
 
@@ -434,18 +435,18 @@ public class LavaSimulator extends SimulationTopNode implements SimulationTickab
     private void doParticles() {
         perfParticles.startRun();
 
-        final World world = this.world;
+        final World world = world;
         final MinecraftServer server = world.getServer();
         int capacity = server == null ? 0 : Configurator.VOLCANO.maxLavaEntities - EntityLavaBlob.getLiveParticleCount();
 
         if (capacity <= 0)
             return;
 
-        Collection<ParticleInfo> particles = this.particleManager.pollEligible(this, capacity);
+        Collection<ParticleInfo> particles = particleManager.pollEligible(this, capacity);
 
         if (!particles.isEmpty()) {
             for (ParticleInfo p : particles) {
-                LavaCell cell = this.cells.getCellIfExists(p.x(), p.y(), p.z());
+                LavaCell cell = cells.getCellIfExists(p.x(), p.y(), p.z());
 
                 // abort on strangeness, particle is discarded
                 if (cell == null)
@@ -472,14 +473,14 @@ public class LavaSimulator extends SimulationTopNode implements SimulationTickab
         //TODO: still correct?
         long now = world.getTime();
 
-        if (now >= this.nextStatTime) {
+        if (now >= nextStatTime) {
 
-            float onTickLoad = (float) this.perfOnTick.runTime() / Configurator.Volcano.performanceBudgetOnTickNanos;
-            float totalTickLoad = ((float) this.perfOnTick.runTime() + this.perfOffTick.runTime()) / Configurator.Volcano.performanceBudgetTotalNanos;
-            float chunkLoad = this.cells.chunkCount() / (float) Configurator.PERFORMANCE.chunkBudget;
-            float coolingLoad = this.basaltTracker.size() / (float) Configurator.PERFORMANCE.coolingBlockBudget;
+            float onTickLoad = (float) perfOnTick.runTime() / Configurator.Volcano.performanceBudgetOnTickNanos;
+            float totalTickLoad = ((float) perfOnTick.runTime() + perfOffTick.runTime()) / Configurator.Volcano.performanceBudgetTotalNanos;
+            float chunkLoad = cells.chunkCount() / (float) Configurator.PERFORMANCE.chunkBudget;
+            float coolingLoad = basaltTracker.size() / (float) Configurator.PERFORMANCE.coolingBlockBudget;
 
-            this.loadFactor = Math.max(Math.max(onTickLoad, totalTickLoad), Math.max(chunkLoad, coolingLoad));
+            loadFactor = Math.max(Math.max(onTickLoad, totalTickLoad), Math.max(chunkLoad, coolingLoad));
 
             if (Configurator.DEBUG.enablePerformanceLogging) {
                 perfCollectorOnTick.outputStats();
@@ -492,13 +493,13 @@ public class LavaSimulator extends SimulationTopNode implements SimulationTickab
             // this one is always maintained in order to compute load factor
             perfCollectorAllTick.clearStats();
 
-            this.connections.reportFlowTrackingIfEnabled();
+            connections.reportFlowTrackingIfEnabled();
 
             if (Configurator.DEBUG.enablePerformanceLogging) {
-                Pyroclasm.LOG.info("Lava chunks = %d (%f load)  basaltBlocks = %d (%f load)", this.cells.chunkCount(), chunkLoad,
-                        this.basaltTracker.size(), coolingLoad);
+                Pyroclasm.LOG.info("Lava chunks = %d (%f load)  basaltBlocks = %d (%f load)", cells.chunkCount(), chunkLoad,
+                        basaltTracker.size(), coolingLoad);
 
-                Pyroclasm.LOG.info("Effective load factor is %f.  (onTick = %f, totalTick = %f)", this.loadFactor, onTickLoad, totalTickLoad);
+                Pyroclasm.LOG.info("Effective load factor is %f.  (onTick = %f, totalTick = %f)", loadFactor, onTickLoad, totalTickLoad);
 
                 Pyroclasm.LOG.info(String.format("Time elapsed = %1$.3fs", ((float) Configurator.PERFORMANCE.performanceSampleInterval
                         + (now - nextStatTime) / Configurator.Volcano.performanceSampleIntervalMillis)));
@@ -506,9 +507,9 @@ public class LavaSimulator extends SimulationTopNode implements SimulationTickab
             }
 
             if (Configurator.DEBUG.outputLavaCellDebugSummaries)
-                this.cells.logDebugInfo();
+                cells.logDebugInfo();
 
-            this.nextStatTime = now + Configurator.Volcano.performanceSampleIntervalMillis;
+            nextStatTime = now + Configurator.Volcano.performanceSampleIntervalMillis;
         }
     }
 
@@ -524,7 +525,7 @@ public class LavaSimulator extends SimulationTopNode implements SimulationTickab
         }
         cell.coolAndShrink();
 
-        final World world = this.world;
+        final World world = world;
 
         BlockPos pos = new BlockPos(x, lavaCheckY, z);
         // turn vanilla lava underneath into basalt
@@ -535,14 +536,14 @@ public class LavaSimulator extends SimulationTopNode implements SimulationTickab
 
     @Override
     public boolean isDirty() {
-        return this.isDirty;
+        return isDirty;
     }
 
     @Override
     public void unload() {
     }
 
-    
+
     @Override
     public void afterDeserialization() {
 
@@ -560,7 +561,7 @@ public class LavaSimulator extends SimulationTopNode implements SimulationTickab
             return;
 
         if (newBlock instanceof CoolingBasaltBlock) {
-            this.registerCoolingBlock(this.world, pos);
+            this.registerCoolingBlock(world, pos);
             return;
         }
 
@@ -570,7 +571,7 @@ public class LavaSimulator extends SimulationTopNode implements SimulationTickab
         if (oldType == newType)
             return;
 
-        LavaCell entry = this.cells.getEntryCell(pos.getX(), pos.getZ());
+        LavaCell entry = cells.getEntryCell(pos.getX(), pos.getZ());
         if (entry == null) {
             // FIXME: handle rare case of full block columns
             // for example, if a block is broken in a chunk that has lava cells

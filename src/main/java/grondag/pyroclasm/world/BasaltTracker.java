@@ -1,6 +1,16 @@
 package grondag.pyroclasm.world;
 
-import javax.annotation.Nullable;
+import it.unimi.dsi.fastutil.longs.Long2IntMap.Entry;
+import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectIterator;
+import org.jetbrains.annotations.Nullable;
+
+import net.minecraft.block.Block;
+import net.minecraft.block.BlockState;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.math.BlockPos;
 
 import grondag.fermion.position.PackedBlockPos;
 import grondag.fermion.position.PackedChunkPos;
@@ -12,18 +22,9 @@ import grondag.fermion.varia.Useful;
 import grondag.pyroclasm.Configurator;
 import grondag.pyroclasm.Pyroclasm;
 import grondag.pyroclasm.block.CoolingBasaltBlock;
-import it.unimi.dsi.fastutil.longs.Long2IntMap.Entry;
-import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
-import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.objects.ObjectIterator;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
 
 public class BasaltTracker {
-    private static final String NBT_BASALT_BLOCKS = NBTDictionary.claim("basaltBlocks");
+    private static final String NBT_BASALT_BLOCKS = NBTDictionary.GLOBAL.claim("basaltBlocks");
     private static final int BASALT_BLOCKS_NBT_WIDTH = 3;
 
     /** Basalt blocks that are awaiting cooling */
@@ -36,15 +37,15 @@ public class BasaltTracker {
     private int size = 0;
 
     private void coolBlocks(Long2IntOpenHashMap targets) {
-        int lastEligibleBasaltCoolingTick = Simulator.currentTick() - Configurator.LAVA.basaltCoolingTicks;
-        ObjectIterator<Entry> it = targets.long2IntEntrySet().fastIterator();
+        final int lastEligibleBasaltCoolingTick = Simulator.currentTick() - Configurator.LAVA.basaltCoolingTicks;
+        final ObjectIterator<Entry> it = targets.long2IntEntrySet().fastIterator();
         while (it.hasNext()) {
-            Entry e = it.next();
+            final Entry e = it.next();
 
             if (e.getIntValue() <= lastEligibleBasaltCoolingTick) {
-                BlockPos pos = PackedBlockPos.unpack(e.getLongKey());
-                BlockState state = world.getBlockState(pos);
-                Block block = state.getBlock();
+                final BlockPos pos = PackedBlockPos.unpack(e.getLongKey());
+                final BlockState state = world.getBlockState(pos);
+                final Block block = state.getBlock();
                 if (block instanceof CoolingBasaltBlock) {
                     switch (((CoolingBasaltBlock) block).tryCooling(world, pos, state)) {
                     case PARTIAL:
@@ -60,14 +61,13 @@ public class BasaltTracker {
                     case INVALID:
                     default:
                         it.remove();
-                        this.size--;
+                        size--;
                     }
                 } else {
                     it.remove();
-                    this.size--;
+                    size--;
                 }
             }
-            ;
         }
 
     }
@@ -75,32 +75,32 @@ public class BasaltTracker {
     public BasaltTracker(PerformanceCollector perfCollector, ServerWorld world, ChunkTracker chunkTracker) {
         this.world = world;
         this.chunkTracker = chunkTracker;
-        this.perfCounter = PerformanceCounter.create(Configurator.DEBUG.enablePerformanceLogging, "Basalt cooling", perfCollector);
+        perfCounter = PerformanceCounter.create(Configurator.DEBUG.enablePerformanceLogging, "Basalt cooling", perfCollector);
     }
 
     public void doBasaltCooling(long packedChunkPos) {
 //        assert FMLCommonHandler.instance().getMinecraftServerInstance().isCallingFromMinecraftThread();
 
-        this.perfCounter.startRun();
-        if (!this.basaltBlocks.isEmpty()) {
-            Long2IntOpenHashMap targets = this.basaltBlocks.get(packedChunkPos);
+        perfCounter.startRun();
+        if (!basaltBlocks.isEmpty()) {
+            final Long2IntOpenHashMap targets = basaltBlocks.get(packedChunkPos);
 
             if (targets != null) {
                 if (!targets.isEmpty())
-                    this.coolBlocks(targets);
+                    coolBlocks(targets);
 
                 if (targets.isEmpty()) {
-                    this.basaltBlocks.remove(packedChunkPos);
-                    this.chunkTracker.untrackChunk(this.world, packedChunkPos);
+                    basaltBlocks.remove(packedChunkPos);
+                    chunkTracker.untrackChunk(world, packedChunkPos);
                 }
             }
         }
-        this.perfCounter.endRun();
+        perfCounter.endRun();
     }
 
     public boolean isTracked(long packedBlockPos) {
-        long chunkPos = PackedChunkPos.getPackedChunkPos(packedBlockPos);
-        Long2IntOpenHashMap blocks = this.basaltBlocks.get(chunkPos);
+        final long chunkPos = PackedChunkPos.getPackedChunkPos(packedBlockPos);
+        final Long2IntOpenHashMap blocks = basaltBlocks.get(chunkPos);
         if (blocks == null)
             return false;
 
@@ -120,31 +120,31 @@ public class BasaltTracker {
     public void trackCoolingBlock(long packedBlockPos, int tick) {
 //        assert FMLCommonHandler.instance().getMinecraftServerInstance().isCallingFromMinecraftThread();
 
-        long chunkPos = PackedChunkPos.getPackedChunkPos(packedBlockPos);
-        Long2IntOpenHashMap blocks = this.basaltBlocks.get(chunkPos);
+        final long chunkPos = PackedChunkPos.getPackedChunkPos(packedBlockPos);
+        Long2IntOpenHashMap blocks = basaltBlocks.get(chunkPos);
 
         if (blocks == null) {
             blocks = new Long2IntOpenHashMap();
-            this.basaltBlocks.put(chunkPos, blocks);
+            basaltBlocks.put(chunkPos, blocks);
 
-            this.chunkTracker.trackChunk(this.world, chunkPos);
+            chunkTracker.trackChunk(world, chunkPos);
         }
         if (blocks.put(packedBlockPos, tick) == blocks.defaultReturnValue())
-            this.size++;
+            size++;
     }
 
     public int size() {
-        return this.size;
+        return size;
     }
 
     public void serializeNBT(CompoundTag nbt) {
         if (Configurator.DEBUG.enablePerformanceLogging)
-            Pyroclasm.LOG.info("Saving " + this.size + " cooling basalt blocks.");
+            Pyroclasm.LOG.info("Saving " + size + " cooling basalt blocks.");
 
-        int[] saveData = new int[this.size * BASALT_BLOCKS_NBT_WIDTH];
+        final int[] saveData = new int[size * BASALT_BLOCKS_NBT_WIDTH];
         int i = 0;
-        for (Long2IntOpenHashMap blocks : this.basaltBlocks.values()) {
-            for (Entry e : blocks.long2IntEntrySet()) {
+        for (final Long2IntOpenHashMap blocks : basaltBlocks.values()) {
+            for (final Entry e : blocks.long2IntEntrySet()) {
                 saveData[i++] = Useful.longToIntHigh(e.getLongKey());
                 saveData[i++] = Useful.longToIntLow(e.getLongKey());
                 saveData[i++] = e.getIntValue();
@@ -158,7 +158,7 @@ public class BasaltTracker {
         if (nbt == null)
             return;
 
-        int[] saveData = nbt.getIntArray(NBT_BASALT_BLOCKS);
+        final int[] saveData = nbt.getIntArray(NBT_BASALT_BLOCKS);
 
         // confirm correct size
         if (saveData.length % BASALT_BLOCKS_NBT_WIDTH != 0) {
@@ -169,7 +169,7 @@ public class BasaltTracker {
                 this.trackCoolingBlock(Useful.longFromInts(saveData[i++], saveData[i++]), saveData[i++]);
             }
             if (Configurator.DEBUG.enablePerformanceLogging)
-                Pyroclasm.LOG.info("Loaded " + this.size + " cooling basalt blocks.");
+                Pyroclasm.LOG.info("Loaded " + size + " cooling basalt blocks.");
         }
     }
 }

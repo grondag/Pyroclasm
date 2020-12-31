@@ -2,16 +2,6 @@ package grondag.pyroclasm.block;
 
 import java.util.Random;
 
-import grondag.fermion.simulator.Simulator;
-import grondag.pyroclasm.Configurator;
-import grondag.pyroclasm.fluidsim.LavaSimulator;
-import grondag.pyroclasm.init.ModSounds;
-import grondag.xm.api.modelstate.ModelState;
-import grondag.xm.relics.BlockSubstance;
-import grondag.xm.terrain.TerrainDynamicBlock;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-import net.fabricmc.fabric.api.block.FabricBlockSettings;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
@@ -22,6 +12,18 @@ import net.minecraft.sound.SoundCategory;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.ViewableWorld;
 import net.minecraft.world.World;
+
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+import net.fabricmc.fabric.api.block.FabricBlockSettings;
+
+import grondag.fermion.simulator.Simulator;
+import grondag.pyroclasm.Configurator;
+import grondag.pyroclasm.fluidsim.LavaSimulator;
+import grondag.pyroclasm.init.ModSounds;
+import grondag.xm.api.modelstate.ModelState;
+import grondag.xm.relics.BlockSubstance;
+import grondag.xm.terrain.TerrainDynamicBlock;
 
 public class LavaBlock extends TerrainDynamicBlock {
     public LavaBlock(FabricBlockSettings settings, String blockName, BlockSubstance substance, ModelState defaultModelState, boolean isFiller) {
@@ -80,7 +82,7 @@ public class LavaBlock extends TerrainDynamicBlock {
         super.onBlockAdded(state, worldIn, pos, otherBlockState, someBoolean);
         if (!worldIn.isClient) {
             handleFallingBlocks(worldIn, pos, state);
-            LavaSimulator sim = Simulator.instance().getNode(LavaSimulator.class);
+            final LavaSimulator sim = Simulator.instance().getNode(LavaSimulator.class);
             if (sim != null)
                 sim.registerPlacedLava(worldIn, pos, state);
         }
@@ -90,7 +92,7 @@ public class LavaBlock extends TerrainDynamicBlock {
     @Override
     public void onBlockRemoved(BlockState state, World worldIn, BlockPos pos, BlockState otherBlockState, boolean someBoolean) {
         super.onBlockRemoved(state, worldIn, pos, otherBlockState, someBoolean);
-        LavaSimulator sim = Simulator.instance().getNode(LavaSimulator.class);
+        final LavaSimulator sim = Simulator.instance().getNode(LavaSimulator.class);
         if (sim != null)
             sim.unregisterDestroyedLava(worldIn, pos, state);
     }
@@ -127,13 +129,13 @@ public class LavaBlock extends TerrainDynamicBlock {
 //        super.addProbeInfo(mode, probeInfo, player, world, blockState, data);
 //        if(data == null || probeInfo == null)
 //            return;
-//        
+//
 //        if(Configurator.DEBUG.enableLavaBlockProbeOutput)
 //        {
 //            LavaSimulator sim = Simulator.instance().getNode(LavaSimulator.class);
-//            if(sim != null) 
+//            if(sim != null)
 //            {
-//                BlockPos pos = data.getPos();  
+//                BlockPos pos = data.getPos();
 //                LavaCell cell = sim.cells.getCellIfExists(pos.getX(), pos.getY(), pos.getZ());
 //                if(cell == null)
 //                {
@@ -160,15 +162,15 @@ public class LavaBlock extends TerrainDynamicBlock {
     @Override
     @Environment(EnvType.CLIENT)
     public void randomDisplayTick(BlockState stateIn, World worldIn, BlockPos pos, Random rand) {
-        double d0 = (double) pos.getX();
-        double d1 = (double) pos.getY();
-        double d2 = (double) pos.getZ();
+        final double d0 = pos.getX();
+        final double d1 = pos.getY();
+        final double d2 = pos.getZ();
 
         if (worldIn.getBlockState(pos.up()).getMaterial() == Material.AIR) {
             if (rand.nextInt(100) == 0) {
-                double d8 = d0 + (double) rand.nextFloat();
-                double d4 = d1 + stateIn.getCollisionShape(worldIn, pos).getBoundingBox().maxY;
-                double d6 = d2 + (double) rand.nextFloat();
+                final double d8 = d0 + rand.nextFloat();
+                final double d4 = d1 + stateIn.getCollisionShape(worldIn, pos).getBoundingBox().maxY;
+                final double d6 = d2 + rand.nextFloat();
                 worldIn.addParticle(ParticleTypes.LAVA, d8, d4, d6, 0.0D, 0.0D, 0.0D);
 //                worldIn.playSound(d8, d4, d6, SoundEvents.BLOCK_LAVA_POP, SoundCategory.BLOCKS, 0.2F + rand.nextFloat() * 0.2F, 0.9F + rand.nextFloat() * 0.15F, false);
             } else if (rand.nextInt(200) == 0)
@@ -182,12 +184,12 @@ public class LavaBlock extends TerrainDynamicBlock {
         }
 
         if (rand.nextInt(10) == 0 && worldIn.getBlockState(pos.down()).hasSolidTopSurface(worldIn, pos, null)) {
-            Material material = worldIn.getBlockState(pos.down(2)).getMaterial();
+            final Material material = worldIn.getBlockState(pos.down(2)).getMaterial();
 
             if (!material.blocksMovement() && !material.isLiquid()) {
-                double d3 = d0 + (double) rand.nextFloat();
-                double d5 = d1 - 1.05D;
-                double d7 = d2 + (double) rand.nextFloat();
+                final double d3 = d0 + rand.nextFloat();
+                final double d5 = d1 - 1.05D;
+                final double d7 = d2 + rand.nextFloat();
 
                 worldIn.addParticle(ParticleTypes.DRIPPING_LAVA, d3, d5, d7, 0.0D, 0.0D, 0.0D);
             }

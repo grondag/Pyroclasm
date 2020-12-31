@@ -1,13 +1,5 @@
 package grondag.pyroclasm.item;
 
-import grondag.fermion.position.PackedBlockPos;
-import grondag.pyroclasm.init.ModBlocks;
-import grondag.xm.terrain.TerrainBlock;
-import grondag.xm.terrain.TerrainBlockHelper;
-import grondag.xm.terrain.TerrainDynamicBlock;
-import grondag.xm.terrain.TerrainState;
-import grondag.xm.terrain.TerrainStaticBlock;
-import grondag.xm.terrain.TerrainWorldAdapter;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
@@ -25,6 +17,15 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
 import net.minecraft.world.World;
 
+import grondag.fermion.position.PackedBlockPos;
+import grondag.pyroclasm.init.ModBlocks;
+import grondag.xm.terrain.TerrainBlock;
+import grondag.xm.terrain.TerrainBlockHelper;
+import grondag.xm.terrain.TerrainDynamicBlock;
+import grondag.xm.terrain.TerrainState;
+import grondag.xm.terrain.TerrainStaticBlock;
+import grondag.xm.terrain.TerrainWorldAdapter;
+
 public class TerrainWand extends Item {
     public TerrainWand() {
         super(new Item.Settings().maxCount(1));
@@ -38,7 +39,7 @@ public class TerrainWand extends Item {
 
     @Override
     public TypedActionResult<ItemStack> use(World worldIn, PlayerEntity playerIn, Hand hand) {
-        ItemStack stack = playerIn.getStackInHand(hand);
+        final ItemStack stack = playerIn.getStackInHand(hand);
 
         if (!worldIn.isClient) {
             TerrainMode newMode = TerrainMode.STATE;
@@ -56,10 +57,10 @@ public class TerrainWand extends Item {
             tag.putString(MODE_TAG, newMode.name());
             stack.setTag(tag);
 
-            playerIn.sendMessage(new TranslatableText("misc.mode_set", newMode.toString()));
+            playerIn.sendMessage(new TranslatableText("misc.mode_set", newMode.toString()), true);
 
         }
-        return new TypedActionResult<ItemStack>(ActionResult.SUCCESS, stack);
+        return new TypedActionResult<>(ActionResult.SUCCESS, stack);
     }
 
     public TerrainMode getMode(ItemStack itemStackIn) {
@@ -71,13 +72,13 @@ public class TerrainWand extends Item {
 
     }
 
-    
+
     @Override
     public ActionResult useOnBlock(ItemUsageContext context) {
         if (context.getWorld().isClient)
             return ActionResult.SUCCESS;
 
-        ItemStack stack = context.getStack();
+        final ItemStack stack = context.getStack();
 
         if (getMode(stack) == TerrainMode.HEIGHT) {
 //            if(playerIn.isSneaking())
@@ -94,17 +95,17 @@ public class TerrainWand extends Item {
     }
 
     public ActionResult handleUseStateMode(ItemStack stack, PlayerEntity playerIn, World worldIn, BlockPos pos) {
-        BlockState stateIn = worldIn.getBlockState(pos);
-        Block blockIn = stateIn.getBlock();
+        final BlockState stateIn = worldIn.getBlockState(pos);
+        final Block blockIn = stateIn.getBlock();
 
         if (TerrainBlockHelper.isFlowBlock(stateIn)) {
 
             if (blockIn == ModBlocks.basalt_cool_static_height) {
-                BlockState targetState = ModBlocks.lava_dynamic_height.getDefaultState().with(TerrainBlock.TERRAIN_TYPE, stateIn.get(TerrainBlock.TERRAIN_TYPE));
+                final BlockState targetState = ModBlocks.lava_dynamic_height.getDefaultState().with(TerrainBlock.TERRAIN_TYPE, stateIn.get(TerrainBlock.TERRAIN_TYPE));
                 worldIn.setBlockState(pos, targetState);
 
             } else if (blockIn == ModBlocks.basalt_cool_static_filler) {
-                BlockState targetState = ModBlocks.lava_dynamic_filler.getDefaultState().with(TerrainBlock.TERRAIN_TYPE, stateIn.get(TerrainBlock.TERRAIN_TYPE));
+                final BlockState targetState = ModBlocks.lava_dynamic_filler.getDefaultState().with(TerrainBlock.TERRAIN_TYPE, stateIn.get(TerrainBlock.TERRAIN_TYPE));
                 worldIn.setBlockState(pos, targetState);
             } else if (blockIn instanceof TerrainDynamicBlock) {
                 ((TerrainDynamicBlock) blockIn).makeStatic(stateIn, worldIn, pos);
@@ -118,7 +119,7 @@ public class TerrainWand extends Item {
 
     /** for testing box filter smoothing on flowing terrain - not for release */
     public ActionResult handleUseSmoothMode(ItemStack stack, PlayerEntity playerIn, World worldIn, BlockPos pos) {
-        int height[][] = new int[33][33];
+        final int height[][] = new int[33][33];
 
         for (int x = 0; x < 33; x++) {
             for (int z = 0; z < 33; z++) {
@@ -128,19 +129,19 @@ public class TerrainWand extends Item {
 
         for (int x = 1; x < 32; x++) {
             for (int z = 1; z < 32; z++) {
-                int avg = (height[x - 1][z] + height[x - 1][z] + height[x - 1][z + 1] + height[x][z] + height[x][z] + height[x][z + 1] + height[x + 1][z]
+                final int avg = (height[x - 1][z] + height[x - 1][z] + height[x - 1][z + 1] + height[x][z] + height[x][z] + height[x][z + 1] + height[x + 1][z]
                         + height[x + 1][z] + height[x + 1][z + 1]) / 9;
 
-                int currentLevel = height[x][z];
+                final int currentLevel = height[x][z];
 
-                int currentY = (int) Math.floor((currentLevel - 1) / TerrainState.BLOCK_LEVELS_FLOAT);
-                BlockPos targetPos = new BlockPos(pos.getX() - 16 + x, currentY, pos.getZ() - 16 + z);
-                BlockState currentState = worldIn.getBlockState(targetPos);
+                final int currentY = (int) Math.floor((currentLevel - 1) / TerrainState.BLOCK_LEVELS_FLOAT);
+                final BlockPos targetPos = new BlockPos(pos.getX() - 16 + x, currentY, pos.getZ() - 16 + z);
+                final BlockState currentState = worldIn.getBlockState(targetPos);
 
                 if (TerrainBlockHelper.isFlowHeight(currentState)) {
                     if (avg > currentLevel) {
-                        int newLevel = Math.min(currentLevel + TerrainState.BLOCK_LEVELS_INT, avg);
-                        int newY = (int) Math.floor((newLevel - 1) / TerrainState.BLOCK_LEVELS_FLOAT);
+                        final int newLevel = Math.min(currentLevel + TerrainState.BLOCK_LEVELS_INT, avg);
+                        final int newY = (int) Math.floor((newLevel - 1) / TerrainState.BLOCK_LEVELS_FLOAT);
 
                         if (newY == currentY) {
                             worldIn.setBlockState(targetPos,
@@ -151,8 +152,8 @@ public class TerrainWand extends Item {
                                     TerrainBlockHelper.stateWithDiscreteFlowHeight(currentState, newLevel - (newY * TerrainState.BLOCK_LEVELS_INT)));
                         }
                     } else if (avg < currentLevel) {
-                        int newLevel = Math.max(currentLevel - TerrainState.BLOCK_LEVELS_INT, avg);
-                        int newY = (int) Math.floor((newLevel - 1) / TerrainState.BLOCK_LEVELS_FLOAT);
+                        final int newLevel = Math.max(currentLevel - TerrainState.BLOCK_LEVELS_INT, avg);
+                        final int newY = (int) Math.floor((newLevel - 1) / TerrainState.BLOCK_LEVELS_FLOAT);
 
                         if (newY == currentY) {
                             worldIn.setBlockState(targetPos,
@@ -170,7 +171,7 @@ public class TerrainWand extends Item {
     }
 
     private static int getHeightAt(World world, int x, int y, int z) {
-        BlockPos pos = new BlockPos(x, y, z);
+        final BlockPos pos = new BlockPos(x, y, z);
         BlockState state = world.getBlockState(pos);
         int h = TerrainBlockHelper.getFlowHeightFromState(state);
 
@@ -210,24 +211,24 @@ public class TerrainWand extends Item {
             return handleUseHeightMode(stack, playerIn, worldIn, pos.up());
         }
 
-        BlockState stateIn = worldIn.getBlockState(pos);
-        Block blockIn = stateIn.getBlock();
+        final BlockState stateIn = worldIn.getBlockState(pos);
+        final Block blockIn = stateIn.getBlock();
 
         BlockState targetState = null;
         BlockPos targetPos = null;
 
-        int level = TerrainBlockHelper.getFlowHeightFromState(stateIn);
+        final int level = TerrainBlockHelper.getFlowHeightFromState(stateIn);
         if (level > 0) {
             if (playerIn.isSneaking()) {
                 if (level > 1) {
                     targetPos = pos;
                     targetState = TerrainBlockHelper.stateWithDiscreteFlowHeight(stateIn, level - 1);
-                    playerIn.sendMessage(new TranslatableText("Level " + (level - 1)));
+                    playerIn.sendMessage(new TranslatableText("Level " + (level - 1)), true);
 
                 } else if (TerrainBlockHelper.isFlowHeight(worldIn.getBlockState(pos.down()))) {
                     targetPos = pos;
                     targetState = Blocks.AIR.getDefaultState();
-                    playerIn.sendMessage(new TranslatableText("Level 0 (removed a block)"));
+                    playerIn.sendMessage(new TranslatableText("Level 0 (removed a block)"), true);
                 } else {
                     // prevent mode change
                     return ActionResult.SUCCESS;
@@ -236,12 +237,12 @@ public class TerrainWand extends Item {
                 if (level < TerrainState.BLOCK_LEVELS_INT) {
                     targetPos = pos;
                     targetState = TerrainBlockHelper.stateWithDiscreteFlowHeight(stateIn, level + 1);
-                    playerIn.sendMessage(new TranslatableText("Level " + (level + 1)));
+                    playerIn.sendMessage(new TranslatableText("Level " + (level + 1)), true);
                 } else if (worldIn.getBlockState(pos.up()).getMaterial().isReplaceable()
                         || TerrainBlockHelper.isFlowFiller(worldIn.getBlockState(pos.up()))) {
                     targetPos = pos.up();
                     targetState = TerrainBlockHelper.stateWithDiscreteFlowHeight(stateIn, 1);
-                    playerIn.sendMessage(new TranslatableText("Level 1 (added new block)"));
+                    playerIn.sendMessage(new TranslatableText("Level 1 (added new block)"), true);
                 } else {
                     // prevent mode change
                     return ActionResult.SUCCESS;
@@ -253,12 +254,12 @@ public class TerrainWand extends Item {
             return ActionResult.FAIL;
         }
 
-        Box axisalignedbb = targetState.getCollisionShape(worldIn, targetPos).getBoundingBox();
+        final Box axisalignedbb = targetState.getCollisionShape(worldIn, targetPos).getBoundingBox();
         if (!worldIn.doesNotCollide(playerIn, axisalignedbb))
             return ActionResult.FAIL;
 
-        TerrainWorldAdapter twa = new TerrainWorldAdapter(worldIn);
-        long packedTargetPos = PackedBlockPos.pack(targetPos);
+        final TerrainWorldAdapter twa = new TerrainWorldAdapter(worldIn);
+        final long packedTargetPos = PackedBlockPos.pack(targetPos);
         twa.setBlockState(packedTargetPos, targetState);
 
         TerrainBlockHelper.adjustFillIfNeeded(twa, packedTargetPos);
@@ -271,7 +272,7 @@ public class TerrainWand extends Item {
         TerrainBlockHelper.adjustFillIfNeeded(twa, PackedBlockPos.add(packedTargetPos, 1, 0, -1));
         TerrainBlockHelper.adjustFillIfNeeded(twa, PackedBlockPos.add(packedTargetPos, 1, 0, 1));
 
-        worldIn.playSound((double) ((float) targetPos.getX() + 0.5F), (double) ((float) targetPos.getY() + 0.5F), (double) ((float) targetPos.getZ() + 0.5F),
+        worldIn.playSound(targetPos.getX() + 0.5F, targetPos.getY() + 0.5F, targetPos.getZ() + 0.5F,
                 blockIn.getSoundGroup(targetState).getPlaceSound(), SoundCategory.BLOCKS, (blockIn.getSoundGroup(targetState).getVolume() + 1.0F) / 2.0F,
                 blockIn.getSoundGroup(targetState).getPitch() * 0.8F, true);
 
@@ -296,33 +297,33 @@ public class TerrainWand extends Item {
 //            IBlockState baseState = worldObj.getBlockState(basePos);
 //            Block baseBlock = baseState.getBlock();
 //            SuperBlock fillBlock = null;
-//            
+//
 //            //don't adjustIfEnabled static blocks
 //            if(baseBlock instanceof TerrainStaticBlock) continue;
-//            
+//
 //            int targetMeta = SHOULD_BE_AIR;
 //
 //            /**
 //             * If space is occupied with a non-displaceable block, will be ignored.
 //             * Static flow blocks are also ignored.
 //             * Otherwise, possible target states: air, fill +1, fill +2
-//             * 
+//             *
 //             * Should be fill +1 if block below is a heightblock and needs a fill >= 1;
 //             * Should be a fill +2 if block below is not a heightblock and block
 //             * two below needs a fill = 2;
 //             * Otherwise should be air.
 //             */
 //            IBlockState stateBelow = worldObj.getBlockState(basePos.down());
-//            if(TerrainBlock.isFlowHeight(stateBelow.getBlock()) 
+//            if(TerrainBlock.isFlowHeight(stateBelow.getBlock())
 //                    && TerrainBlock.topFillerNeeded(stateBelow, worldObj, basePos.down()) > 0)
 //            {
 //                targetMeta = 0;
 //                fillBlock = (SuperBlock) TerrainBlockRegistry.TERRAIN_STATE_REGISTRY.getFillerBlock(stateBelow.getBlock());
 //            }
-//            else 
+//            else
 //            {
 //                IBlockState stateTwoBelow = worldObj.getBlockState(basePos.down(2));
-//                if((TerrainBlock.isFlowHeight(stateTwoBelow.getBlock()) 
+//                if((TerrainBlock.isFlowHeight(stateTwoBelow.getBlock())
 //                        && TerrainBlock.topFillerNeeded(stateTwoBelow, worldObj, basePos.down(2)) == 2))
 //                {
 //                    targetMeta = 1;

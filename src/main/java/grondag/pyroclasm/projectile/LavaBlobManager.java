@@ -6,21 +6,21 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-import javax.annotation.Nullable;
-
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.ImmutableList;
+import org.jetbrains.annotations.Nullable;
+
+import net.minecraft.nbt.CompoundTag;
 
 import grondag.fermion.position.PackedBlockPos;
 import grondag.fermion.simulator.Simulator;
 import grondag.fermion.varia.NBTDictionary;
+import grondag.pyroclasm.Configurator;
 import grondag.pyroclasm.Pyroclasm;
 import grondag.pyroclasm.fluidsim.LavaSimulator;
-import net.minecraft.nbt.CompoundTag;
-import grondag.pyroclasm.Configurator;
 
 public class LavaBlobManager {
-    private final static String NBT_LAVA_PARTICLE_MANAGER = NBTDictionary.claim("lavaBlobs");
+    private final static String NBT_LAVA_PARTICLE_MANAGER = NBTDictionary.GLOBAL.claim("lavaBlobs");
     private final static int NBT_SAVE_DATA_WIDTH = 4;
 
     private final static int MIN_WAIT_TICKS = 4;
@@ -30,7 +30,7 @@ public class LavaBlobManager {
      */
     private final static int MAX_WAIT_TICKS = 200;
 
-    private final ConcurrentHashMap<Long, ParticleInfo> map = new ConcurrentHashMap<Long, ParticleInfo>(512);
+    private final ConcurrentHashMap<Long, ParticleInfo> map = new ConcurrentHashMap<>(512);
 
     public void clear() {
         map.clear();
@@ -59,11 +59,11 @@ public class LavaBlobManager {
         if (map.isEmpty())
             return ImmutableList.of();
 
-        int firstEligibleTick = Simulator.currentTick() - MIN_WAIT_TICKS;
-        int forceEligibleTick = Simulator.currentTick() - MAX_WAIT_TICKS;
+        final int firstEligibleTick = Simulator.currentTick() - MIN_WAIT_TICKS;
+        final int forceEligibleTick = Simulator.currentTick() - MAX_WAIT_TICKS;
 
         // wait until minimum size * minimum age, full size, or max age
-        List<ParticleInfo> candidates = map.values().parallelStream()
+        final List<ParticleInfo> candidates = map.values().parallelStream()
                 .filter(p -> p.tickCreated <= forceEligibleTick || p.fluidUnits >= LavaSimulator.FLUID_UNITS_PER_BLOCK
                         || (p.tickCreated <= firstEligibleTick && p.fluidUnits >= LavaSimulator.FLUID_UNITS_PER_LEVEL))
                 .sorted(new Comparator<ParticleInfo>() {
@@ -91,31 +91,31 @@ public class LavaBlobManager {
         }
 
         private void addFluid(int fluidUnitsIn) {
-            this.fluidUnits += fluidUnitsIn;
+            fluidUnits += fluidUnitsIn;
         }
 
         public int getFluidUnits() {
-            return this.fluidUnits;
+            return fluidUnits;
         }
 
         public int x() {
-            return PackedBlockPos.getX(this.packedBlockPos);
+            return PackedBlockPos.getX(packedBlockPos);
         }
 
         public int y() {
-            return PackedBlockPos.getY(this.packedBlockPos);
+            return PackedBlockPos.getY(packedBlockPos);
         }
 
         public int z() {
-            return PackedBlockPos.getZ(this.packedBlockPos);
+            return PackedBlockPos.getZ(packedBlockPos);
         }
 
     }
 
     public void readFromNBT(CompoundTag nbt) {
-        this.map.clear();
+        map.clear();
 
-        int[] saveData = nbt.getIntArray(NBT_LAVA_PARTICLE_MANAGER);
+        final int[] saveData = nbt.getIntArray(NBT_LAVA_PARTICLE_MANAGER);
 
         // confirm correct size
         if (saveData.length % NBT_SAVE_DATA_WIDTH != 0) {
@@ -126,7 +126,7 @@ public class LavaBlobManager {
         int i = 0;
 
         while (i < saveData.length) {
-            ParticleInfo p = new ParticleInfo(saveData[i++], (long) saveData[i++] << 32 | (long) saveData[i++], saveData[i++]);
+            final ParticleInfo p = new ParticleInfo(saveData[i++], (long) saveData[i++] << 32 | saveData[i++], saveData[i++]);
 
             // protect against duplicate position weirdness in save data
             if (!map.containsKey(p.packedBlockPos)) {
@@ -141,10 +141,10 @@ public class LavaBlobManager {
         if (Configurator.DEBUG.enablePerformanceLogging)
             Pyroclasm.LOG.info("Saving " + map.size() + " lava entities.");
 
-        int[] saveData = new int[map.size() * NBT_SAVE_DATA_WIDTH];
+        final int[] saveData = new int[map.size() * NBT_SAVE_DATA_WIDTH];
         int i = 0;
 
-        for (ParticleInfo p : map.values()) {
+        for (final ParticleInfo p : map.values()) {
             saveData[i++] = p.tickCreated;
             saveData[i++] = (int) (p.packedBlockPos & 0xFFFFFFFF);
             saveData[i++] = (int) ((p.packedBlockPos >> 32) & 0xFFFFFFFF);

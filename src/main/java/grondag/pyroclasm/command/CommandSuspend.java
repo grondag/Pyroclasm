@@ -1,9 +1,10 @@
 package grondag.pyroclasm.command;
 
-import grondag.pyroclasm.fluidsim.LavaSimulator;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.TranslatableText;
+
+import grondag.pyroclasm.fluidsim.LavaSimulator;
 
 //TODO: redo w/ Brigadier
 public class CommandSuspend { //extends CommandBase {
@@ -26,7 +27,7 @@ public class CommandSuspend { //extends CommandBase {
 //    @Override
     public void execute(MinecraftServer server, ServerPlayerEntity sender, String[] args) {
         LavaSimulator.isSuspended = true;
-        sender.sendMessage(new TranslatableText("commands.volcano.suspend.success"));
+        sender.sendMessage(new TranslatableText("commands.volcano.suspend.success"), true);
     }
 
 }

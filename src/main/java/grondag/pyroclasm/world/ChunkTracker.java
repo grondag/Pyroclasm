@@ -5,10 +5,11 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
+
+import net.minecraft.server.world.ServerWorld;
 
 import grondag.fermion.position.PackedChunkPos;
-import net.minecraft.server.world.ServerWorld;
 
 public class ChunkTracker {
     private final ConcurrentHashMap<Long, AtomicInteger> map = new ConcurrentHashMap<>();
@@ -16,15 +17,15 @@ public class ChunkTracker {
     @Nullable
     Iterator<Map.Entry<Long, AtomicInteger>> iterator = null;
 
-    private AtomicInteger trackedCount = new AtomicInteger();
+    private final AtomicInteger trackedCount = new AtomicInteger();
 
     public void clear() {
-        this.map.clear();
-        this.trackedCount.set(0);
+        map.clear();
+        trackedCount.set(0);
     }
 
     public int size() {
-        return this.trackedCount.get();
+        return trackedCount.get();
     }
 
     public void trackChunk(ServerWorld world, long packedChunkPos) {
@@ -51,14 +52,14 @@ public class ChunkTracker {
     }
 
     public long nextPackedChunkPosForUpdate() {
-        Iterator<Map.Entry<Long, AtomicInteger>> it = this.iterator;
+        Iterator<Map.Entry<Long, AtomicInteger>> it = iterator;
         if (it == null || !it.hasNext()) {
-            it = this.map.entrySet().iterator();
-            this.iterator = it;
+            it = map.entrySet().iterator();
+            iterator = it;
         }
 
         while (it.hasNext()) {
-            Map.Entry<Long, AtomicInteger> e = it.next();
+            final Map.Entry<Long, AtomicInteger> e = it.next();
             if (e.getValue().get() > 0)
                 return e.getKey();
         }

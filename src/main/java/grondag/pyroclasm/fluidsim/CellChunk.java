@@ -3,25 +3,26 @@ package grondag.pyroclasm.fluidsim;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
+
+import net.minecraft.world.chunk.Chunk;
 
 import grondag.fermion.position.PackedChunkPos;
 import grondag.fermion.sc.unordered.SimpleUnorderedArrayList;
 import grondag.fermion.simulator.Simulator;
-import grondag.pyroclasm.Pyroclasm;
 import grondag.pyroclasm.Configurator;
-import net.minecraft.world.chunk.Chunk;
+import grondag.pyroclasm.Pyroclasm;
 
 /**
  * Container for all cells in a world chunk. When a chunk is loaded (or updated)
  * all cells that can exist in the chunk are created.
- * 
+ *
  * Lifecycle notes --------------------------------------- when a chunk gets
  * lava for the start time is created becomes active retains neighboring chunks
  * must be loaded
- * 
+ *
  * when a chunk gets retained for the start time is created must be loaded
- * 
+ *
  * chunks can be unloaded when they are not active AND they are not retained
  */
 public class CellChunk {
@@ -103,15 +104,15 @@ public class CellChunk {
 
     CellChunk(long packedChunkPos, LavaCells cells) {
         this.packedChunkPos = packedChunkPos;
-        this.xStart = PackedChunkPos.getChunkXStart(packedChunkPos);
-        this.zStart = PackedChunkPos.getChunkZStart(packedChunkPos);
-        this.xEnd = this.xStart + 15;
-        this.zEnd = this.zStart + 15;
+        xStart = PackedChunkPos.getChunkXStart(packedChunkPos);
+        zStart = PackedChunkPos.getChunkZStart(packedChunkPos);
+        xEnd = xStart + 15;
+        zEnd = zStart + 15;
 
         this.cells = cells;
 
         if (Configurator.DEBUG.enableLavaCellChunkTrace)
-            Pyroclasm.LOG.info("Created chunk buffer with corner x=%d, z=%d", this.xStart, this.zStart);
+            Pyroclasm.LOG.info("Created chunk buffer with corner x=%d, z=%d", xStart, zStart);
     }
 
     /**
@@ -119,7 +120,7 @@ public class CellChunk {
      * chunk is unloaded.
      */
     public void requestFullValidation() {
-        this.needsFullValidation = true;
+        needsFullValidation = true;
     }
 
     /**
@@ -128,17 +129,17 @@ public class CellChunk {
      * are individually marked for validation.
      */
     public boolean needsFullLoadOrValidation() {
-        return (this.needsFullValidation || this.validationCount.get() > 64);
+        return (needsFullValidation || validationCount.get() > 64);
     }
 
     public int validationPriority() {
-        if (this.isNew())
+        if (isNew())
             return Integer.MAX_VALUE;
 
-        if (this.needsFullValidation)
+        if (needsFullValidation)
             return 256;
 
-        return this.validationCount.get();
+        return validationCount.get();
     }
 
     public boolean isNew() {
@@ -148,7 +149,7 @@ public class CellChunk {
         // neighbor chunks
         // after NBT load because activation counts weren't being updated because chunk
         // was "new"
-        return this.lastValidationTick == 0 && this.entryCount.get() == 0;
+        return lastValidationTick == 0 && entryCount.get() == 0;
     }
 
     /**
@@ -156,51 +157,51 @@ public class CellChunk {
      * validated.
      */
     public long lastValidationTick() {
-        return this.lastValidationTick;
+        return lastValidationTick;
     }
 
     /**
      * Validates any cells that have been marked for individual validation.
-     * 
+     *
      * Will return without doing any validation if a full validation is already
      * needed.
-     * 
+     *
      * @param worldBuffer
-     * 
+     *
      * @return true if any cells were validated.
      */
     public boolean validateMarkedCells() {
-        this.lastValidationTick = Simulator.currentTick();
+        lastValidationTick = Simulator.currentTick();
 
-        if (this.needsFullLoadOrValidation() || this.validationCount.get() == 0)
+        if (needsFullLoadOrValidation() || validationCount.get() == 0)
             return false;
 
         if (Configurator.DEBUG.enableLavaCellChunkTrace)
-            Pyroclasm.LOG.info("Validating marked cells in chunk with corner x=%d, z=%d", this.xStart, this.zStart);
+            Pyroclasm.LOG.info("Validating marked cells in chunk with corner x=%d, z=%d", xStart, zStart);
 
-        Chunk chunk = this.cells.sim.world.getChunk(PackedChunkPos.getChunkXPos(this.packedChunkPos), PackedChunkPos.getChunkZPos(this.packedChunkPos));
+        final Chunk chunk = cells.sim.world.getChunk(PackedChunkPos.getChunkXPos(packedChunkPos), PackedChunkPos.getChunkZPos(packedChunkPos));
 
-        CellStackBuilder builder = new CellStackBuilder();
+        final CellStackBuilder builder = new CellStackBuilder();
 
         synchronized (this) {
 
             for (int x = 0; x < 16; x++) {
                 for (int z = 0; z < 16; z++) {
-                    LavaCell entryCell = this.getEntryCell(x, z);
+                    LavaCell entryCell = getEntryCell(x, z);
 
                     if (entryCell != null && entryCell.isValidationNeeded()) {
-                        entryCell = builder.updateCellStack(cells, chunk, entryCell, this.xStart + x, this.zStart + z);
+                        entryCell = builder.updateCellStack(cells, chunk, entryCell, xStart + x, zStart + z);
                         if (entryCell != null)
                             entryCell.setValidationNeeded(false);
-                        this.setEntryCell(x, z, entryCell);
+                        setEntryCell(x, z, entryCell);
                     }
                 }
             }
-            this.validationCount.set(0);
+            validationCount.set(0);
 
         }
 
-        this.forEach(cell -> cell.updateRetentionIfNeeded());
+        forEach(cell -> cell.updateRetentionIfNeeded());
 
         return true;
     }
@@ -212,31 +213,31 @@ public class CellChunk {
     public void loadOrValidateChunk() {
         synchronized (this) {
             if (Configurator.DEBUG.enableLavaCellChunkTrace)
-                Pyroclasm.LOG.info("Loading (or reloading) chunk buffer with corner x=%d, z=%d", this.xStart, this.zStart);
+                Pyroclasm.LOG.info("Loading (or reloading) chunk buffer with corner x=%d, z=%d", xStart, zStart);
 
-            CellStackBuilder builder = new CellStackBuilder();
+            final CellStackBuilder builder = new CellStackBuilder();
 
-            Chunk chunk = this.cells.sim.world.getChunk(PackedChunkPos.getChunkXPos(this.packedChunkPos), PackedChunkPos.getChunkZPos(this.packedChunkPos));
+            final Chunk chunk = cells.sim.world.getChunk(PackedChunkPos.getChunkXPos(packedChunkPos), PackedChunkPos.getChunkZPos(packedChunkPos));
 
             for (int x = 0; x < 16; x++) {
                 for (int z = 0; z < 16; z++) {
-                    LavaCell entryCell = this.getEntryCell(x, z);
+                    final LavaCell entryCell = getEntryCell(x, z);
 
                     if (entryCell == null) {
-                        this.setEntryCell(x, z, builder.buildNewCellStack(this.cells, chunk, this.xStart + x, this.zStart + z));
+                        setEntryCell(x, z, builder.buildNewCellStack(cells, chunk, xStart + x, zStart + z));
                     } else {
-                        this.setEntryCell(x, z, builder.updateCellStack(this.cells, chunk, entryCell, this.xStart + x, this.zStart + z));
+                        setEntryCell(x, z, builder.updateCellStack(cells, chunk, entryCell, xStart + x, zStart + z));
                     }
                 }
             }
 
             // this.isLoaded = true;
-            this.needsFullValidation = false;
-            this.validationCount.set(0);
-            this.lastValidationTick = Simulator.currentTick();
+            needsFullValidation = false;
+            validationCount.set(0);
+            lastValidationTick = Simulator.currentTick();
         }
 
-        this.forEach(cell -> cell.updateRetentionIfNeeded());
+        forEach(cell -> cell.updateRetentionIfNeeded());
     }
 
     /**
@@ -244,11 +245,11 @@ public class CellChunk {
      * validation after the last validation of that column.
      */
     public void incrementValidationCount() {
-        this.validationCount.incrementAndGet();
+        validationCount.incrementAndGet();
     }
 
     public int getActiveCount() {
-        return this.activeCount.get();
+        return activeCount.get();
     }
 
     /**
@@ -257,24 +258,24 @@ public class CellChunk {
      * neighboring chunks to be loaded so that lava can flow into them.
      */
     public void incrementActiveCount(int blockX, int blockZ) {
-        this.activeCount.incrementAndGet();
+        activeCount.incrementAndGet();
 
         // create (if needed) and retain neighbors if newly have lava at the edge of
         // this chunk
-        if (blockX == this.xStart) {
-            if (this.activeCountLowX.incrementAndGet() == 1)
-                this.cells.getOrCreateCellChunk(this.xStart - 16, this.zStart).retain();
-        } else if (blockX == this.xEnd) {
-            if (this.activeCountHighX.incrementAndGet() == 1)
-                this.cells.getOrCreateCellChunk(this.xStart + 16, this.zStart).retain();
+        if (blockX == xStart) {
+            if (activeCountLowX.incrementAndGet() == 1)
+                cells.getOrCreateCellChunk(xStart - 16, zStart).retain();
+        } else if (blockX == xEnd) {
+            if (activeCountHighX.incrementAndGet() == 1)
+                cells.getOrCreateCellChunk(xStart + 16, zStart).retain();
         }
 
-        if (blockZ == this.zStart) {
-            if (this.activeCountLowZ.incrementAndGet() == 1)
-                this.cells.getOrCreateCellChunk(this.xStart, this.zStart - 16).retain();
-        } else if (blockZ == this.zEnd) {
-            if (this.activeCountHighZ.incrementAndGet() == 1)
-                this.cells.getOrCreateCellChunk(this.xStart, this.zStart + 16).retain();
+        if (blockZ == zStart) {
+            if (activeCountLowZ.incrementAndGet() == 1)
+                cells.getOrCreateCellChunk(xStart, zStart - 16).retain();
+        } else if (blockZ == zEnd) {
+            if (activeCountHighZ.incrementAndGet() == 1)
+                cells.getOrCreateCellChunk(xStart, zStart + 16).retain();
         }
 
     }
@@ -285,27 +286,27 @@ public class CellChunk {
      */
     public void decrementActiveCount(int blockX, int blockZ) {
         // release neighbors if no longer have lava at the edge of this chunk
-        if (blockX == this.xStart) {
-            if (this.activeCountLowX.decrementAndGet() == 0)
-                this.releaseChunkIfExists(this.xStart - 16, this.zStart);
-        } else if (blockX == this.xEnd) {
-            if (this.activeCountHighX.decrementAndGet() == 0)
-                this.releaseChunkIfExists(this.xStart + 16, this.zStart);
+        if (blockX == xStart) {
+            if (activeCountLowX.decrementAndGet() == 0)
+                releaseChunkIfExists(xStart - 16, zStart);
+        } else if (blockX == xEnd) {
+            if (activeCountHighX.decrementAndGet() == 0)
+                releaseChunkIfExists(xStart + 16, zStart);
         }
 
-        if (blockZ == this.zStart) {
-            if (this.activeCountLowZ.decrementAndGet() == 0)
-                this.releaseChunkIfExists(this.xStart, this.zStart - 16);
-        } else if (blockZ == this.zEnd) {
-            if (this.activeCountHighZ.decrementAndGet() == 0)
-                this.releaseChunkIfExists(this.xStart, this.zStart + 16);
+        if (blockZ == zStart) {
+            if (activeCountLowZ.decrementAndGet() == 0)
+                releaseChunkIfExists(xStart, zStart - 16);
+        } else if (blockZ == zEnd) {
+            if (activeCountHighZ.decrementAndGet() == 0)
+                releaseChunkIfExists(xStart, zStart + 16);
         }
 
-        this.activeCount.decrementAndGet();
+        activeCount.decrementAndGet();
     }
 
     private void releaseChunkIfExists(int blockX, int blockZ) {
-        CellChunk chunk = this.cells.getCellChunk(blockX, blockZ);
+        final CellChunk chunk = cells.getCellChunk(blockX, blockZ);
         if (chunk == null) {
             assert false : "Neighboring cell chunk not found during release - expected it to be loaded.";
         } else {
@@ -320,7 +321,7 @@ public class CellChunk {
      * lava to flow into this chunk if it should.
      */
     public void retain() {
-        this.retainCount.incrementAndGet();
+        retainCount.incrementAndGet();
     }
 
     /**
@@ -329,7 +330,7 @@ public class CellChunk {
      * cells.
      */
     public void release() {
-        final int c = this.retainCount.decrementAndGet();
+        final int c = retainCount.decrementAndGet();
         assert c >= 0;
     }
 
@@ -337,26 +338,26 @@ public class CellChunk {
      * Returns true if chunk should be unloaded. Call once per tick
      */
     public boolean canUnload() {
-        if (this.isNew())
+        if (isNew())
             return false;
 
         // complete validation before unloading because may be new info that could cause
         // chunk to remain loaded
-        if (this.activeCount.get() == 0 && this.retainCount.get() == 0 && this.validationCount.get() == 0) {
-            return this.unloadTickCount++ >= TICK_UNLOAD_THRESHOLD;
+        if (activeCount.get() == 0 && retainCount.get() == 0 && validationCount.get() == 0) {
+            return unloadTickCount++ >= TICK_UNLOAD_THRESHOLD;
         } else {
-            this.unloadTickCount = 0;
+            unloadTickCount = 0;
             return false;
         }
     }
 
     public void unload() {
         if (Configurator.DEBUG.enableLavaCellChunkTrace)
-            Pyroclasm.LOG.info("Unloading chunk buffer with corner x=%d, z=%d", this.xStart, this.zStart);
+            Pyroclasm.LOG.info("Unloading chunk buffer with corner x=%d, z=%d", xStart, zStart);
 
         for (int x = 0; x < 16; x++) {
             for (int z = 0; z < 16; z++) {
-                LavaCell entryCell = this.getEntryCell(x, z);
+                LavaCell entryCell = getEntryCell(x, z);
 
                 if (entryCell == null) {
                     Pyroclasm.LOG.warn("Null entry cell in chunk being unloaded");
@@ -368,12 +369,12 @@ public class CellChunk {
                 assert entryCell.belowCell() == null : "First cell is not actually the start cell.";
 
                 do {
-                    LavaCell nextCell = entryCell.aboveCell();
+                    final LavaCell nextCell = entryCell.aboveCell();
                     entryCell.setDeleted();
                     entryCell = nextCell;
                 } while (entryCell != null);
 
-                this.setEntryCell(x, z, null);
+                setEntryCell(x, z, null);
             }
         }
     }
@@ -384,7 +385,7 @@ public class CellChunk {
      */
     @Nullable
     LavaCell getEntryCell(int x, int z) {
-        LavaCell result = this.entryCells[getIndex(x, z)];
+        final LavaCell result = entryCells[getIndex(x, z)];
         assert result == null || !result.isDeleted() : "derp in CellChunk unloading - returning deleted cell from getEntryCell";
         return result;
     }
@@ -394,23 +395,23 @@ public class CellChunk {
      * safe if not accessing same x, z.
      */
     void setEntryCell(int x, int z, @Nullable LavaCell entryCell) {
-        int i = getIndex(x, z);
-        boolean wasNull = this.entryCells[i] == null;
+        final int i = getIndex(x, z);
+        final boolean wasNull = entryCells[i] == null;
 
-        this.entryCells[i] = entryCell;
+        entryCells[i] = entryCell;
 
         if (wasNull) {
             if (entryCell != null)
-                this.entryCount.incrementAndGet();
+                entryCount.incrementAndGet();
         } else {
             if (entryCell == null)
-                this.entryCount.decrementAndGet();
+                entryCount.decrementAndGet();
         }
     }
 
     /** How many x. z locations in this chunk have at least one cell? */
     public int getEntryCount() {
-        return this.entryCount.get();
+        return entryCount.get();
     }
 
     private static int getIndex(int x, int z) {
@@ -418,34 +419,34 @@ public class CellChunk {
     }
 
     public void provideBlockUpdatesAndDoCooling() {
-        final LavaSimulator sim = this.cells.sim;
+        final LavaSimulator sim = cells.sim;
 
         final int tick = Simulator.currentTick();
 
-        CellChunk c = sim.cells.getCellChunk(this.xStart - 16, this.zStart);
+        CellChunk c = sim.cells.getCellChunk(xStart - 16, zStart);
         final boolean isUnavailableLowX = c == null || c.isNew();
 
-        c = sim.cells.getCellChunk(this.xStart + 16, this.zStart);
+        c = sim.cells.getCellChunk(xStart + 16, zStart);
         final boolean isUnavailableHighX = c == null || c.isNew();
 
-        c = sim.cells.getCellChunk(this.xStart, this.zStart - 16);
+        c = sim.cells.getCellChunk(xStart, zStart - 16);
         final boolean isUnavailableLowZ = c == null || c.isNew();
 
-        c = sim.cells.getCellChunk(this.xStart, this.zStart + 16);
+        c = sim.cells.getCellChunk(xStart, zStart + 16);
         final boolean isUnavailableHighZ = c == null || c.isNew();
 
         // don't want to cool the cells as we go - would potentially cause unpleasing
         // cascade
-        SimpleUnorderedArrayList<LavaCell> coolTargets = new SimpleUnorderedArrayList<>(16);
+        final SimpleUnorderedArrayList<LavaCell> coolTargets = new SimpleUnorderedArrayList<>(16);
 
-        for (LavaCell entryCell : this.entryCells) {
+        for (final LavaCell entryCell : entryCells) {
             if (entryCell == null)
                 continue;
 
             // don't allow cooling on edge cells if neighbor chunk not loaded yet
             // because won't have connection formed yet
-            final boolean enableCooling = !((isUnavailableLowX && entryCell.x() == this.xStart) || (isUnavailableHighX && entryCell.x() == this.xEnd)
-                    || (isUnavailableLowZ && entryCell.z() == this.zStart) || (isUnavailableHighZ && entryCell.z() == this.zEnd));
+            final boolean enableCooling = !((isUnavailableLowX && entryCell.x() == xStart) || (isUnavailableHighX && entryCell.x() == xEnd)
+                    || (isUnavailableLowZ && entryCell.z() == zStart) || (isUnavailableHighZ && entryCell.z() == zEnd));
 
             LavaCell cell = entryCell.firstCell();
 
@@ -464,18 +465,18 @@ public class CellChunk {
         if (!coolTargets.isEmpty())
             coolTargets.forEach(cell -> sim.coolCell(cell));
 
-        this.forEach(cell -> cell.updateRetentionIfNeeded());
+        forEach(cell -> cell.updateRetentionIfNeeded());
     }
 
     /**
      * Applies the given operation to all cells in the chunk.
      * <p>
-     * 
+     *
      * Do not use for operations that may add or remove cells.
      */
     public void forEach(Consumer<LavaCell> consumer) {
         for (int i = 0; i < 256; i++) {
-            LavaCell c = this.entryCells[i];
+            LavaCell c = entryCells[i];
             if (c == null)
                 continue;
             c = c.firstCell();

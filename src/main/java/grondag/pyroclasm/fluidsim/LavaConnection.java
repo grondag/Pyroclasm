@@ -2,7 +2,7 @@ package grondag.pyroclasm.fluidsim;
 
 import java.util.concurrent.atomic.LongAdder;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 import grondag.pyroclasm.Configurator;
 
@@ -29,11 +29,11 @@ public class LavaConnection {
     }
 
     public final @Nullable Flowable flowable() {
-        return this.flowable;
+        return flowable;
     }
 
     public final LavaCell getOther(LavaCell cellIAlreadyHave) {
-        return cellIAlreadyHave == this.firstCell ? this.secondCell : this.firstCell;
+        return cellIAlreadyHave == firstCell ? secondCell : firstCell;
     }
 
     /**
@@ -41,16 +41,16 @@ public class LavaConnection {
      * recompute of direction / shape dependent flow attributes.
      */
     public final void setCellShapeDirty() {
-        this.flowable = null;
+        flowable = null;
     }
 
     public final boolean isValid() {
-        return this.firstCell.canConnectWith(this.secondCell);
+        return firstCell.canConnectWith(secondCell);
     }
 
     /** true if either cell has fluid */
     public final boolean isActive() {
-        return this.firstCell.fluidUnits() > 0 || this.secondCell.fluidUnits() > 0;
+        return firstCell.fluidUnits() > 0 || secondCell.fluidUnits() > 0;
     }
 
     /**
@@ -59,8 +59,8 @@ public class LavaConnection {
      * opposite direction. returns Flowable if can flow from the calling cell.
      */
     public final @Nullable Flowable setupTick(LavaCell sourceCell) {
-        int surface1 = this.firstCell.pressureSurfaceUnits();
-        int surface2 = this.secondCell.pressureSurfaceUnits();
+        final int surface1 = firstCell.pressureSurfaceUnits();
+        final int surface2 = secondCell.pressureSurfaceUnits();
 
         if (surface1 == surface2) {
             return null;
@@ -68,27 +68,27 @@ public class LavaConnection {
 
         if (surface1 > surface2) {
             // Will be set up from other cell
-            if (this.secondCell == sourceCell)
+            if (secondCell == sourceCell)
                 return null;
 
-            if (this.direction == FlowDirection.TWO_TO_ONE) {
+            if (direction == FlowDirection.TWO_TO_ONE) {
                 // don't allow switch of direction unless something substantial to flow
                 if (surface1 - surface2 < LavaSimulator.FLUID_UNITS_PER_LEVEL / 4)
                     return null;
 
                 // don't allow switch of direction in same tick
-                this.direction = FlowDirection.NONE;
+                direction = FlowDirection.NONE;
                 return null;
             }
 
-            Flowable f = this.flowable;
-            if (f == null || f.fromCell != this.firstCell) {
-                f = new Flowable(this.firstCell, this.secondCell);
-                this.flowable = f;
+            Flowable f = flowable;
+            if (f == null || f.fromCell != firstCell) {
+                f = new Flowable(firstCell, secondCell);
+                flowable = f;
             }
 
             if (f.setFlowLimitsThisTick(surface1, surface2)) {
-                this.direction = FlowDirection.ONE_TO_TWO;
+                direction = FlowDirection.ONE_TO_TWO;
                 return f;
             } else {
                 return null;
@@ -97,27 +97,27 @@ public class LavaConnection {
         {
 
             // Will be set up from other cell
-            if (this.firstCell == sourceCell)
+            if (firstCell == sourceCell)
                 return null;
 
-            if (this.direction == FlowDirection.ONE_TO_TWO) {
+            if (direction == FlowDirection.ONE_TO_TWO) {
                 // don't allow switch of direction unless something substantial to flow
                 if (surface2 - surface1 < Configurator.LAVA.lavaFlowReversalThreshold)
                     return null;
 
                 // don't allow switch of direction in same tick
-                this.direction = FlowDirection.NONE;
+                direction = FlowDirection.NONE;
                 return null;
             }
 
-            Flowable f = this.flowable;
-            if (f == null || f.fromCell != this.secondCell) {
-                f = new Flowable(this.secondCell, this.firstCell);
-                this.flowable = f;
+            Flowable f = flowable;
+            if (f == null || f.fromCell != secondCell) {
+                f = new Flowable(secondCell, firstCell);
+                flowable = f;
             }
 
             if (f.setFlowLimitsThisTick(surface2, surface1)) {
-                this.direction = FlowDirection.TWO_TO_ONE;
+                direction = FlowDirection.TWO_TO_ONE;
                 return f;
             } else {
                 return null;
@@ -193,15 +193,15 @@ public class LavaConnection {
          * the lesser of {@link LavaCell#maxOutputPerStep} from the source cell and the
          * max amount that could flow based on connection size.
          * <p>
-         * 
+         *
          * Set during {@link #setFlowLimitsThisTick(LavaCell, LavaCell, int, int)}
          * <p>
-         * 
+         *
          * Necessary so that fluid has a chance to flow in more than one direction. If
          * we did not limit flow per step, then flow would usually always go across a
          * single connection, even if the vertical drop is the same.
          * <p>
-         * 
+         *
          * This is a per-connection max, and is enforced in
          * {@link #tryFlow(LavaCell, LavaCell)}. The per-cell step max is <em>not</em>
          * enforced, which is what allows multiple connections sharing the same drop to
@@ -221,7 +221,7 @@ public class LavaConnection {
             this.fromCell = fromCell;
             this.toCell = toCell;
 
-            this.fromRetained = fromCell.getRetainedUnits();
+            fromRetained = fromCell.getRetainedUnits();
 
             final int fromFloor = fromCell.floorUnits();
             final int toFloor = toCell.floorUnits();
@@ -236,16 +236,16 @@ public class LavaConnection {
             this.fromVolume = fromVolume;
             this.toVolume = toVolume;
 
-            this.drop = Math.min(fromFloor - toCell.getMinFloorUnitsFrom(fromCell), LavaSimulator.FLUID_UNITS_PER_TWO_BLOCKS);
+            drop = Math.min(fromFloor - toCell.getMinFloorUnitsFrom(fromCell), LavaSimulator.FLUID_UNITS_PER_TWO_BLOCKS);
 
             if (fromCeiling > toCeiling) {
-                this.isToLowerThanFrom = true;
-                this.dualPressureThreshold = AbstractLavaCell.dualPressureThreshold(fromFloor, fromVolume, toFloor, toVolume);
-                this.singlePressureThreshold = AbstractLavaCell.singlePressureThreshold(fromFloor, toFloor, toCeiling);
+                isToLowerThanFrom = true;
+                dualPressureThreshold = AbstractLavaCell.dualPressureThreshold(fromFloor, fromVolume, toFloor, toVolume);
+                singlePressureThreshold = AbstractLavaCell.singlePressureThreshold(fromFloor, toFloor, toCeiling);
             } else {
-                this.isToLowerThanFrom = false;
-                this.dualPressureThreshold = AbstractLavaCell.dualPressureThreshold(toFloor, toVolume, fromFloor, fromVolume);
-                this.singlePressureThreshold = AbstractLavaCell.singlePressureThreshold(fromFloor, toFloor, fromCeiling);
+                isToLowerThanFrom = false;
+                dualPressureThreshold = AbstractLavaCell.dualPressureThreshold(toFloor, toVolume, fromFloor, fromVolume);
+                singlePressureThreshold = AbstractLavaCell.singlePressureThreshold(fromFloor, toFloor, fromCeiling);
             }
 
         }
@@ -253,7 +253,7 @@ public class LavaConnection {
         /**
          * Does a step - flowing across the connection if possible.
          * <p>
-         * 
+         *
          * Note there is no checking for deleted or non-flowing connections here.
          * Assumes any deleted or non-flowing connections were excluded during setup.
          */
@@ -261,11 +261,11 @@ public class LavaConnection {
             final int fromFluid = fromCell.fluidUnits();
             final int toFluid = toCell.fluidUnits();
 
-            int availableFluidUnits = fromFluid - this.fromRetained;
+            int availableFluidUnits = fromFluid - fromRetained;
             if (availableFluidUnits < LavaSimulator.MIN_FLOW_UNITS)
                 return;
-            if (availableFluidUnits > this.maxFlowPerStep)
-                availableFluidUnits = this.maxFlowPerStep;
+            if (availableFluidUnits > maxFlowPerStep)
+                availableFluidUnits = maxFlowPerStep;
 
             final int toSurface = AbstractLavaCell.pressureSurface(toFloor, toVolume, toFluid);
 
@@ -275,12 +275,12 @@ public class LavaConnection {
                 final int fluidTotal = toFluid + fromFluid;
                 int flow;
 
-                if (fluidTotal > this.dualPressureThreshold) {
-                    flow = Math.min(availableFluidUnits, this.dualPressureFlow(toFluid, fromFluid, fluidTotal));
-                } else if (fluidTotal > this.singlePressureThreshold) {
-                    flow = Math.min(availableFluidUnits, this.singlePressureFlow(toFluid, fromFluid, fluidTotal));
+                if (fluidTotal > dualPressureThreshold) {
+                    flow = Math.min(availableFluidUnits, dualPressureFlow(toFluid, fromFluid, fluidTotal));
+                } else if (fluidTotal > singlePressureThreshold) {
+                    flow = Math.min(availableFluidUnits, singlePressureFlow(toFluid, fromFluid, fluidTotal));
                 } else {
-                    flow = Math.min(availableFluidUnits, this.freeFlow(toFluid, fromFluid, fluidTotal));
+                    flow = Math.min(availableFluidUnits, freeFlow(toFluid, fromFluid, fluidTotal));
                 }
 
                 if (flow < LavaSimulator.MIN_FLOW_UNITS) {
@@ -312,20 +312,20 @@ public class LavaConnection {
         /**
          * Returns amount that should flow from "from" cell to "to" cell to equalize
          * pressure.
-         * 
+         *
          * Definitions c Pressure Factor (constant) t total lava (invariant) Pa Pb
          * pressurized fluid surface Sa Sb normal fluid surface (bounded by cell
          * ceiling) Fa Fb column floor (fixed) Ua Ub normal fluid units (bounded by cell
          * volume) Xa Xb extra (pressure) fluid units
-         * 
-         * 
+         *
+         *
          * Sa = Fa + Ua, Sb = Fb + Ub compute normal surfaces Pa = Sa + cXa, Pb = Sb +
          * cXb compute pressure surffaces Pa = Fa + Ua + cXa, Pb = Fb + Ub + cXb expand
          * pressure surface forumla
-         * 
+         *
          * 1 t = Ua + Ub + Xa + Xb conservation of fluid 2 Pa = Pb equalize pressurized
          * fluid surface 3 Fa + Ua + cXa = Fb + Ub + cXb expanded equalization formula
-         * 
+         *
          * Single Column Under Pressure 4 t = Ua + Ub + Xb If b has pressure (Ub is
          * fixed and Xa=0) 5 Fa + Ua = Fb + Ub + cXb 6 Ua = Fb + Ub + cXb - Fa rearrange
          * #5 7 t = Fb + Ub + cXb - Fa + Ub + Xb substitue #6 into #4 8 t = Fb - Fa +
@@ -339,7 +339,7 @@ public class LavaConnection {
 
             int newFluidFrom;
 
-            if (this.isToLowerThanFrom) {
+            if (isToLowerThanFrom) {
 
                 // flowing from upper cell into lower, creating pressure in lower cell
                 // "to" cell corresponds to subscript "b" in formula.
@@ -368,18 +368,18 @@ public class LavaConnection {
         /**
          * Returns amount that should flow from "from" cell to "to" cell to equalize
          * pressure.
-         * 
+         *
          * Definitions c Pressure Factor (constant) t total lava (invariant) Pa Pb
          * pressurized fluid surface Sa Sb normal fluid surface (bounded by cell
          * ceiling) Fa Fb column floor (fixed) Ua Ub normal fluid units (bounded by cell
          * volume) Xa Xb extra (pressure) fluid units
-         * 
-         * 
+         *
+         *
          * 1 t = Ua + Ub + Xa + Xb conservation of fluid, Ua and Ub are fixed 2 Pa = Pb
          * equalize pressurized fluid surface 3 Fa + Ua + cXa = Fb + Ub + cXb expanded
          * equalization formula
-         * 
-         * 
+         *
+         *
          * 6 Xb = t - Ua - Ub - Xa rearrange #1 7 cXa = Fb + Ub - Fa - Ua +cXb rearrange
          * #3 8 cXa = Fb + Ub - Fa - Ua +c(t - Ua - Ub - Xa) substitute #6 into #3 9 cXa
          * = Fb + Ub - Fa - Ua +ct - cUa - cUb - cXa 10 2cXa = Fb - Fa + Ub - cUb - Ua -
@@ -390,7 +390,7 @@ public class LavaConnection {
             // Does not matter which cell has higher ceiling when both are under pressure.
             // Assigning "from" cell to subscript a in formula.
 
-            int fromPressureUnits = (toFloor - fromFloor + (1 - AbstractLavaCell.PRESSURE_FACTOR) * toVolume
+            final int fromPressureUnits = (toFloor - fromFloor + (1 - AbstractLavaCell.PRESSURE_FACTOR) * toVolume
                     - AbstractLavaCell.PRESSURE_FACTOR_PLUS * fromVolume + AbstractLavaCell.PRESSURE_FACTOR * fluidTotal
 
                     // Adding PRESSURE_FACTOR to numerator term rounds up without floating point
@@ -407,18 +407,18 @@ public class LavaConnection {
         /**
          * Returns amount that should flow from "from" cell to "to" cell to equalize
          * level in absence of pressure in either cell.
-         * 
+         *
          * Definitions t total lava (invariant) Fa Fb column floor (fixed) Ua Ub normal
          * fluid units (bounded by cell volume)
-         * 
+         *
          * 1 t = Ua + Ub conservation of fluid 2 Fa + Ua = Fb + Ub equalization
          * condition
-         * 
-         * 
+         *
+         *
          * 3 Ub = t - Ua rearrange #1 4 Ua = Fb - Ub - Fa rearrange #2
-         * 
+         *
          * 5 Ua = Fb + t - Ua - Fa substitute #3 into #4
-         * 
+         *
          * 5 2Ua = Fb - Fa + t 6 Ua = (Fb - Fa + t) / 2
          */
         private int freeFlow(final int fluidTo, final int fluidFrom, final int fluidTotal) {
@@ -433,7 +433,7 @@ public class LavaConnection {
             do {
                 if (fromCell.tryLock()) {
                     if (toCell.tryLock()) {
-                        this.doStep();
+                        doStep();
                         isIncomplete = false;
                         toCell.unlock();
                     }
@@ -462,14 +462,14 @@ public class LavaConnection {
             // want to flow faster if under pressure - so use surface of high cell if above
             // low cell ceiling
             // and if flowing into an open area use the max height of the low cell
-            int flowWindow = Math.max(surfaceFrom, this.toCell.ceilingUnits()) - Math.max(this.fromFloor, this.toFloor);
+            final int flowWindow = Math.max(surfaceFrom, toCell.ceilingUnits()) - Math.max(fromFloor, toFloor);
 
             if (flowWindow < LavaSimulator.FLUID_UNITS_PER_LEVEL) {
                 // cross-section too small
                 return false;
             }
 
-            this.maxFlowPerStep = Math.min(flowWindow / LavaConnections.STEP_COUNT, fromCell.maxOutputPerStep);
+            maxFlowPerStep = Math.min(flowWindow / LavaConnections.STEP_COUNT, fromCell.maxOutputPerStep);
             return true;
         }
     }
