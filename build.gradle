@@ -44,15 +44,10 @@ repositories {
 }
 
 processResources {
-	inputs.property "version", version
-	
-	from(sourceSets.main.resources.srcDirs) {
-		include "fabric.mod.json"
-		expand "version": version
-	}
-	
-	from(sourceSets.main.resources.srcDirs) {
-		exclude "fabric.mod.json"
+	inputs.property "version", project.version
+
+	filesMatching("fabric.mod.json") {
+		expand "version": project.version
 	}
 }
 
